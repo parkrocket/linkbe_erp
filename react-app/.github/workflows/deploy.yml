@@ -3,7 +3,7 @@ name: Deploy React App to EC2
 on:
   push:
     paths:
-      - 'react-app/**'  # 'react-app' 디렉토리에 있는 파일이 변경되면 트리거됩니다.
+      - 'react-app/**'
     branches:
       - master  # master 브랜치에 푸시할 때 워크플로를 실행합니다.
 
@@ -36,4 +36,4 @@ jobs:
         echo "${KEY}" > key.pem
         chmod 400 key.pem
         scp -o StrictHostKeyChecking=no -i key.pem -r react-app/build/* $USERNAME@$HOST:/var/www/html/
-        ssh -o StrictHostKeyChecking=no -i key.pem $USERNAME@$HOST "sudo systemctl restart nginx"
+        ssh -o StrictHostKeyChecking-no -i key.pem $USERNAME@$HOST "sudo systemctl restart nginx"
