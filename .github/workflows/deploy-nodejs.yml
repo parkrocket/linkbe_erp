@@ -23,6 +23,10 @@ jobs:
     - name: Install dependencies
       run: cd nodejs-server && npm install
 
+    - name: Create .ssh directory
+      run: |
+        mkdir -p ~/.ssh
+
     - name: Add known_hosts
       run: |
         ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
@@ -36,6 +40,6 @@ jobs:
       run: |
         echo "${KEY}" > key.pem
         chmod 400 key.pem
-        rsync -avz --exclude 'node_modules' nodejs-server/ -e "ssh -o StrictHostKeyChecking=no -i key.pem" $USERNAME@$HOST:/home/ubuntu/nodejs-server/
+        rsync -avz --exclude 'node_modules' -e "ssh -o StrictHostKeyChecking=no -i key.pem" nodejs-server/ $USERNAME@$HOST:/home/ubuntu/nodejs-server/
         ssh -o StrictHostKeyChecking=no -i key.pem $USERNAME@$HOST "cd /home/ubuntu/nodejs-server && npm install && pm2 restart nodejs-server || pm2 start src/index.js --name nodejs-server"
         rm key.pem
