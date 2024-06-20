@@ -1,7 +1,9 @@
-name: Deploy React App to EC2
+name: Deploy Node.js App to EC2
 
 on:
   push:
+    paths:
+      - 'nodejs-server/**'  # 'nodejs-server' 디렉토리에 있는 파일이 변경되면 트리거됩니다.
     branches:
       - master  # master 브랜치에 푸시할 때 워크플로를 실행합니다.
 
@@ -16,13 +18,10 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '20'  # 사용하려는 Node.js 버전을 지정합니다.
+        node-version: '18'  # Node.js 버전을 지정합니다.
 
     - name: Install dependencies
-      run: npm install
-
-    - name: Build React app
-      run: npm run build
+      run: cd nodejs-server && npm install
 
     - name: Deploy to EC2
       env:
@@ -33,5 +32,5 @@ jobs:
       run: |
         echo "${KEY}" > key.pem
         chmod 400 key.pem
-        scp -o StrictHostKeyChecking=no -i key.pem -r build/* $USERNAME@$HOST:/var/www/html/
-        ssh -o StrictHostKeyChecking=no -i key.pem $USERNAME@$HOST "sudo systemctl restart nginx"
+        scp -o StrictHostKeyChecking=no -i key.pem -r nodejs-server/* $USERNAME@$HOST:/home/ubuntu/nodejs-server/
+        ssh -o StrictHostKeyChecking=no -i key.pem $USERNAME@$HOST "cd /home/ubuntu/nodejs-server && npm install && pm2 restart nodejs-server || pm2 start src/index.js --name nodejs-server"
