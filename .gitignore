@@ -26,11 +26,9 @@ yarn-error.log*
 /react-app/.env.local
 /react-app/.env.development.local
 /react-app/.env.test.local
-/react-app/.env.production.local
 
 # Node Server
 /nodejs-server/.env
 /nodejs-server/.env.local
 /nodejs-server/.env.development.local
 /nodejs-server/.env.test.local
-/nodejs-server/.env.production.local
