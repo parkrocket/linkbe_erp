@@ -4,18 +4,11 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
-import { BrowserRouter as Router } from 'react-router-dom';
-
-import { Provider } from 'react-redux';
-import store from './_reducers/Reducers'; // 수정된 `Reducers` 파일에서 `store`를 가져옴
-
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-    <Router>
-        <Provider store={store}>
-            <App />
-        </Provider>
-    </Router>
+    <React.StrictMode>
+        <App />
+    </React.StrictMode>
 );
 
 // If you want to start measuring performance in your app, pass a function
