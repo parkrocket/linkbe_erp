@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Routes } from './pages/Routes';
 
 function App() {
     const [message, setMessage] = useState('');
@@ -14,12 +15,9 @@ function App() {
     }, []);
 
     return (
-        <div className="App">
-            <header className="App-header">
-                <h1>통신테스트:</h1>
-                <p>{message}</p>
-            </header>
-        </div>
+        <React.Fragment>
+            <Routes />
+        </React.Fragment>
     );
 }
 
