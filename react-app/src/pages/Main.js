@@ -20,7 +20,7 @@ function Main() {
                 removeCookie('x_auth');
                 navigate('/');
             } else {
-                alert('로그아웃에 실패하였습니다.');
+                alert('로그아웃에 실패하였습니다ㅠㅠㅠㅠ');
             }
         });
     };
