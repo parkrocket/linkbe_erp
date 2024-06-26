@@ -12,7 +12,7 @@ import { BrowserRouter as Router } from 'react-router-dom';
 
 const store = configureStore({
     reducer: rootReducer,
-    middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(promiseMiddleware, thunk),
+    middleware: (getDefaultMiddleware) => getDefaultMiddleware({ serializableCheck: false }).concat(promiseMiddleware, thunk),
 });
 
 const root = ReactDOM.createRoot(document.getElementById('root'));

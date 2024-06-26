@@ -8,8 +8,13 @@ const rootReducer = combineReducers({
 function user(state = {}, action) {
     switch (action.type) {
         case LOGIN_USER:
-            return { ...state, loginSuccess: action.payload };
-
+            return { ...state, userData: action.payload, loginError: null, isAuthenticated: true };
+        case REGISTER_USER:
+            return { ...state, userData: action.payload, loginError: null, isAuthenticated: true };
+        case AUTH_USER:
+            return { ...state, userData: action.payload, loginError: null, isAuthenticated: action.payload.isAuth };
+        case LOGOUT_USER:
+            return { ...state, loginError: null, isAuthenticated: false };
         default:
             return state;
     }

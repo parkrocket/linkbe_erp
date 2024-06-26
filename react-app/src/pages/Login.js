@@ -2,10 +2,14 @@ import React from 'react';
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { loginUser } from '../_actions/user_action';
+import { useNavigate } from 'react-router-dom';
+import { useCookies } from 'react-cookie';
 
 function Login() {
     const [email, setEamil] = useState('');
     const [password, setPassword] = useState('');
+    const [, setCookie] = useCookies(['x_auth']);
+    const navigate = useNavigate();
 
     const dispatch = useDispatch();
 
@@ -17,10 +21,14 @@ function Login() {
             password,
         };
 
-        console.log(email, password);
-
         dispatch(loginUser(loginData)).then((response) => {
-            console.log(response);
+            if (response.payload.loginSuccess) {
+                setCookie('x_auth', response.payload.token);
+                window.localStorage.setItem('userId', response.payload.user.mb_id);
+                navigate('/');
+            } else {
+                alert(response.payload.error);
+            }
         });
     };
 
