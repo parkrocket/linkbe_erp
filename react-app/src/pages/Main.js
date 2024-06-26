@@ -35,7 +35,7 @@ function Main() {
                 </p>
             ) : (
                 <p>
-                    <Link to="/login">로그인 해주세요</Link>
+                    <Link to="/login">로그인 해주세요!</Link>
                 </p>
             )}
             <div>Main</div>
