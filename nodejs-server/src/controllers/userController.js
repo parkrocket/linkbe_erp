@@ -6,6 +6,8 @@ exports.login = (req, res) => {
     const { email, password } = req.body;
 
     User.findByEmail(email, (err, user) => {
+        console.log(secretKey);
+
         //return res.status(500).json({ message: 'Login successful', user: user });
 
         if (err) {
@@ -24,6 +26,7 @@ exports.login = (req, res) => {
             }
 
             // JWT 생성 및 전송
+
             const token = jwt.sign({ userId: user.mb_id }, secretKey, { expiresIn: '24h' });
             res.cookie('x_auth', token, { httpOnly: true });
 
@@ -55,8 +58,6 @@ exports.register = (req, res) => {
 };
 
 exports.auth = (req, res) => {
-    console.log(req.body.x_auth);
-
     const token = req.body.x_auth;
 
     if (!token) {
