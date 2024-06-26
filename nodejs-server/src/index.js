@@ -7,6 +7,8 @@ const port = 5000;
 // 환경 변수 로드
 dotenv.config();
 
+console.log(process.env.JWT_SECRET_KEY);
+
 // CORS 설정
 app.use(cors()); // CORS 미들웨어 사용
 
