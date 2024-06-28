@@ -1,8 +1,8 @@
-import React from "react";
-import { Link } from "react-router-dom";
-import "./../css/Common.css";
-import "./../css/Header.css";
-import HeaderLogo from "./../img/header_logo.svg";
+import React from 'react';
+import { Link } from 'react-router-dom';
+import './../css/Common.css';
+import './../css/Header.css';
+import HeaderLogo from './../img/header_logo.svg';
 
 function Header() {
     return (
@@ -16,7 +16,7 @@ function Header() {
                                 <img src={HeaderLogo} alt="header_logo" />
                             </Link>
                         </h1>
-                        <div class="header_btn_wrap">
+                        <div className="header_btn_wrap">
                             <Link className="header_login_btn" to="/login">
                                 로그인
                             </Link>
