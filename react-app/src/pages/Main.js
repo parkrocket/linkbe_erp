@@ -3,6 +3,7 @@ import { useCookies } from "react-cookie";
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../_actions/user_action";
 import { Link, useNavigate } from "react-router-dom";
+import MainStyle from "../css/Main.module.css";
 
 function Main() {
     const user = useSelector((state) => state.user);
@@ -27,18 +28,24 @@ function Main() {
 
     return (
         <div>
-            {user.isAuthenticated ? (
-                <p>
-                    <a href="#!" onClick={logOutHandler}>
-                        {user.userData.user.mb_id}로그아웃
-                    </a>
-                </p>
-            ) : (
-                <p>
-                    <Link to="/login">로그인 해주세요!! 수정해봅니다.</Link>
-                </p>
-            )}
-            <div>Main</div>
+            <main>
+                <div className={`${MainStyle.container} display-f align-items-c justify-c text-align-c`}>
+                    <div className={MainStyle.wrapper}>
+                        {user.isAuthenticated ? (
+                            <p>
+                                <a href="#!" onClick={logOutHandler}>
+                                    {user.userData.user.mb_id}로그아웃
+                                </a>
+                            </p>
+                        ) : (
+                            <p className="text-align-c">
+                                <Link to="/login">로그인 해주세요!! 수정해봅니다.</Link>
+                            </p>
+                        )}
+                        <div>Main</div>
+                    </div>
+                </div>
+            </main>
         </div>
     );
 }
