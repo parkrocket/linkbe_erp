@@ -9,7 +9,11 @@ header .wrapper {
     display: flex;
     justify-content: space-between;
 }
-.header_btn_wrap a {
+.header_btn_wrap {
+    display: flex;
+}
+.header_btn_wrap a,
+.header_btn_wrap button {
     height: 37px;
     line-height: 37px;
     text-align: center;
@@ -29,4 +33,21 @@ header .wrapper {
 .header_btn_wrap .header_signup_btn {
     background-color: rgb(53, 98, 228);
     color: #fff;
+}
+/* 로그인 했을 때(내 정보, 로그아웃 버튼) */
+.mypage_btn_warp {
+    margin-right: 30px;
+}
+.header_btn_wrap .mypage_btn {
+    color: rgb(53, 52, 52);
+    height: auto;
+    width: auto;
+    font-size: 17px;
+    font-weight: bold;
+}
+.header_btn_wrap .mypage_btn:hover {
+    text-decoration: underline;
+}
+.header_btn_wrap p {
+    display: inline-block;
 }

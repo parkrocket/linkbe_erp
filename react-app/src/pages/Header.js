@@ -1,10 +1,17 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import './../css/Common.css';
-import './../css/Header.css';
-import HeaderLogo from './../img/header_logo.svg';
+
+import React from "react";
+import { useSelector } from "react-redux";
+import { Link } from "react-router-dom";
+import HeaderRightLogin from "../component/HeaderRightLogin";
+import HeaderRightLogout from "../component/HeaderRightLogout";
+import "./../css/Common.css";
+import "./../css/Header.css";
+import HeaderLogo from "./../img/header_logo.svg";
+
 
 function Header() {
+    const user = useSelector((state) => state.user);
+
     return (
         <div>
             <header>
@@ -16,6 +23,19 @@ function Header() {
                                 <img src={HeaderLogo} alt="header_logo" />
                             </Link>
                         </h1>
+
+                        {user.isAuthenticated ? (
+                            <div>
+                                <HeaderRightLogout />
+                            </div>
+                        ) : (
+                            <div>
+                                <HeaderRightLogin />
+                            </div>
+                        )}
+
+                        {/* 
+
                         <div className="header_btn_wrap">
                             <Link className="header_login_btn" to="/login">
                                 로그인
@@ -24,6 +44,7 @@ function Header() {
                                 회원가입
                             </Link>
                         </div>
+						 */}
                     </div>
                 </div>
             </header>
