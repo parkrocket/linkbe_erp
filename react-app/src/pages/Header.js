@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
@@ -6,6 +7,7 @@ import HeaderRightLogout from "../component/HeaderRightLogout";
 import "./../css/Common.css";
 import "./../css/Header.css";
 import HeaderLogo from "./../img/header_logo.svg";
+
 
 function Header() {
     const user = useSelector((state) => state.user);
@@ -33,6 +35,7 @@ function Header() {
                         )}
 
                         {/* 
+
                         <div className="header_btn_wrap">
                             <Link className="header_login_btn" to="/login">
                                 로그인
