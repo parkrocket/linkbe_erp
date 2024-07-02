@@ -15,7 +15,11 @@ app.use(express.json());
 
 // 라우터 설정
 const userRoutes = require('./routes/user');
+const gtwRoutes = require('./routes/gtw');
+
 app.use('/api/users', userRoutes);
+
+app.use('/api/gtw', gtwRoutes);
 
 // 서버 실행
 app.listen(port, () => {
