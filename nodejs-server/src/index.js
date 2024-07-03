@@ -4,6 +4,10 @@ const dotenv = require('dotenv');
 const app = express();
 const port = 5000;
 
+const requestIp = require('request-ip');
+
+app.use(requestIp.mw());
+
 // 환경 변수 로드
 dotenv.config();
 

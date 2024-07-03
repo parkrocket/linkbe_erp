@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCookies } from 'react-cookie';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../_actions/user_action';
@@ -30,9 +30,12 @@ function Main() {
     };
 
     const handleClick = (message) => {
-        const dataTosubmit = { message };
+        const userId = user.userData.user.mb_id;
+        const type = 'gtw';
+        const platform = 'homepage';
 
-        console.log(message);
+        const dataTosubmit = { message, userId, type, platform };
+
         axios.post(`${SERVER_URL}/api/gtw/companyIn`, dataTosubmit).then((response) => response.data);
     };
 

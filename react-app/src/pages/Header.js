@@ -5,7 +5,7 @@ import HeaderRightLogin from '../component/HeaderRightLogin';
 import HeaderRightLogout from '../component/HeaderRightLogout';
 import './../css/Common.css';
 import './../css/Header.css';
-import HeaderLogo from './../img/header_logo.svg';
+import HeaderLogo from './../img/linkbe_logo.svg';
 
 function Header() {
     const user = useSelector((state) => state.user);
