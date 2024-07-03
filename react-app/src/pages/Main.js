@@ -36,7 +36,9 @@ function Main() {
 
         const dataTosubmit = { message, userId, type, platform };
 
-        axios.post(`${SERVER_URL}/api/gtw/companyIn`, dataTosubmit).then((response) => response.data);
+        const result = axios.post(`${SERVER_URL}/api/gtw/companyIn`, dataTosubmit).then((response) => response.data);
+
+        console.log(result);
     };
 
     return (
