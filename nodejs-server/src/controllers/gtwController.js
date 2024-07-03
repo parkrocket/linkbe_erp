@@ -5,9 +5,16 @@ const requestIp = require('request-ip');
 const moment = require('moment');
 
 exports.companyIn = (req, res) => {
-    //
+    let ip;
 
-    const ip = req.clientIp;
+    if (process.env.NODE_ENV === 'development') {
+        ip = process.env.DEV_IP;
+    } else {
+        ip = req.clientIp.includes('::ffff:') ? req.clientIp.split('::ffff:')[1] : req.clientIp;
+    }
+
+    console.log(ip);
+
     const { userId, type, platform } = req.body;
 
     Gtw.create(userId, type, ip, platform, (err, gtw) => {
