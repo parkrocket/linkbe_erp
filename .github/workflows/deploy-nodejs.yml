@@ -41,5 +41,5 @@ jobs:
         echo "${KEY}" > key.pem
         chmod 400 key.pem
         rsync -avz --exclude 'node_modules' -e "ssh -o StrictHostKeyChecking=no -i key.pem" nodejs-server/ $USERNAME@$HOST:/home/ubuntu/nodejs-server/
-        ssh -o StrictHostKeyChecking=no -i key.pem $USERNAME@$HOST "cd /home/ubuntu/nodejs-server && npm install && pm2 restart nodejs-server || pm2 start src/index.js --name nodejs-server"
+        ssh -o StrictHostKeyChecking=no -i key.pem $USERNAME@$HOST "cd /home/ubuntu/nodejs-server && npm install && NODE_ENV=production pm2 restart nodejs-server || NODE_ENV=production pm2 start src/index.js --name nodejs-server"
         rm key.pem

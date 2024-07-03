@@ -9,7 +9,11 @@ const requestIp = require('request-ip');
 app.use(requestIp.mw());
 
 // 환경 변수 로드
-dotenv.config();
+if (process.env.NODE_ENV === 'production') {
+    dotenv.config({ path: '.env.production' });
+} else {
+    dotenv.config();
+}
 
 // CORS 설정
 app.use(cors()); // CORS 미들웨어 사용
