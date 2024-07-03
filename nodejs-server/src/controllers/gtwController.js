@@ -15,6 +15,8 @@ exports.companyIn = (req, res) => {
 
     const { userId, type, platform } = req.body;
 
+    console.log(process.env.COMPANY_IP, ip);
+
     if (process.env.COMPANY_IP !== ip) {
         return res.status(200).json({ gtwSuccess: false, error: 'Database query error', errorMessage: 'IP가 일치하지 않습니다.' });
     }
