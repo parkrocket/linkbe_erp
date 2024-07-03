@@ -15,18 +15,15 @@ exports.companyIn = (req, res) => {
 
     const { userId, type, platform } = req.body;
 
-    console.log(process.env.COMPANY_IP, ip);
-
     if (process.env.COMPANY_IP !== ip) {
         return res.status(200).json({ gtwSuccess: false, error: 'Database query error', errorMessage: 'IP가 일치하지 않습니다.' });
     }
 
     Gtw.create(userId, type, ip, platform, (err, gtw) => {
         if (err) {
-            return res.status(200).json({ registerSuccess: false, error: 'Database query error' });
+            return res.status(200).json({ gtwSuccess: false, error: 'Database query error' });
         }
-        console.log(gtw);
 
-        return res.json({ registerSuccess: true, message: 'gtw insert successful', gtw });
+        return res.json({ gtwSuccess: true, message: 'gtw insert successful', gtw });
     });
 };
