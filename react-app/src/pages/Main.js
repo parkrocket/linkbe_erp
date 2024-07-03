@@ -36,9 +36,13 @@ function Main() {
 
         const dataTosubmit = { message, userId, type, platform };
 
-        const result = axios.post(`${SERVER_URL}/api/gtw/companyIn`, dataTosubmit).then((response) => response.data);
-
-        console.log(result);
+        axios.post(`${SERVER_URL}/api/gtw/companyIn`, dataTosubmit).then((response) => {
+            if (response.data.gtwSuccess) {
+                alert('출근완료!');
+            } else {
+                alert('지정된 IP가 아닙니다. IP를 확인해주세요.');
+            }
+        });
     };
 
     return (

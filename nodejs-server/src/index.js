@@ -31,5 +31,5 @@ app.use('/api/gtw', gtwRoutes);
 
 // 서버 실행
 app.listen(port, () => {
-    console.log(`server running on port ${port}`);
+    console.log(`Server running on port ${port}`);
 });
