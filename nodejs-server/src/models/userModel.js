@@ -24,8 +24,8 @@ User.create = (email, password, callback) => {
     });
 };
 
-User.findByEmail = (email, callback) => {
-    db.query('SELECT * FROM lk_user WHERE user_id = ?', [email], (err, results) => {
+User.findByEmail = (userId, callback) => {
+    db.query('SELECT * FROM lk_user WHERE user_id = ?', [userId], (err, results) => {
         if (err) {
             return callback(err, null);
         }

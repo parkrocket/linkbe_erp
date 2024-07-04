@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useCookies } from 'react-cookie';
 import { useSelector, useDispatch } from 'react-redux';
-import { logout } from '../_actions/user_action';
+import { logout, refresh } from '../_actions/user_action';
 import { gtw } from '../_actions/gtw_action';
 import { Link, useNavigate } from 'react-router-dom';
 import MainStyle from '../css/Main.module.css';
@@ -17,6 +17,7 @@ function Main() {
 
     const dispatch = useDispatch();
     const [, , removeCookie] = useCookies(['x_auth']);
+    const [gtwStatus, setGtwStatus] = useState(false);
 
     const logOutHandler = (event) => {
         dispatch(logout(user)).then((response) => {
@@ -38,11 +39,18 @@ function Main() {
         const dataTosubmit = { message, userId, type, platform };
 
         dispatch(gtw(dataTosubmit)).then((response) => {
-            console.log(response);
-
             if (response.payload.gtwSuccess === true) {
-                alert('출근완료!');
+                console.log(userId);
+
+                dispatch(refresh(dataTosubmit)).then((response) => {
+                    if (response.payload.refreshSuccess === true) {
+                        setGtwStatus(true);
+                    } else {
+                        setGtwStatus(false);
+                    }
+                });
             } else {
+                setGtwStatus(false);
                 alert(response.payload.error);
             }
         });
@@ -68,7 +76,7 @@ function Main() {
                                     onClick={() => handleClick('출근하자')}
                                     className="bg-blue-500 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 p-20"
                                 >
-                                    출근하기
+                                    {user.userData.user.gtw_status === 0 ? '출근하기' : '퇴근하기'}
                                 </Button>
                             </p>
                         ) : (

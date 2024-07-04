@@ -77,6 +77,22 @@ exports.auth = (req, res) => {
     });
 };
 
+exports.refresh = (req, res) => {
+    const { userId } = req.body;
+    User.findByEmail(userId, (err, user) => {
+        //return res.status(500).json({ message: 'Login successful', user: user });
+
+        if (err) {
+            return res.status(200).json({ refreshSuccess: false, error: 'Database query error' });
+        }
+        if (!user) {
+            return res.status(200).json({ refreshSuccess: false, error: 'User not found' });
+        }
+
+        return res.json({ refreshSuccess: true, message: 'refresh successful', user });
+    });
+};
+
 exports.logout = (req, res) => {
     res.clearCookie('x_auth');
     res.json({ logoutSuccess: true });

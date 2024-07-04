@@ -1,4 +1,4 @@
-import { LOGIN_USER, REGISTER_USER, AUTH_USER, LOGOUT_USER, GTW, GTW_STATUS } from '../_actions/types';
+import { LOGIN_USER, REGISTER_USER, AUTH_USER, LOGOUT_USER, GTW, GTW_STATUS, REFRESH_USER } from '../_actions/types';
 import { combineReducers } from 'redux';
 
 const rootReducer = combineReducers({
@@ -9,6 +9,8 @@ const rootReducer = combineReducers({
 function user(state = {}, action) {
     switch (action.type) {
         case LOGIN_USER:
+            return { ...state, userData: action.payload, loginError: null, isAuthenticated: true };
+        case REFRESH_USER:
             return { ...state, userData: action.payload, loginError: null, isAuthenticated: true };
         case REGISTER_USER:
             return { ...state, userData: action.payload, loginError: null, isAuthenticated: true };
