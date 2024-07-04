@@ -80,7 +80,7 @@ function Login() {
         dispatch(loginUser(loginData)).then((response) => {
             if (response.payload.loginSuccess) {
                 setCookie('x_auth', response.payload.token);
-                window.localStorage.setItem('userId', response.payload.user.mb_id);
+                window.localStorage.setItem('userId', response.payload.user.user_id);
                 navigate('/');
             } else {
                 alert(response.payload.error);

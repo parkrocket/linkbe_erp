@@ -27,7 +27,7 @@ exports.login = (req, res) => {
 
             // JWT 생성 및 전송
 
-            const token = jwt.sign({ userId: user.mb_id }, secretKey, { expiresIn: '24h' });
+            const token = jwt.sign({ userId: user.user_id }, secretKey, { expiresIn: '24h' });
             res.cookie('x_auth', token, { httpOnly: true });
 
             return res.json({ loginSuccess: true, message: 'Login successful', user, token });
@@ -46,11 +46,6 @@ exports.register = (req, res) => {
         }
         if (!user) {
             return res.status(200).json({ registerSuccess: false, error: 'User not found' });
-        }
-
-        // 비밀번호 검증 (여기서는 단순히 비교, 실제로는 bcrypt 등을 사용)
-        if (user.mb_password !== password) {
-            return res.status(200).json({ registerSuccess: false, error: 'Invalid credentials' });
         }
 
         return res.json({ registerSuccess: true, message: 'Register successful', user });

@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { useCookies } from 'react-cookie';
 import { auth } from '../_actions/user_action';
+import { gtwStatus } from '../_actions/gtw_action';
 import Empty from '../pages/Empty';
 
 function Auth(ChildrenComponent, option, adminRoute = false, menu = 0, subMenu = 0) {

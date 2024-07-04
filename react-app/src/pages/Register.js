@@ -1,14 +1,14 @@
-import React from "react";
-import { useState, useRef, useEffect } from "react";
-import { useDispatch } from "react-redux";
-import { registerUser } from "../_actions/user_action";
-import { useNavigate } from "react-router-dom";
-import RegisterStyle from "../css/Register.module.css";
+import React from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useDispatch } from 'react-redux';
+import { registerUser } from '../_actions/user_action';
+import { useNavigate } from 'react-router-dom';
+import RegisterStyle from '../css/Register.module.css';
 
 function Register() {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [passwordCheck, setPasswordCheck] = useState("");
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [passwordCheck, setPasswordCheck] = useState('');
     const [isValidEmail, setIsValidEmail] = useState(true);
     const [isValidPassword, setIsValidPassword] = useState(true);
     const [isValidPasswordCheck, setIsValidPasswordCheck] = useState(true);
@@ -80,7 +80,7 @@ function Register() {
     const handlePhoneInputChange = (e) => {
         //핸드폰번호에 하이픈 추가
         let value = e.target.value;
-        value = value.replace(/[^0-9]/g, "");
+        value = value.replace(/[^0-9]/g, '');
 
         if (value.length <= 3) {
             e.target.value = value;
@@ -133,27 +133,27 @@ function Register() {
         e.preventDefault();
 
         if (!isValidEmail) {
-            alert("이메일 형식을 확인해주세요.");
+            alert('이메일 형식을 확인해주세요.');
             emailInputRef.current.focus();
             return;
         }
         if (!isValidPassword) {
-            alert("비밀번호를 확인해주세요.");
+            alert('비밀번호를 확인해주세요.');
             passwordInputRef.current.focus();
             return;
         }
         if (!isValidPasswordCheck) {
-            alert("비밀번호 확인을 확인해주세요.");
+            alert('비밀번호 확인을 확인해주세요.');
             passwordCheckInputRef.current.focus();
             return;
         }
         if (!isValidName) {
-            alert("이름을 확인해주세요.");
+            alert('이름을 확인해주세요.');
             nameInputRef.current.focus();
             return;
         }
         if (!isValidPhone) {
-            alert("핸드폰 번호를 확인해주세요.");
+            alert('핸드폰 번호를 확인해주세요.');
             phoneInputRef.current.focus();
             return;
         }
@@ -166,10 +166,11 @@ function Register() {
         };
 
         dispatch(registerUser(loginData)).then((response) => {
-            if (response.payload.loginSuccess) {
-                console.log(response);
-                //navigate('/login');
+            if (response.payload.registerSuccess) {
+                //console.log(response);
+                navigate('/login');
             } else {
+                //console.log(response);
                 alert(response.payload.error);
             }
         });
@@ -184,45 +185,129 @@ function Register() {
                     <div>
                         <div className={RegisterStyle.label_area}>
                             <label htmlFor="email">이메일</label>
-                            <p className={`${RegisterStyle.error} ${RegisterStyle.error_email} ${isValidEmail ? "" : `${RegisterStyle.on}`} `}>올바르지 않은 이메일 형식입니다.</p>
+                            <p className={`${RegisterStyle.error} ${RegisterStyle.error_email} ${isValidEmail ? '' : `${RegisterStyle.on}`} `}>
+                                올바르지 않은 이메일 형식입니다.
+                            </p>
                         </div>
-                        <input id="email" type="text" placeholder="이메일을 입력해주세요." autoComplete="off" name="email" required onChange={handleEmailInputChange} className={isValidEmail ? "" : `${RegisterStyle.on}`} ref={emailInputRef} value={email} />
+                        <input
+                            id="email"
+                            type="text"
+                            placeholder="이메일을 입력해주세요."
+                            autoComplete="off"
+                            name="email"
+                            required
+                            onChange={handleEmailInputChange}
+                            className={isValidEmail ? '' : `${RegisterStyle.on}`}
+                            ref={emailInputRef}
+                            value={email}
+                        />
                     </div>
                     <div>
                         <div className={RegisterStyle.label_area}>
                             <label htmlFor="password">비밀번호</label>
-                            <p className={`${RegisterStyle.error} ${RegisterStyle.error_password}  ${isValidPassword ? "" : `${RegisterStyle.on}`}`}>영어 대소문자, 숫자, 특수문자 중 2종류 조합의 8-15자</p>
+                            <p className={`${RegisterStyle.error} ${RegisterStyle.error_password}  ${isValidPassword ? '' : `${RegisterStyle.on}`}`}>
+                                영어 대소문자, 숫자, 특수문자 중 2종류 조합의 8-15자
+                            </p>
                         </div>
-                        <input id="password" type="password" placeholder="영어 대소문자, 숫자, 특수문자 중 2종류 조합의 8-15자" autoComplete="off" name="password" required onChange={handlePasswordInputChange} className={isValidPassword ? "" : `${RegisterStyle.on}`} ref={passwordInputRef} value={password} />
+                        <input
+                            id="password"
+                            type="password"
+                            placeholder="영어 대소문자, 숫자, 특수문자 중 2종류 조합의 8-15자"
+                            autoComplete="off"
+                            name="password"
+                            required
+                            onChange={handlePasswordInputChange}
+                            className={isValidPassword ? '' : `${RegisterStyle.on}`}
+                            ref={passwordInputRef}
+                            value={password}
+                        />
                     </div>
                     <div>
                         <div className={RegisterStyle.label_area}>
                             <label htmlFor="passwordConfirm">비밀번호 확인</label>
-                            <p className={`${RegisterStyle.error} ${RegisterStyle.error_confirm} ${isValidPasswordCheck ? "" : `${RegisterStyle.on}`}`}>비밀번호가 일치하지 않습니다.</p>
+                            <p
+                                className={`${RegisterStyle.error} ${RegisterStyle.error_confirm} ${
+                                    isValidPasswordCheck ? '' : `${RegisterStyle.on}`
+                                }`}
+                            >
+                                비밀번호가 일치하지 않습니다.
+                            </p>
                         </div>
-                        <input id="passwordConfirm" type="password" placeholder="비밀번호를 다시 입력해 주세요." autoComplete="off" name="passwordConfirm" required onChange={handlePasswordCheckInputChange} className={isValidPasswordCheck ? "" : `${RegisterStyle.on}`} ref={passwordCheckInputRef} />
+                        <input
+                            id="passwordConfirm"
+                            type="password"
+                            placeholder="비밀번호를 다시 입력해 주세요."
+                            autoComplete="off"
+                            name="passwordConfirm"
+                            required
+                            onChange={handlePasswordCheckInputChange}
+                            className={isValidPasswordCheck ? '' : `${RegisterStyle.on}`}
+                            ref={passwordCheckInputRef}
+                        />
                     </div>
                     <div>
                         <label htmlFor="name">이름</label>
-                        <input id="name" type="text" placeholder="이름을 입력해주세요." autoComplete="off" name="name" onChange={handleNameInputChange} className={RegisterStyle.essential} required ref={nameInputRef} />
+                        <input
+                            id="name"
+                            type="text"
+                            placeholder="이름을 입력해주세요."
+                            autoComplete="off"
+                            name="name"
+                            onChange={handleNameInputChange}
+                            className={RegisterStyle.essential}
+                            required
+                            ref={nameInputRef}
+                        />
                     </div>
                     <div className={RegisterStyle.border_box}>
                         <label htmlFor="phone">휴대폰 번호</label>
-                        <input id="phone" type="text" placeholder="휴대폰 번호를 입력해주세요." autoComplete="off" name="phone" onChange={handlePhoneInputChange} className={RegisterStyle.essential} maxLength="13" required ref={phoneInputRef} />
+                        <input
+                            id="phone"
+                            type="text"
+                            placeholder="휴대폰 번호를 입력해주세요."
+                            autoComplete="off"
+                            name="phone"
+                            onChange={handlePhoneInputChange}
+                            className={RegisterStyle.essential}
+                            maxLength="13"
+                            required
+                            ref={phoneInputRef}
+                        />
                     </div>
 
                     <h3>회사 정보</h3>
                     <div>
                         <label htmlFor="corpName">회사명</label>
-                        <input id="corpName" type="text" placeholder="회사명을 입력해 주세요." autoComplete="off" name="corpName" className={RegisterStyle.essential} />
+                        <input
+                            id="corpName"
+                            type="text"
+                            placeholder="회사명을 입력해 주세요."
+                            autoComplete="off"
+                            name="corpName"
+                            className={RegisterStyle.essential}
+                        />
                     </div>
                     <div>
                         <label htmlFor="homepage">회사 홈페이지</label>
-                        <input id="homepage" type="text" placeholder="회사 홈페이지를 입력해 주세요." autoComplete="off" name="homepage" className={RegisterStyle.essential} />
+                        <input
+                            id="homepage"
+                            type="text"
+                            placeholder="회사 홈페이지를 입력해 주세요."
+                            autoComplete="off"
+                            name="homepage"
+                            className={RegisterStyle.essential}
+                        />
                     </div>
                     <div>
                         <label htmlFor="address">사업장 주소</label>
-                        <input id="address" type="text" placeholder="사업장 주소를 입력해 주세요." autoComplete="off" name="address" className={RegisterStyle.essential} />
+                        <input
+                            id="address"
+                            type="text"
+                            placeholder="사업장 주소를 입력해 주세요."
+                            autoComplete="off"
+                            name="address"
+                            className={RegisterStyle.essential}
+                        />
                     </div>
                 </div>
                 <div className={RegisterStyle.vacation}>
@@ -254,34 +339,68 @@ function Register() {
                 </div>
                 <div className={RegisterStyle.border_box}>
                     <label htmlFor="workSectorCode">업종코드(선택)</label>
-                    <input id="workSectorCode" type="text" placeholder="숫자를 입력해주세요." autoComplete="off" name="workSectorCode" maxLength="6" />
+                    <input
+                        id="workSectorCode"
+                        type="text"
+                        placeholder="숫자를 입력해주세요."
+                        autoComplete="off"
+                        name="workSectorCode"
+                        maxLength="6"
+                    />
                 </div>
 
                 <h3>약관동의</h3>
                 <div className={`${RegisterStyle.checkbox_wrap} ${RegisterStyle.border}`}>
                     <label>
-                        <input id="selectAll" type="checkbox" defaultValue="agree_all" name="checkAll" onChange={handleAgreeCheckAllChange} checked={agreeCheckAll} />
+                        <input
+                            id="selectAll"
+                            type="checkbox"
+                            defaultValue="agree_all"
+                            name="checkAll"
+                            onChange={handleAgreeCheckAllChange}
+                            checked={agreeCheckAll}
+                        />
                         <span className={RegisterStyle.label}>전체동의</span>
                     </label>
                     <a href="#">자세히보기</a>
                 </div>
                 <div className={RegisterStyle.checkbox_wrap}>
                     <label>
-                        <input type="checkbox" className={RegisterStyle.checkbox} name="check01" required onChange={handleTermsChange} checked={termsChecked} />
+                        <input
+                            type="checkbox"
+                            className={RegisterStyle.checkbox}
+                            name="check01"
+                            required
+                            onChange={handleTermsChange}
+                            checked={termsChecked}
+                        />
                         <span className={RegisterStyle.label}>이용약관 동의 (필수)</span>
                     </label>
                     <a href="#">자세히보기</a>
                 </div>
                 <div className={RegisterStyle.checkbox_wrap}>
                     <label>
-                        <input type="checkbox" className={RegisterStyle.checkbox} name="check02" required onChange={handlePrivacyChange} checked={privacyChecked} />
+                        <input
+                            type="checkbox"
+                            className={RegisterStyle.checkbox}
+                            name="check02"
+                            required
+                            onChange={handlePrivacyChange}
+                            checked={privacyChecked}
+                        />
                         <span className={RegisterStyle.label}>개인정보 수집 및 이용 동의 (필수)</span>
                     </label>
                     <a href="#">자세히보기</a>
                 </div>
                 <div className={`${RegisterStyle.checkbox_wrap} ${RegisterStyle.border_box}`}>
                     <label>
-                        <input type="checkbox" className={RegisterStyle.checkbox} name="check03" onChange={handleMarketingChange} checked={marketingChecked} />
+                        <input
+                            type="checkbox"
+                            className={RegisterStyle.checkbox}
+                            name="check03"
+                            onChange={handleMarketingChange}
+                            checked={marketingChecked}
+                        />
                         <span className={RegisterStyle.label}>마케팅 정보 수신에 대한 동의 (선택)</span>
                     </label>
                     <a href="#">자세히보기</a>

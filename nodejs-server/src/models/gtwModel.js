@@ -5,20 +5,43 @@ const Gtw = {};
 
 Gtw.create = (userId, type, ip, platform, callback) => {
     db.query('INSERT INTO lk_ctw (user_id, type, ip, datetime, platform) VALUES (?, ?, ?, NOW(),?)', [userId, type, ip, platform], (err, results) => {
+        let gtwStatus = 0;
         if (err) {
             return callback(err, null);
         }
 
-        return callback(null, results.insertId);
+        if (type === 'gtw') {
+            gtwStatus = 1;
+        } else {
+            gtwStatus = 0;
+        }
+
+        db.query('UPDATE lk_user SET gtw_status = ? WHERE user_id = ?', [gtwStatus, userId], (err, results) => {
+            if (err) {
+                return callback(err, null);
+            }
+
+            return callback(null, results.insertId);
+        });
     });
 };
 
-Gtw.findByEmail = (userId, datetime, type, callback) => {
-    db.query('SELECT * FROM lk_user WHERE mb_email = ?', [email], (err, results) => {
+Gtw.findByGtw = (userId, type, date, callback) => {
+    db.query('SELECT * FROM lk_ctw WHERE user_id = ? AND type = ? AND DATE(datetime) = ?', [userId, type, date], (err, results) => {
         if (err) {
             return callback(err, null);
         }
-        return callback(null, results[0]);
+        return callback(null, results);
+    });
+};
+
+//미사용
+Gtw.findByGtwStatus = (userId, date, callback) => {
+    db.query('SELECT * FROM lk_ctw WHERE user_id = ? AND DATE(datetime) = ? ORDER BY datetime DESC', [userId, date], (err, results) => {
+        if (err) {
+            return callback(err, null);
+        }
+        return callback(null, results);
     });
 };
 

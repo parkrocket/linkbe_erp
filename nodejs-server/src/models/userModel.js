@@ -10,18 +10,22 @@ User.create = (email, password, callback) => {
             return callback(err, null);
         }
 
-        db.query('INSERT INTO lk_user (mb_id, mb_email, mb_password, mb_datetime) VALUES (?, ?, ?, NOW())', [email, email, hash], (err, results) => {
-            if (err) {
-                return callback(err, null);
-            }
+        db.query(
+            'INSERT INTO lk_user (user_id, mb_email, mb_password, mb_datetime) VALUES (?, ?, ?, NOW())',
+            [email, email, hash],
+            (err, results) => {
+                if (err) {
+                    return callback(err, null);
+                }
 
-            return callback(null, results.insertId);
-        });
+                return callback(null, results.insertId);
+            }
+        );
     });
 };
 
 User.findByEmail = (email, callback) => {
-    db.query('SELECT * FROM lk_user WHERE mb_email = ?', [email], (err, results) => {
+    db.query('SELECT * FROM lk_user WHERE user_id = ?', [email], (err, results) => {
         if (err) {
             return callback(err, null);
         }

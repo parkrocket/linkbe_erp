@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useCookies } from 'react-cookie';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../_actions/user_action';
+import { gtw } from '../_actions/gtw_action';
 import { Link, useNavigate } from 'react-router-dom';
 import MainStyle from '../css/Main.module.css';
 import Button from '../component/Button';
@@ -30,19 +31,30 @@ function Main() {
     };
 
     const handleClick = (message) => {
-        const userId = user.userData.user.mb_id;
+        const userId = user.userData.user.user_id;
         const type = 'gtw';
         const platform = 'homepage';
 
         const dataTosubmit = { message, userId, type, platform };
 
-        axios.post(`${SERVER_URL}/api/gtw/companyIn`, dataTosubmit).then((response) => {
-            if (response.data.gtwSuccess) {
+        dispatch(gtw(dataTosubmit)).then((response) => {
+            console.log(response);
+
+            if (response.payload.gtwSuccess === true) {
                 alert('출근완료!');
             } else {
-                alert('지정된 IP가 아닙니다. IP를 확인해주세요.');
+                alert(response.payload.error);
             }
         });
+        /*
+        axios.post(`${SERVER_URL}/api/gtw/companyIn`, dataTosubmit).then((response) => {
+            if (response.data.gtwSuccess) {
+                
+            } else {
+                
+            }
+        });
+        */
     };
 
     return (
