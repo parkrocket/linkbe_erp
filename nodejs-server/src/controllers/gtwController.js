@@ -23,28 +23,30 @@ exports.companyIn = (req, res) => {
     }
 
     Gtw.findByGtw(userId, type, date, (err, gtw) => {
+        console.log(err);
         if (err) {
             return res.status(200).json({ gtwSuccess: false, error: 'Database query error' });
         }
-        if (gtw.length > 0) {
-            if (gtw[0].type === 'go') {
-                errorM = '오늘 출퇴근은 완료하셨습니다. 수고하셨습니다.';
-            } else {
+
+        if (type === 'gtw' && gtw.length > 0) {
+            console.log(gtw);
+            if (gtw[0].end_time === null) {
                 errorM = '이미 출근중입니다.';
+            } else {
+                errorM = '이미 퇴근하셨습니다. 내일도 화이팅.';
+            }
+            return res.status(200).json({ gtwSuccess: false, error: errorM });
+        }
+
+        Gtw.create(userId, type, date, ip, platform, (err, gtw) => {
+            console.log(err);
+
+            if (err) {
+                return res.status(200).json({ gtwSuccess: false, error: 'Database query error' });
             }
 
-            return res.status(200).json({ gtwSuccess: false, error: errorM });
-        } else {
-            Gtw.create(userId, type, ip, platform, (err, gtw) => {
-                console.log(err);
-
-                if (err) {
-                    return res.status(200).json({ gtwSuccess: false, error: 'Database query error' });
-                }
-
-                return res.json({ gtwSuccess: true, message: '출근완료', gtw });
-            });
-        }
+            return res.json({ gtwSuccess: true, message: '출근완료', gtw });
+        });
     });
 };
 

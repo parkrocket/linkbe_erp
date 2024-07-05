@@ -26,12 +26,16 @@ app.use(cors()); // CORS 미들웨어 사용
 app.use(express.json());
 
 // 라우터 설정
+
+const listRoutes = require('./routes/list');
 const userRoutes = require('./routes/user');
 const gtwRoutes = require('./routes/gtw');
 
 app.use('/api/users', userRoutes);
 
 app.use('/api/gtw', gtwRoutes);
+
+app.use('/api/list', listRoutes);
 
 // 서버 실행
 app.listen(port, () => {
