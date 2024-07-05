@@ -28,7 +28,7 @@ function HeaderRightLogout() {
         <div className="header_btn_wrap">
             <div className="mypage_btn_warp">
                 <Link className="mypage_btn" to="/">
-                    {user.userData.user.user_id ? user.userData.user.user_id : ''}
+                    {user.userData.user.user_name ? user.userData.user.user_name : ''}
                 </Link>
                 <p>님 안녕하세요.</p>
             </div>

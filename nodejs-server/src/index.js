@@ -2,9 +2,13 @@ const express = require('express');
 const cors = require('cors'); // CORS 미들웨어 불러오기
 const dotenv = require('dotenv');
 const app = express();
+
 const port = 5000;
 
 const requestIp = require('request-ip');
+
+// 매분마다 실행
+require('./controllers/userCron.js');
 
 app.use(requestIp.mw());
 

@@ -6,8 +6,6 @@ exports.login = (req, res) => {
     const { email, password } = req.body;
 
     User.findByEmail(email, (err, user) => {
-        console.log(secretKey);
-
         //return res.status(500).json({ message: 'Login successful', user: user });
 
         if (err) {
@@ -17,7 +15,7 @@ exports.login = (req, res) => {
             return res.status(200).json({ loginSuccess: false, error: 'User not found' });
         }
 
-        User.comparePassword(password, user.mb_password, (err, isMatch) => {
+        User.comparePassword(password, user.user_password, (err, isMatch) => {
             if (err) {
                 return res.status(200).json({ loginSuccess: false, error: 'Error comparing passwords' });
             }
@@ -36,9 +34,10 @@ exports.login = (req, res) => {
 };
 
 exports.register = (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, passwordCheck, name, phone, companyName, companyHomepage, companyAddr, companyStandard, companyNumber, companyCode } =
+        req.body;
 
-    User.create(email, password, (err, user) => {
+    User.create(email, password, name, phone, companyName, companyHomepage, companyAddr, companyStandard, companyNumber, companyCode, (err, user) => {
         //return res.status(500).json({ message: 'Login successful', user: user });
 
         if (err) {

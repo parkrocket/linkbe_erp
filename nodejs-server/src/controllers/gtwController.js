@@ -8,6 +8,7 @@ exports.companyIn = (req, res) => {
     let ip;
 
     const date = moment().format('YYYY-MM-DD');
+    let errorM = '';
 
     if (process.env.NODE_ENV === 'development') {
         ip = process.env.DEV_IP;
@@ -26,7 +27,13 @@ exports.companyIn = (req, res) => {
             return res.status(200).json({ gtwSuccess: false, error: 'Database query error' });
         }
         if (gtw.length > 0) {
-            return res.status(200).json({ gtwSuccess: false, error: '이미 출근중입니다.' });
+            if (gtw[0].type === 'go') {
+                errorM = '오늘 출퇴근은 완료하셨습니다. 수고하셨습니다.';
+            } else {
+                errorM = '이미 출근중입니다.';
+            }
+
+            return res.status(200).json({ gtwSuccess: false, error: errorM });
         } else {
             Gtw.create(userId, type, ip, platform, (err, gtw) => {
                 console.log(err);

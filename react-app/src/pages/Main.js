@@ -31,9 +31,9 @@ function Main() {
         });
     };
 
-    const handleClick = (message) => {
+    const handleClick = (message, gtw_status) => {
         const userId = user.userData.user.user_id;
-        const type = 'gtw';
+        const type = gtw_status;
         const platform = 'homepage';
 
         const dataTosubmit = { message, userId, type, platform };
@@ -72,12 +72,21 @@ function Main() {
                     <div className={MainStyle.wrapper}>
                         {user.isAuthenticated ? (
                             <p>
-                                <Button
-                                    onClick={() => handleClick('출근하자')}
-                                    className="bg-blue-500 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 p-20"
-                                >
-                                    {user.userData.user.gtw_status === 0 ? '출근하기' : '퇴근하기'}
-                                </Button>
+                                {user.userData.user.gtw_status === 0 ? (
+                                    <Button
+                                        onClick={() => handleClick('출근하자', 'gtw')}
+                                        className="bg-blue-500 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 p-20"
+                                    >
+                                        출근하기
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        onClick={() => handleClick('퇴근하자', 'go')}
+                                        className="bg-red-500 text-white hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300 p-20"
+                                    >
+                                        퇴근하기
+                                    </Button>
+                                )}
                             </p>
                         ) : (
                             <p className="text-align-c">

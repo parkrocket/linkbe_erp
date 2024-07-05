@@ -27,12 +27,25 @@ Gtw.create = (userId, type, ip, platform, callback) => {
 };
 
 Gtw.findByGtw = (userId, type, date, callback) => {
-    db.query('SELECT * FROM lk_ctw WHERE user_id = ? AND type = ? AND DATE(datetime) = ?', [userId, type, date], (err, results) => {
-        if (err) {
-            return callback(err, null);
-        }
-        return callback(null, results);
-    });
+    if (type === 'gtw') {
+        db.query('SELECT * FROM lk_ctw WHERE user_id = ?  AND DATE(datetime) = ? ORDER BY datetime DESC LIMIT 1', [userId, date], (err, results) => {
+            if (err) {
+                return callback(err, null);
+            }
+            return callback(null, results);
+        });
+    } else {
+        db.query(
+            'SELECT * FROM lk_ctw WHERE user_id = ? AND type = ?  AND DATE(datetime) = ? ORDER BY datetime DESC LIMIT 1',
+            [userId, type, date],
+            (err, results) => {
+                if (err) {
+                    return callback(err, null);
+                }
+                return callback(null, results);
+            }
+        );
+    }
 };
 
 //미사용
