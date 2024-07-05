@@ -34,21 +34,33 @@ exports.login = (req, res) => {
 };
 
 exports.register = (req, res) => {
-    const { email, password, passwordCheck, name, phone, companyName, companyHomepage, companyAddr, companyStandard, companyNumber, companyCode } =
-        req.body;
+    const { email, password, name, phone, companyName, companyHomepage, companyAddr, companyStandard, companyNumber, companyCode, cpId } = req.body;
 
-    User.create(email, password, name, phone, companyName, companyHomepage, companyAddr, companyStandard, companyNumber, companyCode, (err, user) => {
-        //return res.status(500).json({ message: 'Login successful', user: user });
+    User.create(
+        email,
+        password,
+        name,
+        phone,
+        companyName,
+        companyHomepage,
+        companyAddr,
+        companyStandard,
+        companyNumber,
+        companyCode,
+        cpId,
+        (err, user) => {
+            //return res.status(500).json({ message: 'Login successful', user: user });
 
-        if (err) {
-            return res.status(500).json({ registerSuccess: false, error: 'Database query error' });
+            if (err) {
+                return res.status(500).json({ registerSuccess: false, error: 'Database query error' });
+            }
+            if (!user) {
+                return res.status(200).json({ registerSuccess: false, error: 'User not found' });
+            }
+
+            return res.json({ registerSuccess: true, message: 'Register successful', user });
         }
-        if (!user) {
-            return res.status(200).json({ registerSuccess: false, error: 'User not found' });
-        }
-
-        return res.json({ registerSuccess: true, message: 'Register successful', user });
-    });
+    );
 };
 
 exports.auth = (req, res) => {

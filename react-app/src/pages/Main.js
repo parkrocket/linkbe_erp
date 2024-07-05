@@ -16,10 +16,17 @@ function Main() {
 
     const dispatch = useDispatch();
     const [gtwStatus, setGtwStatus] = useState(false);
+    const [recodeList, setRecodeList] = useState([]);
 
     useEffect(() => {
-        axios.post(`${SERVER_URL}/api/list/lists`).then((response) => console.log(response.data));
+        recodeAxiosLIst(setRecodeList);
     }, []);
+
+    const recodeAxiosLIst = (setRecodeList) => {
+        axios.post(`${SERVER_URL}/api/list/lists`).then((response) => {
+            setRecodeList(response.data.list);
+        });
+    };
 
     const handleClick = (message, gtw_status) => {
         const userId = user.userData.user.user_id;
@@ -38,6 +45,7 @@ function Main() {
                     dispatch(refresh(dataTosubmit)).then((response) => {
                         if (response.payload.refreshSuccess === true) {
                             setGtwStatus(true);
+                            recodeAxiosLIst(setRecodeList);
                         } else {
                             setGtwStatus(false);
                         }
@@ -57,7 +65,7 @@ function Main() {
                     <div className={MainStyle.wrapper}>
                         {user.isAuthenticated ? (
                             <div>
-                                <RecordTable></RecordTable>
+                                <RecordTable list={recodeList}></RecordTable>
                                 {user.userData.user.gtw_status === 0 ? (
                                     <Button
                                         onClick={() => handleClick('출근하자', 'gtw')}

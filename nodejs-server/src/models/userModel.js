@@ -3,7 +3,20 @@ const bcrypt = require('bcrypt');
 
 const User = {};
 
-User.create = (email, password, name, phone, companyName, companyHomepage, companyAddr, companyStandard, companyNumber, companyCode, callback) => {
+User.create = (
+    email,
+    password,
+    name,
+    phone,
+    companyName,
+    companyHomepage,
+    companyAddr,
+    companyStandard,
+    companyNumber,
+    companyCode,
+    cpId,
+    callback
+) => {
     // 비밀번호 해싱
     bcrypt.hash(password, 10, (err, hash) => {
         if (err) {
@@ -11,8 +24,8 @@ User.create = (email, password, name, phone, companyName, companyHomepage, compa
         }
 
         db.query(
-            'INSERT INTO lk_user (user_id, user_email, user_password, user_name, user_phone, company_name, company_homepage, company_addr, company_standard, company_number, company_code, user_datetime) VALUES (?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())',
-            [email, email, hash, name, phone, companyName, companyHomepage, companyAddr, companyStandard, companyNumber, companyCode],
+            'INSERT INTO lk_user (user_id, user_email, user_password, user_name, user_phone, cp_id, user_datetime) VALUES (?, ?, ?, ?, ?, ?, NOW())',
+            [email, email, hash, name, phone, cpId, companyCode],
             (err, results) => {
                 if (err) {
                     return callback(err, null);
@@ -25,7 +38,7 @@ User.create = (email, password, name, phone, companyName, companyHomepage, compa
 };
 
 User.findByEmail = (userId, callback) => {
-    db.query('SELECT * FROM lk_user WHERE user_id = ?', [userId], (err, results) => {
+    db.query('SELECT * FROM lk_user left join lk_company on lk_user.cp_id = lk_company.cp_id WHERE user_id = ?', [userId], (err, results) => {
         if (err) {
             return callback(err, null);
         }

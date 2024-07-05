@@ -23,13 +23,11 @@ exports.companyIn = (req, res) => {
     }
 
     Gtw.findByGtw(userId, type, date, (err, gtw) => {
-        console.log(err);
         if (err) {
             return res.status(200).json({ gtwSuccess: false, error: 'Database query error' });
         }
 
         if (type === 'gtw' && gtw.length > 0) {
-            console.log(gtw);
             if (gtw[0].end_time === null) {
                 errorM = '이미 출근중입니다.';
             } else {
@@ -39,8 +37,6 @@ exports.companyIn = (req, res) => {
         }
 
         Gtw.create(userId, type, date, ip, platform, (err, gtw) => {
-            console.log(err);
-
             if (err) {
                 return res.status(200).json({ gtwSuccess: false, error: 'Database query error' });
             }

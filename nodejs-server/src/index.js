@@ -30,12 +30,15 @@ app.use(express.json());
 const listRoutes = require('./routes/list');
 const userRoutes = require('./routes/user');
 const gtwRoutes = require('./routes/gtw');
+const companyRoutes = require('./routes/company');
 
 app.use('/api/users', userRoutes);
 
 app.use('/api/gtw', gtwRoutes);
 
 app.use('/api/list', listRoutes);
+
+app.use('/api/company', companyRoutes);
 
 // 서버 실행
 app.listen(port, () => {

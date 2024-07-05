@@ -4,6 +4,9 @@ import { registerUser } from '../_actions/user_action';
 import { useNavigate } from 'react-router-dom';
 import RegisterStyle from '../css/Register.module.css';
 
+import axios from 'axios';
+import SERVER_URL from '../Config';
+
 function Register() {
     const [form, setForm] = useState({
         email: '',
@@ -11,6 +14,7 @@ function Register() {
         passwordCheck: '',
         name: '',
         phone: '',
+        cp_id: '',
         companyName: '',
         companyHomepage: '',
         companyAddr: '',
@@ -29,6 +33,7 @@ function Register() {
     const [termsChecked, setTermsChecked] = useState(false);
     const [privacyChecked, setPrivacyChecked] = useState(false);
     const [marketingChecked, setMarketingChecked] = useState(false);
+    const [companyList, setCompanyList] = useState([]);
 
     const { email, password, passwordCheck, name, phone } = form;
     const { isValidEmail, isValidPassword, isValidPasswordCheck, isValidName, isValidPhone } = validity;
@@ -44,7 +49,25 @@ function Register() {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setForm({ ...form, [name]: value });
+        if (name === 'companyName') {
+            const selectedCompany = companyList.find((company) => company.cp_name === value);
+            if (selectedCompany) {
+                setForm({
+                    ...form,
+                    cpId: selectedCompany.cp_id,
+                    companyName: selectedCompany.cp_name,
+                    companyHomepage: selectedCompany.cp_homepage,
+                    companyAddr: selectedCompany.cp_addr,
+                    companyStandard: selectedCompany.cp_type,
+                    companyNumber: selectedCompany.cp_regi_number,
+                    companyCode: selectedCompany.cp_code,
+                });
+            } else {
+                setForm({ ...form, [name]: value });
+            }
+        } else {
+            setForm({ ...form, [name]: value });
+        }
 
         if (name === 'email') {
             const emailRule = /^[a-z A-Z 0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/i;
@@ -72,6 +95,12 @@ function Register() {
     };
 
     useEffect(() => {
+        axios.post(`${SERVER_URL}/api/company/list`).then((response) => {
+            console.log(response.data);
+
+            setCompanyList(response.data.list);
+        });
+
         const allChecked = termsChecked && privacyChecked && marketingChecked;
         setAgreeCheckAll(allChecked);
     }, [termsChecked, privacyChecked, marketingChecked, form]);
@@ -221,16 +250,20 @@ function Register() {
                     <h3>회사 정보</h3>
                     <div>
                         <label htmlFor="corpName">회사명</label>
-                        <input
+                        <select
                             id="corpName"
-                            type="text"
-                            placeholder="회사명을 입력해 주세요."
-                            autoComplete="off"
                             name="companyName"
                             className={RegisterStyle.essential}
                             value={form.companyName}
                             onChange={handleInputChange}
-                        />
+                        >
+                            <option value="">회사명을 선택해 주세요</option>
+                            {companyList.map((company, index) => (
+                                <option key={company.cp_id} value={company.cp_name}>
+                                    {company.cp_name}
+                                </option>
+                            ))}
+                        </select>
                     </div>
                     <div>
                         <label htmlFor="homepage">회사 홈페이지</label>
@@ -243,6 +276,7 @@ function Register() {
                             className={RegisterStyle.essential}
                             value={form.companyHomepage}
                             onChange={handleInputChange}
+                            readOnly
                         />
                     </div>
                     <div>
@@ -256,6 +290,7 @@ function Register() {
                             className={RegisterStyle.essential}
                             value={form.companyAddr}
                             onChange={handleInputChange}
+                            readOnly
                         />
                     </div>
                 </div>
@@ -264,19 +299,31 @@ function Register() {
                     <div className={RegisterStyle.radio_wrap}>
                         <div>
                             <label>
-                                <input type="radio" name="vacation_type" value="finance_year" defaultChecked />
+                                <input
+                                    type="radio"
+                                    name="vacation_type"
+                                    value="finance_year"
+                                    checked={form.companyStandard === 'finance_year'}
+                                    readOnly
+                                />
                                 <span className={RegisterStyle.label}>회계연도 기준</span>
                             </label>
                         </div>
                         <div>
                             <label>
-                                <input type="radio" name="vacation_type" value="entrydate" />
+                                <input type="radio" name="vacation_type" value="entrydate" checked={form.companyStandard === 'entrydate'} readOnly />
                                 <span className={RegisterStyle.label}>입사일 기준</span>
                             </label>
                         </div>
                         <div>
                             <label>
-                                <input type="radio" name="vacation_type" value="finance_year_by_entrydate" />
+                                <input
+                                    type="radio"
+                                    name="vacation_type"
+                                    value="finance_year_by_entrydate"
+                                    checked={form.companyStandard === 'finance_year_by_entrydate'}
+                                    readOnly
+                                />
                                 <span className={RegisterStyle.label}>회계연도 기준(입사일 기준 부여)</span>
                             </label>
                         </div>
@@ -293,6 +340,7 @@ function Register() {
                         maxLength="10"
                         value={form.companyNumber}
                         onChange={handleInputChange}
+                        readOnly
                     />
                 </div>
                 <div className={RegisterStyle.border_box}>
@@ -306,6 +354,7 @@ function Register() {
                         maxLength="6"
                         value={form.companyCode}
                         onChange={handleInputChange}
+                        readOnly
                     />
                 </div>
 

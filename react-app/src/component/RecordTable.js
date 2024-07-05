@@ -4,8 +4,38 @@ import leftArrowImg from '../img/chevron_left_24dp_FILL0_wght400_GRAD0_opsz24.sv
 import rightArrowImg from '../img/chevron_right_24dp_FILL0_wght400_GRAD0_opsz24.svg';
 import downloadImg from '../img/download.svg';
 import TableStyle from '../css/RecordTable.module.css';
+import moment from 'moment';
 
-function RecordTable() {
+function RecordTable({ list }) {
+    // 시간 포맷 변경 함수
+    const formatTime = (time) => {
+        if (!time) return '';
+        return moment(time).format('HH시 mm분');
+    };
+
+    // 근무 시간 계산 함수
+    const calculateWorkDuration = (startTime, endTime) => {
+        if (!startTime || !endTime) return '';
+        const start = moment(startTime);
+        const end = moment(endTime);
+
+        const duration = moment.duration(end.diff(start));
+
+        const hours = Math.floor(duration.asHours());
+        const minutes = duration.minutes();
+        const seconds = duration.seconds();
+        return `${hours}시간 ${minutes}분 ${seconds}초`;
+    };
+
+    // 데이터를 미리 변환
+    const formattedList = list.map((item) => ({
+        ...item,
+        formattedStartTime: formatTime(item.start_time),
+        formattedEndTime: formatTime(item.end_time),
+        status: item.start_time && !item.end_time ? '출근중' : item.start_time && item.end_time ? '퇴근완료' : '미출근',
+        workDuration: item.start_time && item.end_time ? calculateWorkDuration(item.start_time, item.end_time) : '',
+    }));
+
     return (
         <section className=" margin-c">
             <div>
@@ -68,46 +98,20 @@ function RecordTable() {
                         </tr>
                     </thead>
                     <tbody className={TableStyle.work_data}>
-                        <tr>
-                            <td>이원석</td>
-                            <td>
-                                <span>회사 출근</span>
-                            </td>
-                            <td>09:02</td>
-                            <td>회사 출근</td>
-                            <td></td>
-                            <td></td>
-                            <td>05:36</td>
-                            <td>근무중</td>
-                        </tr>
-                    </tbody>
-                    <tbody className={TableStyle.work_end_data}>
-                        <tr>
-                            <td>이원석</td>
-                            <td>
-                                <span>퇴근</span>
-                            </td>
-                            <td>09:02</td>
-                            <td>회사 출근</td>
-                            <td>18:05</td>
-                            <td>회사 퇴근</td>
-                            <td>09:03</td>
-                            <td>퇴근</td>
-                        </tr>
-                    </tbody>
-                    <tbody className={TableStyle.not_work_data}>
-                        <tr>
-                            <td>이원석</td>
-                            <td>
-                                <span>미출근</span>
-                            </td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
+                        {formattedList.map((item, index) => (
+                            <tr key={index}>
+                                <td>{item.user_name}</td>
+                                <td>
+                                    <span>{item.status}</span>
+                                </td>
+                                <td>{item.formattedStartTime}</td>
+                                <td>{item.formattedStartTime ? '회사출근' : ''}</td>
+                                <td>{item.formattedEndTime}</td>
+                                <td>{item.formattedEndTime ? '회사퇴근' : ''}</td>
+                                <td>{item.workDuration}</td>
+                                <td>{item.remarks}</td>
+                            </tr>
+                        ))}
                     </tbody>
                 </table>
             </div>
