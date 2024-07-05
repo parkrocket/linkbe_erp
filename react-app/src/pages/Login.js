@@ -84,6 +84,7 @@ function Login() {
                 navigate('/');
             } else {
                 alert(response.payload.error);
+                navigate('/login');
             }
         });
     };

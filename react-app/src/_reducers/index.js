@@ -9,7 +9,7 @@ const rootReducer = combineReducers({
 function user(state = {}, action) {
     switch (action.type) {
         case LOGIN_USER:
-            return { ...state, userData: action.payload, loginError: null, isAuthenticated: true };
+            return { ...state, userData: action.payload, loginError: null, isAuthenticated: action.payload.loginSuccess };
         case REFRESH_USER:
             return { ...state, userData: action.payload, loginError: null, isAuthenticated: true };
         case REGISTER_USER:

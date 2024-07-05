@@ -1,11 +1,11 @@
-import React from "react";
-import { useSelector } from "react-redux";
-import { Link } from "react-router-dom";
-import HeaderRightLogin from "../component/HeaderRightLogin";
-import HeaderRightLogout from "../component/HeaderRightLogout";
-import "./../css/Common.css";
-import "./../css/Header.css";
-import HeaderLogo from "./../img/linkbe_logo.svg";
+import React from 'react';
+import { useSelector } from 'react-redux';
+import { Link } from 'react-router-dom';
+import HeaderRightLogin from '../component/HeaderRightLogin';
+import HeaderRightLogout from '../component/HeaderRightLogout';
+import './../css/Common.css';
+import './../css/Header.css';
+import HeaderLogo from './../img/linkbe_logo.svg';
 
 function Header() {
     const user = useSelector((state) => state.user);
