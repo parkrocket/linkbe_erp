@@ -4,6 +4,8 @@ const secretKey = process.env.JWT_SECRET_KEY;
 const requestIp = require('request-ip');
 const moment = require('moment');
 
+const { sendSlackMessage } = require('../utils/slack');
+
 exports.companyIn = (req, res) => {
     let ip;
 
@@ -36,10 +38,14 @@ exports.companyIn = (req, res) => {
             return res.status(200).json({ gtwSuccess: false, error: errorM });
         }
 
-        Gtw.create(userId, type, date, ip, platform, (err, gtw) => {
+        Gtw.create(userId, type, date, ip, platform, async (err, gtw) => {
             if (err) {
                 return res.status(200).json({ gtwSuccess: false, error: 'Database query error' });
             }
+
+            // Slack 메시지 전송
+            const message = type === 'gtw' ? `${userId}님이 출근하셨습니다.` : `${userId}님이 퇴근하셨습니다.`;
+            await sendSlackMessage('#출퇴근', message);
 
             return res.json({ gtwSuccess: true, message: '출근완료', gtw });
         });
