@@ -1,0 +1,196 @@
+.tit {
+  text-align: center;
+  padding-top: 110px;
+  margin-top: 14px;
+  margin-bottom: 40px;
+  font-size: 24px;
+  font-weight: bold;
+  letter-spacing: -0.25px;
+}
+
+.register_form {
+  width: 500px;
+  margin: 0 auto;
+  padding-top: 20px;
+  padding-bottom: 250px;
+  border-top: 1px solid rgb(240, 242, 243);
+}
+
+.register_form h3 {
+  margin-bottom: 20px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.25px;
+  color: rgb(86, 86, 86);
+}
+
+.register_form > div {
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.register_form .essential_area > div {
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.register_form > div label {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.25px;
+  color: rgb(119, 119, 119);
+  cursor: pointer;
+}
+
+.register_form .essential_area label {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.25px;
+  color: rgb(119, 119, 119);
+  cursor: pointer;
+}
+
+.label_area {
+  display: flex;
+  justify-content: space-between;
+}
+
+.error {
+  color: rgb(238, 66, 56);
+  font-size: 14px;
+  display: none;
+}
+
+.error.on {
+  display: inline-block;
+}
+
+.register_form > div input {
+  display: inline-block;
+  box-sizing: border-box;
+  position: relative;
+  width: 100%;
+  height: 45px;
+  border-radius: 5px;
+  border: 1px solid rgb(222, 222, 222);
+  background-color: rgb(255, 255, 255);
+  vertical-align: middle;
+  padding: 0 10px;
+  font-size: 14px;
+  letter-spacing: -0.25px;
+  color: rgb(51, 51, 51);
+}
+
+.register_form .essential_area input {
+  display: inline-block;
+  box-sizing: border-box;
+  position: relative;
+  width: 100%;
+  height: 45px;
+  border-radius: 5px;
+  border: 1px solid rgb(222, 222, 222);
+  background-color: rgb(255, 255, 255);
+  vertical-align: middle;
+  padding: 0 10px;
+  font-size: 14px;
+  letter-spacing: -0.25px;
+  color: rgb(51, 51, 51);
+}
+
+input.on {
+  color: rgb(238, 66, 56) !important;
+  border-color: rgb(238, 66, 56) !important;
+}
+
+.border_box {
+  padding-bottom: 48px;
+  border-bottom: 1px solid rgb(240, 242, 243);
+}
+
+.vacation .radio_wrap {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.vacation > span {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: -0.25px;
+  color: rgb(119, 119, 119);
+}
+
+.vacation .radio_wrap div {
+  margin-right: 10px;
+}
+
+.vacation > div label {
+  font-family: Arial, Helvetica, sans-serif;
+  display: flex;
+  align-items: center;
+}
+
+.vacation .radio_wrap input {
+  height: 16px;
+  width: 16px;
+  margin-right: 5px;
+}
+
+.checkbox_wrap {
+  display: flex;
+  margin-bottom: 0;
+  justify-content: space-between;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.checkbox_wrap label {
+  font-size: 14px;
+  color: rgb(86, 86, 86);
+  display: flex;
+  vertical-align: middle;
+  align-items: center;
+  margin: 0 !important;
+}
+
+.checkbox_wrap input {
+  width: 16px !important;
+  height: 16px !important;
+  vertical-align: top !important;
+  border-color: rgb(210, 210, 210);
+  padding: 0;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.checkbox_wrap a {
+  font-size: 12px;
+  color: rgb(86, 86, 86);
+}
+
+.checkbox_wrap a:hover {
+  text-decoration: underline;
+}
+
+.border {
+  padding-bottom: 12px !important;
+  border-bottom: 1px solid rgb(240, 242, 243);
+}
+
+.submit_btn {
+  width: 100%;
+  height: 46px;
+  margin-top: 48px;
+  color: rgb(255, 255, 255);
+  background-color: rgb(2, 78, 238);
+  font-size: 14px;
+  padding: 0 20px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+}

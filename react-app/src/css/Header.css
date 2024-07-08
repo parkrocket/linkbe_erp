@@ -1,0 +1,53 @@
+header {
+    width: 100%;
+    height: 72px;
+    padding-top: 30px;
+}
+header .wrapper {
+    width: 95%;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+}
+.header_btn_wrap {
+    display: flex;
+}
+.header_btn_wrap a,
+.header_btn_wrap button {
+    height: 37px;
+    line-height: 37px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 500;
+    border-radius: 5px;
+    width: 84px;
+    display: inline-block;
+}
+.header_btn_wrap .header_login_btn {
+    color: rgb(126, 126, 126);
+    margin-right: 10px;
+}
+.header_btn_wrap .header_login_btn:hover {
+    background-color: rgb(241, 244, 255);
+}
+.header_btn_wrap .header_signup_btn {
+    background-color: rgb(53, 98, 228);
+    color: #fff;
+}
+/* 로그인 했을 때(내 정보, 로그아웃 버튼) */
+.mypage_btn_warp {
+    margin-right: 30px;
+}
+.header_btn_wrap .mypage_btn {
+    color: rgb(53, 52, 52);
+    height: auto;
+    width: auto;
+    font-size: 17px;
+    font-weight: bold;
+}
+.header_btn_wrap .mypage_btn:hover {
+    text-decoration: underline;
+}
+.header_btn_wrap p {
+    display: inline-block;
+}
