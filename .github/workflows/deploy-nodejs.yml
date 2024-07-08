@@ -46,5 +46,11 @@ jobs:
           echo '${{ secrets.ENV_FILE_CONTENTS }}' > .env &&
           echo '${{ secrets.ENV_PRODUCTION_FILE_CONTENTS }}' > .env.production &&
           npm install &&
-          NODE_ENV=production pm2 restart nodejs-server || NODE_ENV=production pm2 start src/index.js --name nodejs-server"
+          npm install --only=prod &&
+          if [ $? -eq 0 ]; then
+            NODE_ENV=production pm2 restart nodejs-server || NODE_ENV=production pm2 start src/index.js --name nodejs-server;
+          else
+            echo 'npm install failed';
+            exit 1;
+          fi"
         rm key.pem
