@@ -5,7 +5,7 @@ const requestIp = require('request-ip');
 const moment = require('moment');
 
 exports.lists = (req, res) => {
-    const date = moment().format('YYYY-MM-DD');
+    const date = req.body.date;
 
     List.findByList(date, (err, list) => {
         if (err) {
