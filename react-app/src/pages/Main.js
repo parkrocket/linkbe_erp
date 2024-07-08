@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { refresh } from '../_actions/user_action';
-import { gtw } from '../_actions/gtw_action';
-import { Link, useNavigate } from 'react-router-dom';
-import RecordTable from '../component/RecordTable';
-import MainStyle from '../css/Main.module.css';
-import Button from '../component/Button';
-import axios from 'axios';
-import SERVER_URL from '../Config';
+import React, { useState, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { refresh } from "../_actions/user_action";
+import { gtw } from "../_actions/gtw_action";
+import { Link, useNavigate } from "react-router-dom";
+import RecordTable from "../component/RecordTable";
+import MainStyle from "../css/Main.module.css";
+import Button from "../component/Button";
+import axios from "axios";
+import SERVER_URL from "../Config";
 
 function Main() {
     const user = useSelector((state) => state.user);
@@ -31,12 +31,12 @@ function Main() {
     const handleClick = (message, gtw_status) => {
         const userId = user.userData.user.user_id;
         const type = gtw_status;
-        const platform = 'homepage';
+        const platform = "homepage";
 
         const dataTosubmit = { message, userId, type, platform };
 
-        if (type === 'done') {
-            alert('퇴근 완료입니다. 오늘도 수고하셨습니다.');
+        if (type === "done") {
+            alert("퇴근 완료입니다. 오늘도 수고하셨습니다.");
         } else {
             dispatch(gtw(dataTosubmit)).then((response) => {
                 if (response.payload.gtwSuccess === true) {
@@ -67,24 +67,15 @@ function Main() {
                             <div>
                                 <RecordTable list={recodeList}></RecordTable>
                                 {user.userData.user.gtw_status === 0 ? (
-                                    <Button
-                                        onClick={() => handleClick('출근하자', 'gtw')}
-                                        className="bg-blue-500 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 p-20  margin-c display-b"
-                                    >
+                                    <Button onClick={() => handleClick("출근하자!", "gtw")} className="bg-blue-500 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 p-20  margin-c display-b">
                                         출근하기
                                     </Button>
                                 ) : user.userData.user.gtw_status === 1 ? (
-                                    <Button
-                                        onClick={() => handleClick('퇴근하자', 'go')}
-                                        className="bg-red-500 text-white hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300 p-20  margin-c display-b"
-                                    >
+                                    <Button onClick={() => handleClick("퇴근하자!", "go")} className="bg-red-500 text-white hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300 p-20  margin-c display-b">
                                         퇴근하기
                                     </Button>
                                 ) : (
-                                    <Button
-                                        onClick={() => handleClick('퇴근완료', 'done')}
-                                        className="bg-green-500 text-white hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-300 p-20  margin-c display-b"
-                                    >
+                                    <Button onClick={() => handleClick("퇴근완료", "done")} className="bg-green-500 text-white hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-300 p-20  margin-c display-b">
                                         퇴근완료
                                     </Button>
                                 )}
