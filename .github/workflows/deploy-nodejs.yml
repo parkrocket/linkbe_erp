@@ -5,7 +5,7 @@ on:
     paths:
       - 'nodejs-server/**'
     branches:
-      - master  # master 브랜치에 푸시할 때 워크플로를 실행합니다.
+      - master
 
 jobs:
   build:
@@ -18,7 +18,7 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '18'  # Node.js 버전을 지정합니다.
+        node-version: '18'
 
     - name: Install dependencies
       run: cd nodejs-server && npm install
@@ -43,7 +43,8 @@ jobs:
         rsync -avz --exclude 'node_modules' -e "ssh -o StrictHostKeyChecking=no -i key.pem" nodejs-server/ $USERNAME@$HOST:/home/ubuntu/nodejs-server/
         ssh -o StrictHostKeyChecking=no -i key.pem $USERNAME@$HOST "
           cd /home/ubuntu/nodejs-server &&
-          mv .env.production .env &&
+          echo '${{ secrets.ENV_FILE_CONTENTS }}' > .env &&
+          echo '${{ secrets.ENV_PRODUCTION_FILE_CONTENTS }}' > .env.production &&
           npm install &&
           NODE_ENV=production pm2 restart nodejs-server || NODE_ENV=production pm2 start src/index.js --name nodejs-server"
         rm key.pem
