@@ -84,7 +84,6 @@ app.post('/slack/events', async (req, res) => {
                 },
                 {
                     type: 'image',
-                    image_url: 'https://www.example.com/cool-image.png',
                     alt_text: 'cool image',
                 },
             ],
