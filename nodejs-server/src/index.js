@@ -42,5 +42,5 @@ app.use('/api/company', companyRoutes);
 
 // 서버 실행
 app.listen(port, () => {
-    console.log(`Server running on  ports ${port}`);
+    console.log(`Server running on  port ${port}`);
 });
