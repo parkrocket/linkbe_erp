@@ -41,6 +41,12 @@ app.use('/api/list', listRoutes);
 
 app.use('/api/company', companyRoutes);
 
+// /api/test 경로 추가
+app.get('/api/test', (req, res) => {
+    console.log('Received a request on /api/test');
+    res.send('This is a test endpoint');
+});
+
 // 서버 실행
 app.listen(port, () => {
     console.log(`Server running on  port ${port}`);
