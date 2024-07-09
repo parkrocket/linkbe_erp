@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors'); // CORS 미들웨어 불러오기
 const dotenv = require('dotenv');
 const app = express();
+const { WebClient } = require('@slack/web-api');
 
 const port = 5000;
 
@@ -45,6 +46,58 @@ app.use('/api/company', companyRoutes);
 app.get('/api/test', (req, res) => {
     console.log('Received a request on /api/test');
     res.send('This is a test endpoint');
+});
+
+app.post('/slack/events', async (req, res) => {
+    const { type, event } = req.body;
+
+    if (type === 'event_callback' && event.type === 'app_home_opened') {
+        const userId = event.user;
+
+        // Block Kit structure for home tab
+        const view = {
+            type: 'home',
+            callback_id: 'home_view',
+            blocks: [
+                {
+                    type: 'section',
+                    text: {
+                        type: 'mrkdwn',
+                        text: "Welcome to your _App's Home_!",
+                    },
+                },
+                {
+                    type: 'divider',
+                },
+                {
+                    type: 'section',
+                    text: {
+                        type: 'mrkdwn',
+                        text: "*Here's a cool image:*",
+                    },
+                },
+                {
+                    type: 'image',
+                    image_url: 'https://www.example.com/cool-image.png',
+                    alt_text: 'cool image',
+                },
+            ],
+        };
+
+        // Publish the view
+        try {
+            await client.views.publish({
+                user_id: userId,
+                view: view,
+            });
+            res.status(200).send();
+        } catch (error) {
+            console.error('Error publishing view:', error);
+            res.status(500).send();
+        }
+    } else {
+        res.status(200).send();
+    }
 });
 
 // 서버 실행
