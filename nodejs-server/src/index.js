@@ -6,9 +6,6 @@ const { WebClient } = require('@slack/web-api');
 
 const port = 5000;
 
-const token = process.env.SLACK_BOT_TOKEN;
-const client = new WebClient(token);
-
 const requestIp = require('request-ip');
 
 app.use(cors()); // CORS 미들웨어 사용
@@ -24,6 +21,9 @@ if (process.env.NODE_ENV === 'production') {
 } else {
     dotenv.config();
 }
+
+const token = process.env.SLACK_BOT_TOKEN;
+const client = new WebClient(token);
 
 // CORS 설정
 
