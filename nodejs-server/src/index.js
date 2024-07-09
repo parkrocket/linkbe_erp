@@ -7,6 +7,8 @@ const port = 5000;
 
 const requestIp = require('request-ip');
 
+app.use(cors()); // CORS 미들웨어 사용
+
 // 매분마다 실행
 require('./controllers/userCron.js');
 
@@ -20,7 +22,6 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // CORS 설정
-app.use(cors()); // CORS 미들웨어 사용
 
 // JSON 요청을 파싱하는 미들웨어
 app.use(express.json());
