@@ -6,6 +6,8 @@ const { WebClient } = require('@slack/web-api');
 
 const port = 5000;
 
+const token = process.env.SLACK_BOT_TOKEN;
+
 const requestIp = require('request-ip');
 
 app.use(cors()); // CORS 미들웨어 사용
@@ -49,9 +51,12 @@ app.get('/api/test', (req, res) => {
 });
 
 app.post('/slack/events', async (req, res) => {
-    const { type, event } = req.body;
+    const { type, challenge, event } = req.body;
 
-    if (type === 'event_callback' && event.type === 'app_home_opened') {
+    if (type === 'url_verification') {
+        // Respond with the challenge parameter
+        res.status(200).send({ challenge: challenge });
+    } else if (type === 'event_callback' && event.type === 'app_home_opened') {
         const userId = event.user;
 
         // Block Kit structure for home tab
