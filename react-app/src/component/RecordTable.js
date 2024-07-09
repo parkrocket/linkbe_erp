@@ -133,7 +133,7 @@ function RecordTable({ list, date, setRecodeListDate, recodeAxiosLIst, setRecode
                                 onClick={() => handleClick('퇴근완료', 'done')}
                                 className="bg-green-500 text-white hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-300 p-20  margin-c display-b"
                             >
-                                퇴근완료
+                                퇴근완료!!
                             </Button>
                         )}
                     </div>
