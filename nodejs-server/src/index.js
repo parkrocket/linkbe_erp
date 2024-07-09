@@ -84,6 +84,7 @@ app.post('/slack/events', async (req, res) => {
                 },
                 {
                     type: 'image',
+                    image_url: 'https://hibye.kr/static/media/linkbe_logo.43365ed403583bb7ace9f79463e7754f.svg',
                     alt_text: 'cool image',
                 },
             ],
