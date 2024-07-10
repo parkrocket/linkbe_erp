@@ -21,6 +21,10 @@ router.post('/home', async (req, res) => {
 
         console.log(event);
 
+        const userInfo = await client.users.info({ user: userId });
+
+        console.log(userInfo);
+
         // Block Kit structure for home tab
         const view = {
             type: 'home',
