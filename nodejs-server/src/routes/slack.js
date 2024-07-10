@@ -54,6 +54,7 @@ router.post('/home', async (req, res) => {
                                 text: '출근하기',
                             },
                             action_id: 'clock_in',
+                            userInfo: user,
                         },
                     };
                 } else if (user.gtw_status === 1) {
@@ -70,6 +71,7 @@ router.post('/home', async (req, res) => {
                                 text: '퇴근하기',
                             },
                             action_id: 'clock_out',
+                            userInfo: user,
                         },
                     };
                 } else if (user.gtw_status === 2) {
