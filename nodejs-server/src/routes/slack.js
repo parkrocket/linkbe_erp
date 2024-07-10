@@ -120,7 +120,7 @@ router.post('/home', async (req, res) => {
     }
 });
 
-router.post('/interactions', async (req, res) => {
+router.post('/interactions', express.urlencoded({ extended: true }), async (req, res) => {
     const payload = JSON.parse(req.body.payload);
 
     console.log(payload);
