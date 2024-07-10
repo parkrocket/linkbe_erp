@@ -1,11 +1,13 @@
 const express = require('express');
 const User = require('../models/userModel');
+const Gtw = require('../models/gtwModel');
 const moment = require('moment');
 const router = express.Router();
 const slackApp = require('../utils/slack');
 const { WebClient } = require('@slack/web-api');
 const requestIp = require('request-ip');
 const crypto = require('crypto');
+const { sendSlackMessage } = require('../utils/slack');
 
 const algorithm = 'aes-256-cbc';
 const secretKey = 'linkbeflatformlinkbeflatformlink'; // 32바이트 키
@@ -71,7 +73,7 @@ router.post('/home', async (req, res) => {
                         type: 'section',
                         text: {
                             type: 'mrkdwn',
-                            text: `출근하기를 눌러주세요: <https://hibye.kr/node/api/slack/gtwCheck?userId=${encryptedUserId}|출근하기>`,
+                            text: `출근하기를 눌러주세요: <https://hibye.kr/node/api/slack/gtwCheck?userId=${encryptedUserId}&type=gtw&platform=slack|출근하기>`,
                         },
                         accessory: {
                             type: 'button',
@@ -88,7 +90,7 @@ router.post('/home', async (req, res) => {
                         type: 'section',
                         text: {
                             type: 'mrkdwn',
-                            text: `퇴근하기를 눌러주세요: <https://hibye.kr/node/api/slack/gtwCheck?userId=${encryptedUserId}|퇴근하기>`,
+                            text: `퇴근하기를 눌러주세요: <https://hibye.kr/node/api/slack/gtwCheck?userId=${encryptedUserId}&type=go&platform=slack|퇴근하기>`,
                         },
                         accessory: {
                             type: 'button',
@@ -149,7 +151,7 @@ router.post('/home', async (req, res) => {
 });
 
 router.get('/gtwCheck', async (req, res) => {
-    const { userId } = req.query;
+    const { userId, type, platform } = req.query;
     const date = moment().format('YYYY-MM-DD');
 
     let ip;
@@ -168,7 +170,36 @@ router.get('/gtwCheck', async (req, res) => {
         const parts = decryptedUserId.split('|');
 
         if (date === parts[0]) {
-            console.log(ip);
+            if (process.env.COMPANY_IP !== ip) {
+                res.status(404).send('IP가 일치하지 않습니다.');
+            }
+
+            Gtw.findByGtw(parts[1], type, date, (err, gtw) => {
+                if (err) {
+                    return res.status(200).send({ gtwSuccess: false, error: 'Database query error' });
+                }
+
+                if (type === 'gtw' && gtw.length > 0) {
+                    if (gtw[0].end_time === null) {
+                        errorM = '이미 출근중입니다.';
+                    } else {
+                        errorM = '이미 퇴근하셨습니다. 내일도 화이팅.';
+                    }
+                    return res.status(200).send({ gtwSuccess: false, error: errorM });
+                }
+
+                Gtw.create(parts[1], type, date, ip, platform, async (err, gtw) => {
+                    if (err) {
+                        return res.status(200).send({ gtwSuccess: false, error: 'Database query error' });
+                    }
+
+                    // Slack 메시지 전송
+                    const message = type === 'gtw' ? `${userId}님이 출근하셨습니다.` : `${userId}님이 퇴근하셨습니다.`;
+                    await sendSlackMessage('#출퇴근', message);
+
+                    return res.send({ gtwSuccess: true, message: '출근완료', gtw });
+                });
+            });
         } else {
             res.status(404).send('잘못된 접근입니다.');
         }
