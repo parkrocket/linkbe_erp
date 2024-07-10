@@ -14,8 +14,6 @@ router.post('/events', async (req, res) => {
 });
 
 router.post('/home', async (req, res) => {
-    console.log(req.body);
-
     const { type, challenge, event } = req.body;
 
     if (type === 'url_verification') {
@@ -132,7 +130,28 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
 
     const { type, user, actions } = payload;
 
-    console.log(type);
+    if (type === 'block_actions') {
+        const userId = user.id;
+        const actionId = actions[0].action_id;
+
+        if (actionId === 'clock_in') {
+            const redirectUrl = 'https://hibye.kr';
+
+            try {
+                // 사용자에게 리디렉션 링크를 포함한 메시지 보내기
+                await client.chat.postMessage({
+                    channel: userId,
+                    text: `Please click the following link to proceed: ${redirectUrl}`,
+                });
+
+                res.status(200).send();
+            } catch (error) {
+                console.error('Error sending message:', error);
+                res.status(500).send('Internal Server Error');
+            }
+        }
+    }
+    console.log(actions);
 });
 
 module.exports = router;
