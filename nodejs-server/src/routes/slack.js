@@ -8,7 +8,7 @@ const requestIp = require('request-ip');
 const crypto = require('crypto');
 
 const algorithm = 'aes-256-cbc';
-const secretKey = 'linkbeflatform';
+const secretKey = 'linkbeflatformlinkbeflatformlink';
 const iv = crypto.randomBytes(16);
 
 const encrypt = (text) => {
