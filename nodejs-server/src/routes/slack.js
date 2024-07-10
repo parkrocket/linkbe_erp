@@ -120,4 +120,10 @@ router.post('/home', async (req, res) => {
     }
 });
 
+router.post('/interactions', async (req, res) => {
+    const payload = JSON.parse(req.body.payload);
+
+    console.log(payload);
+});
+
 module.exports = router;
