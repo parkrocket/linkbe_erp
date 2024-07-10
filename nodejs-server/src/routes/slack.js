@@ -19,6 +19,8 @@ router.post('/home', async (req, res) => {
     } else if (type === 'event_callback' && event.type === 'app_home_opened') {
         const userId = event.user;
 
+        console.log(event);
+
         // Block Kit structure for home tab
         const view = {
             type: 'home',
