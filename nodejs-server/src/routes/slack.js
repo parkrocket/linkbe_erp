@@ -5,6 +5,28 @@ const router = express.Router();
 const slackApp = require('../utils/slack');
 const { WebClient } = require('@slack/web-api');
 const requestIp = require('request-ip');
+const crypto = require('crypto');
+
+const algorithm = 'aes-256-cbc';
+const secretKey = 'linkbe';
+const iv = crypto.randomBytes(16);
+
+const encrypt = (text) => {
+    const cipher = crypto.createCipheriv(algorithm, Buffer.from(secretKey, 'hex'), iv);
+    let encrypted = cipher.update(text);
+    encrypted = Buffer.concat([encrypted, cipher.final()]);
+    return iv.toString('hex') + ':' + encrypted.toString('hex');
+};
+
+const decrypt = (text) => {
+    const textParts = text.split(':');
+    const iv = Buffer.from(textParts.shift(), 'hex');
+    const encryptedText = Buffer.from(textParts.join(':'), 'hex');
+    const decipher = crypto.createDecipheriv(algorithm, Buffer.from(secretKey, 'hex'), iv);
+    let decrypted = decipher.update(encryptedText);
+    decrypted = Buffer.concat([decrypted, decipher.final()]);
+    return decrypted.toString();
+};
 
 const token = process.env.SLACK_BOT_TOKEN;
 const client = new WebClient(token);
@@ -29,6 +51,8 @@ router.post('/home', async (req, res) => {
         if (userInfo.ok) {
             const userEmail = userInfo.user.profile.email;
 
+            const encryptedUserId = encrypt(userEmail);
+
             User.findByEmail(userEmail, async (err, user) => {
                 //return res.status(500).json({ message: 'Login successful', user: user });
 
@@ -46,7 +70,7 @@ router.post('/home', async (req, res) => {
                         type: 'section',
                         text: {
                             type: 'mrkdwn',
-                            text: `출근하기를 눌러주세요: [출근하기](https://hibye.kr/gtw?userId=${userEmail},'출근하기')`,
+                            text: `출근하기를 눌러주세요: <https://hibye.kr/gtw?userId=${encryptedUserId}|출근하기>`,
                         },
                         accessory: {
                             type: 'button',
@@ -63,7 +87,7 @@ router.post('/home', async (req, res) => {
                         type: 'section',
                         text: {
                             type: 'mrkdwn',
-                            text: `퇴근하기를 눌러주세요: [퇴근하기](https://hibye.kr/gtw?userId=${userEmail},'퇴근하기')`,
+                            text: `퇴근하기를 눌러주세요: <https://hibye.kr/gtw?userId=${encryptedUserId}|퇴근하기>`,
                         },
                         accessory: {
                             type: 'button',
@@ -130,27 +154,6 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
 
     const { type, user, actions } = payload;
 
-    if (type === 'block_actions') {
-        const userId = user.id;
-        const actionId = actions[0].action_id;
-
-        if (actionId === 'clock_in') {
-            const redirectUrl = 'https://hibye.kr';
-
-            try {
-                // 사용자에게 리디렉션 링크를 포함한 메시지 보내기
-                await client.chat.postMessage({
-                    channel: userId,
-                    text: `Please click the following link to proceed: ${redirectUrl}`,
-                });
-
-                res.status(200).send();
-            } catch (error) {
-                console.error('Error sending message:', error);
-                res.status(500).send('Internal Server Error');
-            }
-        }
-    }
     console.log(actions);
 });
 
