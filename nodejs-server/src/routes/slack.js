@@ -176,7 +176,7 @@ router.get('/gtwCheck', async (req, res) => {
 
             Gtw.findByGtw(parts[1], type, date, (err, gtw) => {
                 if (err) {
-                    return res.status(200).send({ gtwSuccess: false, error: 'Database query error' });
+                    return res.status(200).send('Database query error');
                 }
 
                 if (type === 'gtw' && gtw.length > 0) {
@@ -185,19 +185,19 @@ router.get('/gtwCheck', async (req, res) => {
                     } else {
                         errorM = '이미 퇴근하셨습니다. 내일도 화이팅.';
                     }
-                    return res.status(200).send({ gtwSuccess: false, error: errorM });
+                    return res.status(200).send(errorM);
                 }
 
                 Gtw.create(parts[1], type, date, ip, platform, async (err, gtw) => {
                     if (err) {
-                        return res.status(200).send({ gtwSuccess: false, error: 'Database query error' });
+                        return res.status(200).send('Database query error');
                     }
 
                     // Slack 메시지 전송
-                    const message = type === 'gtw' ? `${userId}님이 출근하셨습니다.` : `${userId}님이 퇴근하셨습니다.`;
+                    const message = type === 'gtw' ? `${parts[1]}님이 출근하셨습니다.` : `${parts[1]}님이 퇴근하셨습니다.`;
                     await sendSlackMessage('#출퇴근', message);
 
-                    return res.send({ gtwSuccess: true, message: '출근완료', gtw });
+                    return res.send('출근완료');
                 });
             });
         } else {
