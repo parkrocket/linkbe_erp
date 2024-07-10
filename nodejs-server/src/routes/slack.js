@@ -4,6 +4,7 @@ const moment = require('moment');
 const router = express.Router();
 const slackApp = require('../utils/slack');
 const { WebClient } = require('@slack/web-api');
+const requestIp = require('request-ip');
 
 const token = process.env.SLACK_BOT_TOKEN;
 const client = new WebClient(token);
@@ -13,6 +14,8 @@ router.post('/events', async (req, res) => {
 });
 
 router.post('/home', async (req, res) => {
+    console.log(req.body);
+
     const { type, challenge, event } = req.body;
 
     if (type === 'url_verification') {
