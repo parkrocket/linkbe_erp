@@ -19,8 +19,6 @@ router.post('/home', async (req, res) => {
     } else if (type === 'event_callback' && event.type === 'app_home_opened') {
         const userId = event.user;
 
-        console.log(event);
-
         const userInfo = await client.users.info({ user: userId });
 
         console.log(userInfo.user.profile.email);
@@ -52,20 +50,20 @@ router.post('/home', async (req, res) => {
                     },
                 ],
             };
+
+            // Publish the view
+            try {
+                await client.views.publish({
+                    user_id: userId,
+                    view: view,
+                });
+                res.status(200).send();
+            } catch (error) {
+                console.error('Error publishing view:', error);
+                res.status(500).send();
+            }
         } else {
             console.log('유저정보 에러');
-        }
-
-        // Publish the view
-        try {
-            await client.views.publish({
-                user_id: userId,
-                view: view,
-            });
-            res.status(200).send();
-        } catch (error) {
-            console.error('Error publishing view:', error);
-            res.status(500).send();
         }
     } else {
         res.status(200).send();
