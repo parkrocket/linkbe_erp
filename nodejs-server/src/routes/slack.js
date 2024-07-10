@@ -46,7 +46,7 @@ router.post('/home', async (req, res) => {
                         type: 'section',
                         text: {
                             type: 'mrkdwn',
-                            text: '출근하기 버튼을 눌러주세요:',
+                            text: `출근하기를 눌러주세요: <https://hibye.kr/gtw?userId=${userEmail}|출근하기>`,
                         },
                         accessory: {
                             type: 'button',
@@ -63,7 +63,7 @@ router.post('/home', async (req, res) => {
                         type: 'section',
                         text: {
                             type: 'mrkdwn',
-                            text: '퇴근하기 버튼을 눌러주세요:',
+                            text: `퇴근하기를 눌러주세요: <https://hibye.kr/gtw?userId=${userEmail}|퇴근하기>`,
                         },
                         accessory: {
                             type: 'button',
