@@ -151,11 +151,27 @@ router.post('/home', async (req, res) => {
 router.get('/gtwCheck', async (req, res) => {
     const { userId } = req.query;
     const date = moment().format('YYYY-MM-DD');
+
+    let ip;
+    let errorM = '';
+
+    if (process.env.NODE_ENV === 'development') {
+        ip = process.env.DEV_IP;
+    } else {
+        ip = req.clientIp.includes('::ffff:') ? req.clientIp.split('::ffff:')[1] : req.clientIp;
+    }
+
     try {
         const decryptedUserId = decrypt(userId);
         // 복호화된 userId를 사용하여 사용자 확인 및 처리
 
-        console.log(decryptedUserId);
+        const parts = decryptedUserId.split('|');
+
+        if (date === parts[0]) {
+            console.log(ip);
+        } else {
+            res.status(404).send('잘못된 접근입니다.');
+        }
 
         const user = await User.findById(decryptedUserId);
         if (user) {
