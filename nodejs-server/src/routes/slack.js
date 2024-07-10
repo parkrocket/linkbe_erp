@@ -52,7 +52,7 @@ router.post('/home', async (req, res) => {
         if (userInfo.ok) {
             const userEmail = userInfo.user.profile.email;
 
-            const encryptedUserId = encrypt(userEmail);
+            const encryptedUserId = encrypt(`${date}|${userEmail}`);
 
             User.findByEmail(userEmail, async (err, user) => {
                 //return res.status(500).json({ message: 'Login successful', user: user });
@@ -71,7 +71,7 @@ router.post('/home', async (req, res) => {
                         type: 'section',
                         text: {
                             type: 'mrkdwn',
-                            text: `출근하기를 눌러주세요: <https://hibye.kr/gtw?userId=${encryptedUserId}|출근하기>`,
+                            text: `출근하기를 눌러주세요: <https://hibye.kr/node/api/slack/gtwCheck?userId=${encryptedUserId}|출근하기>`,
                         },
                         accessory: {
                             type: 'button',
@@ -88,7 +88,7 @@ router.post('/home', async (req, res) => {
                         type: 'section',
                         text: {
                             type: 'mrkdwn',
-                            text: `퇴근하기를 눌러주세요: <https://hibye.kr/gtw?userId=${encryptedUserId}|퇴근하기>`,
+                            text: `퇴근하기를 눌러주세요: <https://hibye.kr/node/api/slack/gtwCheck?userId=${encryptedUserId}|퇴근하기>`,
                         },
                         accessory: {
                             type: 'button',
@@ -145,6 +145,26 @@ router.post('/home', async (req, res) => {
         }
     } else {
         res.status(200).send();
+    }
+});
+
+router.get('/gtwCheck', async (req, res) => {
+    const { userId } = req.query;
+    const date = moment().format('YYYY-MM-DD');
+    try {
+        const decryptedUserId = decrypt(userId);
+        // 복호화된 userId를 사용하여 사용자 확인 및 처리
+
+        console.log(decryptedUserId);
+
+        const user = await User.findById(decryptedUserId);
+        if (user) {
+            res.status(200).send(`User authenticated: ${user.user_name}`);
+        } else {
+            res.status(404).send('User not found');
+        }
+    } catch (error) {
+        res.status(400).send('Invalid user ID');
     }
 });
 
