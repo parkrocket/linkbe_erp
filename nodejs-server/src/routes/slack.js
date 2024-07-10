@@ -38,6 +38,50 @@ router.post('/home', async (req, res) => {
                     return res.status(200).json({ refreshSuccess: false, error: 'User not found' });
                 }
 
+                // 동적으로 블록 생성
+                let actionBlock;
+                if (user.gtw_status === 0) {
+                    actionBlock = {
+                        type: 'section',
+                        text: {
+                            type: 'mrkdwn',
+                            text: '출근하기 버튼을 눌러주세요:',
+                        },
+                        accessory: {
+                            type: 'button',
+                            text: {
+                                type: 'plain_text',
+                                text: '출근하기',
+                            },
+                            action_id: 'clock_in',
+                        },
+                    };
+                } else if (user.gtw_status === 1) {
+                    actionBlock = {
+                        type: 'section',
+                        text: {
+                            type: 'mrkdwn',
+                            text: '퇴근하기 버튼을 눌러주세요:',
+                        },
+                        accessory: {
+                            type: 'button',
+                            text: {
+                                type: 'plain_text',
+                                text: '퇴근하기',
+                            },
+                            action_id: 'clock_out',
+                        },
+                    };
+                } else if (user.gtw_status === 2) {
+                    actionBlock = {
+                        type: 'section',
+                        text: {
+                            type: 'mrkdwn',
+                            text: '오늘 하루 수고하셨습니다!',
+                        },
+                    };
+                }
+
                 const view = {
                     type: 'home',
                     callback_id: 'home_view',
@@ -52,13 +96,7 @@ router.post('/home', async (req, res) => {
                         {
                             type: 'divider',
                         },
-                        {
-                            type: 'section',
-                            text: {
-                                type: 'mrkdwn',
-                                text: "*Here's a cool image:*",
-                            },
-                        },
+                        actionBlock,
                     ],
                 };
 
