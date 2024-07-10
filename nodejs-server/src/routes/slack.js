@@ -17,9 +17,13 @@ router.post('/events', async (req, res) => {
     } else if (type === 'event_callback' && event.type === 'app_home_opened') {
         const userId = event.user;
 
+        console.log(userId);
+
         try {
             // 사용자 정보 가져오기
             const userInfo = await client.users.info({ user: userId });
+
+            console.log(userInfo);
 
             if (userInfo.ok) {
                 const userEmail = userInfo.user.profile.email;
