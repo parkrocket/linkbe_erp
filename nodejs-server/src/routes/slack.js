@@ -123,9 +123,15 @@ router.post('/home', async (req, res) => {
 });
 
 router.post('/interactions', express.urlencoded({ extended: true }), async (req, res) => {
+    let ip;
+
+    const date = moment().format('YYYY-MM-DD');
+
     const payload = JSON.parse(req.body.payload);
 
-    console.log(payload);
+    ip = req.clientIp.includes('::ffff:') ? req.clientIp.split('::ffff:')[1] : req.clientIp;
+
+    console.log(ip);
 });
 
 module.exports = router;
