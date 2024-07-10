@@ -23,32 +23,38 @@ router.post('/home', async (req, res) => {
 
         const userInfo = await client.users.info({ user: userId });
 
-        console.log(userInfo);
+        console.log(userInfo.user.profile.email);
 
         // Block Kit structure for home tab
-        const view = {
-            type: 'home',
-            callback_id: 'home_view',
-            blocks: [
-                {
-                    type: 'section',
-                    text: {
-                        type: 'mrkdwn',
-                        text: "Welcome to your _App's Home_!",
+        if (userInfo.ok) {
+            const userEmail = userInfo.user.profile.email;
+
+            const view = {
+                type: 'home',
+                callback_id: 'home_view',
+                blocks: [
+                    {
+                        type: 'section',
+                        text: {
+                            type: 'mrkdwn',
+                            text: `Welcome to your _App's Home_, ${userEmail}!`,
+                        },
                     },
-                },
-                {
-                    type: 'divider',
-                },
-                {
-                    type: 'section',
-                    text: {
-                        type: 'mrkdwn',
-                        text: "*Here's a cool image:*",
+                    {
+                        type: 'divider',
                     },
-                },
-            ],
-        };
+                    {
+                        type: 'section',
+                        text: {
+                            type: 'mrkdwn',
+                            text: "*Here's a cool image:*",
+                        },
+                    },
+                ],
+            };
+        } else {
+            console.log('유저정보 에러');
+        }
 
         // Publish the view
         try {
