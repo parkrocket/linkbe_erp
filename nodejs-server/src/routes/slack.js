@@ -165,16 +165,14 @@ router.get('/gtwCheck', async (req, res) => {
 
     try {
         const decryptedUserId = decrypt(userId);
-        // 복호화된 userId를 사용하여 사용자 확인 및 처리
-
         const parts = decryptedUserId.split('|');
 
         if (date === parts[0]) {
             if (process.env.COMPANY_IP !== ip) {
-                res.status(404).send('IP가 일치하지 않습니다.');
+                return res.status(404).send('IP가 일치하지 않습니다.');
             }
 
-            Gtw.findByGtw(parts[1], type, date, (err, gtw) => {
+            Gtw.findByGtw(parts[1], type, date, async (err, gtw) => {
                 if (err) {
                     return res.status(200).send('Database query error');
                 }
@@ -193,7 +191,6 @@ router.get('/gtwCheck', async (req, res) => {
                         return res.status(200).send('Database query error');
                     }
 
-                    // Slack 메시지 전송
                     const message = type === 'gtw' ? `${parts[1]}님이 출근하셨습니다.` : `${parts[1]}님이 퇴근하셨습니다.`;
                     await sendSlackMessage('#출퇴근', message);
 
@@ -201,17 +198,17 @@ router.get('/gtwCheck', async (req, res) => {
                 });
             });
         } else {
-            res.status(404).send('잘못된 접근입니다.');
+            return res.status(404).send('잘못된 접근입니다.');
         }
 
         const user = await User.findById(decryptedUserId);
         if (user) {
-            res.status(200).send(`User authenticated: ${user.user_name}`);
+            return res.status(200).send(`User authenticated: ${user.user_name}`);
         } else {
-            res.status(404).send('User not found');
+            return res.status(404).send('User not found');
         }
     } catch (error) {
-        res.status(400).send('Invalid user ID ');
+        return res.status(400).send('Invalid user ID');
     }
 });
 
