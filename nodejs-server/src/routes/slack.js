@@ -219,7 +219,7 @@ router.get('/gtwCheck', async (req, res) => {
                     console.error('Error publishing view:', publishError);
                 }
 
-                return res.send('출근완료');
+                return res.json({ message: '출근완료', windowClose: true });
             });
         });
     } catch (error) {

@@ -14,11 +14,9 @@ function Auth(ChildrenComponent, option, adminRoute = false, menu = 0, subMenu =
         const [cookies] = useCookies(['x_auth']);
 
         const [view, setView] = useState(false);
-        console.log(cookies);
 
         useEffect(() => {
             dispatch(auth(cookies)).then((response) => {
-                console.log(cookies);
                 if (response.payload.isAuth) {
                     //console.log(response.payload.isAdmin);
                     //로그인 했음

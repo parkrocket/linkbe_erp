@@ -13,7 +13,7 @@ export const Routes = () => {
             <Route path="/" element={Auth(Main, null)} />
             <Route path="/login" element={Auth(Login, false)} />
             <Route path="/register" element={Auth(Register, false)} />
-            <Route path="/gtw" element={Auth(Gtw, false)} />
+            <Route path="/gtw" element={Auth(Gtw, null)} />
         </ReactRouterRoutes>
     );
 };
