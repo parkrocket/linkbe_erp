@@ -18,12 +18,18 @@ function Gtw() {
     const slackUser = query.get('slackuser');
 
     useEffect(() => {
-        const dataTosubmit = { userId, type, platform, slackUser };
+        const fetchData = async () => {
+            try {
+                const params = new URLSearchParams({ userId, type, platform, slackUser });
+                const response = await axios.get(`${SERVER_URL}/api/slack/gtwCheck?${params.toString()}`);
+                console.log(response.data);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        };
 
-        axios.get(`${SERVER_URL}/api/slack/gtwCheck`, dataTosubmit).then((response) => {
-            console.log(response);
-        });
-    }, []);
+        fetchData();
+    }, [userId, type, platform, slackUser]);
 
     return (
         <div>
