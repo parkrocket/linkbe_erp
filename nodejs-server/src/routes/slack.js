@@ -187,6 +187,11 @@ router.get('/gtwCheck', async (req, res) => {
     const { userId, type, platform, slackuser } = req.query;
     const date = moment().format('YYYY-MM-DD');
 
+    let location;
+
+    if (type === 'gtw' || type == 'remote_gtw') location = 'office';
+    if (type === 'go' || type == 'remote_go') location = 'home';
+
     let ip;
     let errorM = '';
 
@@ -239,7 +244,14 @@ router.get('/gtwCheck', async (req, res) => {
                         const userEmail = userInfo.user.profile.email;
                         const encryptedUserId = encrypt(`${date}|${userEmail}`);
 
-                        await publishHomeView(slackuser, userInfo.user.real_name, type === 'gtw' ? 1 : 2, date, encryptedUserId);
+                        await publishHomeView(
+                            slackuser,
+                            userInfo.user.real_name,
+                            type === 'gtw' || type === 'remote_gtx' ? 1 : 2,
+                            location,
+                            date,
+                            encryptedUserId
+                        );
                     }
                 } catch (publishError) {
                     console.error('Error publishing view:', publishError);
