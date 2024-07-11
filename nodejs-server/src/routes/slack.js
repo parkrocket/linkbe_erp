@@ -172,6 +172,8 @@ router.get('/gtwCheck', async (req, res) => {
         ip = req.clientIp.includes('::ffff:') ? req.clientIp.split('::ffff:')[1] : req.clientIp;
     }
 
+    console.log(process.env.COMPANY_IP, ip);
+
     try {
         const decryptedUserId = decrypt(userId);
         const parts = decryptedUserId.split('|');
