@@ -46,7 +46,7 @@ const publishHomeView = async (userId, userName, gtwStatus, date, encryptedUserI
             type: 'section',
             text: {
                 type: 'mrkdwn',
-                text: `출근하기를 눌러주세요: <https://hibye.kr/node/api/slack/gtwCheck?userId=${encryptedUserId}&type=gtw&platform=slack|출근하기>`,
+                text: `출근하기를 눌러주세요: <https://hibye.kr/node/api/slack/gtwCheck?userId=${encryptedUserId}&type=gtw&platform=slack&slackuser=${userId}|출근하기>`,
             },
             accessory: {
                 type: 'button',
@@ -63,7 +63,7 @@ const publishHomeView = async (userId, userName, gtwStatus, date, encryptedUserI
             type: 'section',
             text: {
                 type: 'mrkdwn',
-                text: `퇴근하기를 눌러주세요: <https://hibye.kr/node/api/slack/gtwCheck?userId=${encryptedUserId}&type=go&platform=slack|퇴근하기>`,
+                text: `퇴근하기를 눌러주세요: <https://hibye.kr/node/api/slack/gtwCheck?userId=${encryptedUserId}&type=go&platform=slack&slackuser=${userId}|퇴근하기>`,
             },
             accessory: {
                 type: 'button',
@@ -160,7 +160,7 @@ router.post('/home', async (req, res) => {
 });
 
 router.get('/gtwCheck', async (req, res) => {
-    const { userId, type, platform } = req.query;
+    const { userId, type, platform, slackuser } = req.query;
     const date = moment().format('YYYY-MM-DD');
 
     let ip;
@@ -207,13 +207,13 @@ router.get('/gtwCheck', async (req, res) => {
                 await sendSlackMessage('#출퇴근', message);
 
                 try {
-                    const userInfo = await client.users.info({ user: parts[1] });
+                    const userInfo = await client.users.info({ user: slackuser });
 
                     if (userInfo.ok) {
                         const userEmail = userInfo.user.profile.email;
                         const encryptedUserId = encrypt(`${date}|${userEmail}`);
 
-                        await publishHomeView(parts[1], userInfo.user.real_name, type === 'gtw' ? 1 : 2, date, encryptedUserId);
+                        await publishHomeView(slackuser, userInfo.user.real_name, type === 'gtw' ? 1 : 2, date, encryptedUserId);
                     }
                 } catch (publishError) {
                     console.error('Error publishing view:', publishError);
