@@ -15,21 +15,24 @@ function Gtw() {
     const userId = query.get('userId');
     const type = query.get('type');
     const platform = query.get('platform');
-    const slackUser = query.get('slackuser');
+    const slackuser = query.get('slackuser');
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const params = new URLSearchParams({ userId, type, platform, slackUser });
+                const params = new URLSearchParams({ userId, type, platform, slackuser });
                 const response = await axios.get(`${SERVER_URL}/api/slack/gtwCheck?${params.toString()}`);
                 console.log(response.data);
+                if (response.data.windowClose) {
+                    window.open('', '_self').close();
+                }
             } catch (error) {
                 console.error('Error fetching data:', error);
             }
         };
 
         fetchData();
-    }, [userId, type, platform, slackUser]);
+    }, [userId, type, platform, slackuser]);
 
     return (
         <div>
@@ -37,7 +40,7 @@ function Gtw() {
             <p>User ID: {userId}</p>
             <p>Type: {type}</p>
             <p>Platform: {platform}</p>
-            <p>Slack User: {slackUser}</p>
+            <p>Slack User: {slackuser}</p>
         </div>
     );
 }
