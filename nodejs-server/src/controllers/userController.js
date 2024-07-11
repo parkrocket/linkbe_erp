@@ -26,7 +26,7 @@ exports.login = (req, res) => {
             // JWT 생성 및 전송
 
             const token = jwt.sign({ userId: user.user_id }, secretKey, { expiresIn: '24h' });
-            res.cookie('x_auth', token, { httpOnly: true });
+            res.cookie('x_auth', token, { httpOnly: false });
 
             return res.json({ loginSuccess: true, message: 'Login successful', user, token });
         });
