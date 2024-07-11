@@ -166,6 +166,8 @@ router.get('/gtwCheck', async (req, res) => {
     let ip;
     let errorM = '';
 
+    console.log(process.env.NODE_ENV);
+
     if (process.env.NODE_ENV === 'development') {
         ip = process.env.DEV_IP;
         console.log('개발!');
