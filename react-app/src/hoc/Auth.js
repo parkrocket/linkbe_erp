@@ -13,6 +13,8 @@ function Auth(ChildrenComponent, option, adminRoute = false, menu = 0, subMenu =
         const dispatch = useDispatch();
         const [cookies] = useCookies(['x_auth']);
 
+        console.log(cookies);
+
         const [view, setView] = useState(false);
 
         useEffect(() => {
