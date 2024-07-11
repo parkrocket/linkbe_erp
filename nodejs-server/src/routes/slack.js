@@ -42,14 +42,14 @@ const publishHomeView = async (userId, userName, gtwStatus, gtwLocation, date, e
     let actionBlock;
 
     if (gtwStatus === 0) {
-        actionBlock = {
+        actionBlock.push({
             type: 'section',
             text: {
                 type: 'mrkdwn',
                 text: '출근 옵션을 선택하세요:',
             },
-        };
-        actionBlock = {
+        });
+        actionBlock.push({
             type: 'actions',
             elements: [
                 {
@@ -71,7 +71,7 @@ const publishHomeView = async (userId, userName, gtwStatus, gtwLocation, date, e
                     action_id: 'remote_clock_in',
                 },
             ],
-        };
+        });
     } else if (gtwStatus === 1) {
         let url;
 
