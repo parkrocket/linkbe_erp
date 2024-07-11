@@ -41,8 +41,6 @@ router.post('/events', async (req, res) => {
 const publishHomeView = async (userId, userName, gtwStatus, gtwLocation, date, encryptedUserId) => {
     let actionBlocks = [];
 
-    console.log(gtwLocation);
-
     if (gtwStatus === 0) {
         actionBlocks.push({
             type: 'section',
@@ -190,14 +188,12 @@ router.post('/home', async (req, res) => {
 router.get('/gtwCheck', async (req, res) => {
     const { userId, type, platform, slackuser } = req.query;
 
-    console.log(req.query);
-
     const date = moment().format('YYYY-MM-DD');
 
     let location;
 
-    if (type === 'gtw' || type == 'remote_gtw') location = 'office';
-    if (type === 'go' || type == 'remote_go') location = 'home';
+    if (type === 'gtw' || type === 'go') location = 'office';
+    if (type === 'remote_gtw' || type === 'remote_go') location = 'home';
 
     let ip;
     let errorM = '';
@@ -259,7 +255,6 @@ router.get('/gtwCheck', async (req, res) => {
                             gtwStatus = 2;
                         }
 
-                        console.log(location);
                         await publishHomeView(slackuser, userInfo.user.real_name, gtwStatus, location, date, encryptedUserId);
                     }
                 } catch (publishError) {
