@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import SERVER_URL from '../Config';
 
@@ -10,12 +10,12 @@ function useQuery() {
 function Gtw() {
     const query = useQuery();
 
-    console.log(query);
-
     const userId = query.get('userId');
     const type = query.get('type');
     const platform = query.get('platform');
     const slackuser = query.get('slackuser');
+
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchData = async () => {
@@ -25,22 +25,26 @@ function Gtw() {
                 console.log(response.data);
                 if (response.data.windowClose) {
                     window.open('', '_self').close();
+                } else {
+                    alert(response.data.message);
                 }
             } catch (error) {
                 console.error('Error fetching data:', error);
             }
         };
 
-        fetchData();
+        if (userId === null || type === null || platform === null || slackuser === null) {
+            alert('정상적인 접근이 아닙니다.');
+            //window.open('', '_self').close();
+            navigate('/');
+        } else {
+            fetchData();
+        }
     }, [userId, type, platform, slackuser]);
 
     return (
         <div>
-            <h1>Gtw</h1>
-            <p>User ID: {userId}</p>
-            <p>Type: {type}</p>
-            <p>Platform: {platform}</p>
-            <p>Slack User: {slackuser}</p>
+            <h1>슬랙 로그인 페이지</h1>
         </div>
     );
 }

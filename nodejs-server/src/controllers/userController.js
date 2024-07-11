@@ -66,7 +66,13 @@ exports.register = (req, res) => {
 exports.auth = (req, res) => {
     const token = req.body.x_auth;
 
-    console.log(token);
+    /*
+    if (process.env.NODE_ENV === 'development') {
+        console.log('개발');
+    } else {
+        console.log('실서버');
+    }
+    */
 
     if (!token) {
         return res.status(200).json({ isAuth: false, error: 'No token provided' });

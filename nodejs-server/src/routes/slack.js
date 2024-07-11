@@ -46,24 +46,40 @@ const publishHomeView = async (userId, userName, gtwStatus, date, encryptedUserI
             type: 'section',
             text: {
                 type: 'mrkdwn',
-                text: `출근하기를 눌러주세요: <https://hibye.kr/gtw?userId=${encryptedUserId}&type=gtw&platform=slack&slackuser=${userId}|출근하기>`,
+                text: '출근 옵션을 선택하세요:',
             },
-            accessory: {
-                type: 'button',
-                text: {
-                    type: 'plain_text',
-                    text: '출근하기',
+            fields: [
+                {
+                    type: 'actions',
+                    elements: [
+                        {
+                            type: 'button',
+                            text: {
+                                type: 'plain_text',
+                                text: '출근하기',
+                            },
+                            url: `https://hibye.kr/gtw?userId=${encryptedUserId}&type=gtw&platform=slack&slackuser=${userId}`,
+                            action_id: 'clock_in',
+                        },
+                        {
+                            type: 'button',
+                            text: {
+                                type: 'plain_text',
+                                text: '재택출근하기',
+                            },
+                            url: `https://hibye.kr/gtw?userId=${encryptedUserId}&type=remote_gtw&platform=slack&slackuser=${userId}`,
+                            action_id: 'remote_clock_in',
+                        },
+                    ],
                 },
-                action_id: 'clock_in',
-                value: userId,
-            },
+            ],
         };
     } else if (gtwStatus === 1) {
         actionBlock = {
             type: 'section',
             text: {
                 type: 'mrkdwn',
-                text: `퇴근하기를 눌러주세요: <https://hibye.kr/gtw?userId=${encryptedUserId}&type=go&platform=slack&slackuser=${userId}|퇴근하기>`,
+                text: '퇴근하기를 눌러주세요:',
             },
             accessory: {
                 type: 'button',
@@ -71,8 +87,8 @@ const publishHomeView = async (userId, userName, gtwStatus, date, encryptedUserI
                     type: 'plain_text',
                     text: '퇴근하기',
                 },
+                url: `https://hibye.kr/gtw?userId=${encryptedUserId}&type=go&platform=slack&slackuser=${userId}`,
                 action_id: 'clock_out',
-                value: userId,
             },
         };
     } else if (gtwStatus === 2) {
@@ -166,33 +182,27 @@ router.get('/gtwCheck', async (req, res) => {
     let ip;
     let errorM = '';
 
-    console.log(process.env.NODE_ENV);
-
     if (process.env.NODE_ENV === 'development') {
         ip = process.env.DEV_IP;
-        console.log('개발!');
     } else {
         ip = req.clientIp.includes('::ffff:') ? req.clientIp.split('::ffff:')[1] : req.clientIp;
-        console.log('실서버');
     }
-
-    console.log(process.env.COMPANY_IP, ip);
 
     try {
         const decryptedUserId = decrypt(userId);
         const parts = decryptedUserId.split('|');
 
         if (date !== parts[0]) {
-            return res.status(404).send('잘못된 접근입니다.');
+            return res.json({ message: '잘못된 접근입니다.', windowClose: false });
         }
 
         if (process.env.COMPANY_IP !== ip) {
-            return res.status(404).send('IP가 일치하지 않습니다.');
+            return res.json({ message: 'ip가 일치하지 않습니다.', windowClose: false });
         }
 
         Gtw.findByGtw(parts[1], type, date, async (err, gtw) => {
             if (err) {
-                return res.status(500).send('Database query error');
+                return res.json({ message: 'Database query error', windowClose: false });
             }
 
             if (type === 'gtw' && gtw.length > 0) {
@@ -201,12 +211,12 @@ router.get('/gtwCheck', async (req, res) => {
                 } else {
                     errorM = '이미 퇴근하셨습니다. 내일도 화이팅.';
                 }
-                return res.status(200).send(errorM);
+                return res.json({ message: errorM, windowClose: false });
             }
 
             Gtw.create(parts[1], type, date, ip, platform, async (err) => {
                 if (err) {
-                    return res.status(500).send('Database query error');
+                    return res.json({ message: 'Database query error', windowClose: false });
                 }
 
                 const message = type === 'gtw' ? `${parts[1]}님이 출근하셨습니다.` : `${parts[1]}님이 퇴근하셨습니다.`;
