@@ -8,7 +8,7 @@ const db = require('../config/db');
 cron.schedule('0 0 * * *', () => {
     console.log('Updating gtw_status to 0 every minute');
 
-    const query = 'UPDATE lk_user SET gtw_status = 0';
+    const query = 'UPDATE lk_user SET gtw_status = 0, gtw_location = NULL';
 
     db.query(query, (error, results) => {
         if (error) {

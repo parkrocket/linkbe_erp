@@ -189,6 +189,9 @@ router.post('/home', async (req, res) => {
 
 router.get('/gtwCheck', async (req, res) => {
     const { userId, type, platform, slackuser } = req.query;
+
+    console.log(req.query);
+
     const date = moment().format('YYYY-MM-DD');
 
     let location;
