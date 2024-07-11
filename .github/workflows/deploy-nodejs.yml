@@ -37,7 +37,7 @@ jobs:
         USERNAME: ${{ secrets.EC2_USER }}
         KEY: ${{ secrets.EC2_KEY }}
         PORT: ${{ secrets.EC2_PORT }}
-        NODE_ENV: production
+        NODE_ENV: production  # 여기서 NODE_ENV를 명시적으로 설정
       run: |
         echo "${KEY}" > key.pem
         chmod 400 key.pem
@@ -49,7 +49,7 @@ jobs:
           npm install &&
           npm install --only=prod &&
           if [ $? -eq 0 ]; then
-            NODE_ENV=production pm2 restart nodejs-server || NODE_ENV=production pm2 start src/index.js --name nodejs-server;
+            NODE_ENV=production pm2 restart nodejs-server || NODE_ENV=production pm2 start ecosystem.config.js --env production;
           else
             echo 'npm install failed';
             exit 1;

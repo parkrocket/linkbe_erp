@@ -1,6 +1,14 @@
 const express = require('express');
 const cors = require('cors'); // CORS 미들웨어 불러오기
 const dotenv = require('dotenv');
+
+// 환경 변수 로드
+if (process.env.NODE_ENV === 'production') {
+    dotenv.config({ path: '.env.production' });
+} else {
+    dotenv.config();
+}
+
 const app = express();
 
 const port = 5000;
