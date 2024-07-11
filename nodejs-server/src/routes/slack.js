@@ -168,8 +168,10 @@ router.get('/gtwCheck', async (req, res) => {
 
     if (process.env.NODE_ENV === 'development') {
         ip = process.env.DEV_IP;
+        console.log('개발');
     } else {
         ip = req.clientIp.includes('::ffff:') ? req.clientIp.split('::ffff:')[1] : req.clientIp;
+        console.log('실서버');
     }
 
     console.log(process.env.COMPANY_IP, ip);
