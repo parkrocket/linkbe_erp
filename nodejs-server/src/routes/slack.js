@@ -170,6 +170,8 @@ router.post('/home', async (req, res) => {
                     return res.status(404).json({ refreshSuccess: false, error: 'User not found' });
                 }
 
+                console.log(user.gtw_location);
+
                 await publishHomeView(userId, user.user_name, user.gtw_status, user.gtw_location, date, encryptedUserId);
 
                 res.status(200).send();
