@@ -244,14 +244,14 @@ router.get('/gtwCheck', async (req, res) => {
                         const userEmail = userInfo.user.profile.email;
                         const encryptedUserId = encrypt(`${date}|${userEmail}`);
 
-                        await publishHomeView(
-                            slackuser,
-                            userInfo.user.real_name,
-                            type === 'gtw' || type === 'remote_gtx' ? 1 : 2,
-                            location,
-                            date,
-                            encryptedUserId
-                        );
+                        let gtwStatus;
+
+                        if (type === 'gtw' || type === 'remote_gtw') {
+                            gtwStatus = 1;
+                        } else {
+                            gtwStatus = 2;
+                        }
+                        await publishHomeView(slackuser, userInfo.user.real_name, gtwStatus, location, date, encryptedUserId);
                     }
                 } catch (publishError) {
                     console.error('Error publishing view:', publishError);
