@@ -20,7 +20,7 @@ Gtw.create = (userId, type, date, ip, platform, callback) => {
         if (type === 'remote_go') location = 'home';
     }
 
-    if (type === 'gtw') {
+    if (type === 'gtw' || type === 'remote_gtw') {
         query = 'INSERT INTO lk_ctw (user_id, ip, start_time, platform, date, location) VALUES (?, ?, NOW(), ?, ?, ?)';
         queryParams = [userId, ip, platform, date, location];
     } else {
@@ -33,8 +33,6 @@ Gtw.create = (userId, type, date, ip, platform, callback) => {
         if (err) {
             return callback(err, null);
         }
-
-        console.log(location);
 
         db.query('UPDATE lk_user SET gtw_status = ?, gtw_location = ? WHERE user_id = ?', [gtwStatus, location, userId], (err, results) => {
             if (err) {
