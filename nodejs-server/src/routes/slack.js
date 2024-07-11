@@ -46,7 +46,7 @@ const publishHomeView = async (userId, userName, gtwStatus, date, encryptedUserI
             type: 'section',
             text: {
                 type: 'mrkdwn',
-                text: `출근하기를 눌러주세요: <https://hibye.kr/node/api/slack/gtwCheck?userId=${encryptedUserId}&type=gtw&platform=slack&slackuser=${userId}|출근하기>`,
+                text: `출근하기를 눌러주세요: <https://hibye.kr/gtw?userId=${encryptedUserId}&type=gtw&platform=slack&slackuser=${userId}|출근하기>`,
             },
             accessory: {
                 type: 'button',
@@ -63,7 +63,7 @@ const publishHomeView = async (userId, userName, gtwStatus, date, encryptedUserI
             type: 'section',
             text: {
                 type: 'mrkdwn',
-                text: `퇴근하기를 눌러주세요: <https://hibye.kr/node/api/slack/gtwCheck?userId=${encryptedUserId}&type=go&platform=slack&slackuser=${userId}|퇴근하기>`,
+                text: `퇴근하기를 눌러주세요: <https://hibye.kr/gtw?userId=${encryptedUserId}&type=go&platform=slack&slackuser=${userId}|퇴근하기>`,
             },
             accessory: {
                 type: 'button',
