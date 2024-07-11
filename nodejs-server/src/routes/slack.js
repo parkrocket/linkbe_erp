@@ -39,17 +39,17 @@ router.post('/events', async (req, res) => {
 });
 
 const publishHomeView = async (userId, userName, gtwStatus, gtwLocation, date, encryptedUserId) => {
-    let actionBlock;
+    let actionBlocks = [];
 
     if (gtwStatus === 0) {
-        actionBlock.push({
+        actionBlocks.push({
             type: 'section',
             text: {
                 type: 'mrkdwn',
                 text: '출근 옵션을 선택하세요:',
             },
         });
-        actionBlock.push({
+        actionBlocks.push({
             type: 'actions',
             elements: [
                 {
@@ -81,7 +81,7 @@ const publishHomeView = async (userId, userName, gtwStatus, gtwLocation, date, e
             url = `https://hibye.kr/gtw?userId=${encryptedUserId}&type=remote_go&platform=slack&slackuser=${userId}`;
         }
 
-        actionBlock = {
+        actionBlocks.push({
             type: 'section',
             text: {
                 type: 'mrkdwn',
@@ -96,33 +96,35 @@ const publishHomeView = async (userId, userName, gtwStatus, gtwLocation, date, e
                 url: url,
                 action_id: 'clock_out',
             },
-        };
+        });
     } else if (gtwStatus === 2) {
-        actionBlock = {
+        actionBlocks.push({
             type: 'section',
             text: {
                 type: 'mrkdwn',
                 text: '오늘 하루 수고하셨습니다!',
             },
-        };
+        });
     }
+
+    const blocks = [
+        {
+            type: 'section',
+            text: {
+                type: 'mrkdwn',
+                text: `${date}일 입니다. ${userName}님!`,
+            },
+        },
+        {
+            type: 'divider',
+        },
+        ...actionBlocks,
+    ];
 
     const view = {
         type: 'home',
         callback_id: 'home_view',
-        blocks: [
-            {
-                type: 'section',
-                text: {
-                    type: 'mrkdwn',
-                    text: `${date}일 입니다. ${userName}님!`,
-                },
-            },
-            {
-                type: 'divider',
-            },
-            actionBlock,
-        ],
+        blocks: blocks,
     };
 
     try {
