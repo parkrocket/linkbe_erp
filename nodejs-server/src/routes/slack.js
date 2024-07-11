@@ -38,7 +38,7 @@ router.post('/events', async (req, res) => {
     await slackApp.requestListener()(req, res);
 });
 
-const publishHomeView = async (userId, userName, gtwStatus, date, encryptedUserId) => {
+const publishHomeView = async (userId, userName, gtwStatus, gtwLocation, date, encryptedUserId) => {
     let actionBlock;
 
     if (gtwStatus === 0) {
@@ -73,6 +73,14 @@ const publishHomeView = async (userId, userName, gtwStatus, date, encryptedUserI
             ],
         };
     } else if (gtwStatus === 1) {
+        let url;
+
+        if (gtwLocation === 'office') {
+            url = `https://hibye.kr/gtw?userId=${encryptedUserId}&type=go&platform=slack&slackuser=${userId}`;
+        } else {
+            url = `https://hibye.kr/gtw?userId=${encryptedUserId}&type=remote_go&platform=slack&slackuser=${userId}`;
+        }
+
         actionBlock = {
             type: 'section',
             text: {
@@ -85,7 +93,7 @@ const publishHomeView = async (userId, userName, gtwStatus, date, encryptedUserI
                     type: 'plain_text',
                     text: '퇴근하기',
                 },
-                url: `https://hibye.kr/gtw?userId=${encryptedUserId}&type=go&platform=slack&slackuser=${userId}`,
+                url: url,
                 action_id: 'clock_out',
             },
         };
@@ -160,7 +168,7 @@ router.post('/home', async (req, res) => {
                     return res.status(404).json({ refreshSuccess: false, error: 'User not found' });
                 }
 
-                await publishHomeView(userId, user.user_name, user.gtw_status, date, encryptedUserId);
+                await publishHomeView(userId, user.user_name, user.gtw_status, user.gtw_location, date, encryptedUserId);
 
                 res.status(200).send();
             });
@@ -194,8 +202,10 @@ router.get('/gtwCheck', async (req, res) => {
             return res.json({ message: '잘못된 접근입니다.', windowClose: false });
         }
 
-        if (process.env.COMPANY_IP !== ip) {
-            return res.json({ message: 'ip가 일치하지 않습니다.', windowClose: false });
+        if (type === 'gtw' || type === 'go') {
+            if (process.env.COMPANY_IP !== ip) {
+                return res.json({ message: 'ip가 일치하지 않습니다.', windowClose: false });
+            }
         }
 
         Gtw.findByGtw(parts[1], type, date, async (err, gtw) => {

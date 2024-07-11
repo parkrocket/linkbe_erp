@@ -21,9 +21,22 @@ Gtw.create = (userId, type, date, ip, platform, callback) => {
             return callback(err, null);
         }
 
-        let gtwStatus = type === 'gtw' ? 1 : type === 'go' ? 2 : 0;
+        let gtwStatus;
+        let location;
 
-        db.query('UPDATE lk_user SET gtw_status = ? WHERE user_id = ?', [gtwStatus, userId], (err, results) => {
+        if (type === 'gtw' || type === 'remote_gtw') {
+            gtwStatus = 1;
+            if (type === 'gtw') location = 'office';
+            if (type === 'remote_gtw') location = 'home';
+        } else if (type === 'go' || type === 'remote_go') {
+            gtwStatus = 2;
+            if (type === 'go') location = 'office';
+            if (type === 'remote_go') location = 'home';
+        }
+
+        console.log(location);
+
+        db.query('UPDATE lk_user SET gtw_status = ?, gtw_location = ? WHERE user_id = ?', [gtwStatus, location, userId], (err, results) => {
             if (err) {
                 return callback(err, null);
             }
