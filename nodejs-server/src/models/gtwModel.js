@@ -7,31 +7,31 @@ Gtw.create = (userId, type, date, ip, platform, callback) => {
     let query = '';
     let queryParams = [];
 
+    let gtwStatus;
+    let location;
+
+    if (type === 'gtw' || type === 'remote_gtw') {
+        gtwStatus = 1;
+        if (type === 'gtw') location = 'office';
+        if (type === 'remote_gtw') location = 'home';
+    } else if (type === 'go' || type === 'remote_go') {
+        gtwStatus = 2;
+        if (type === 'go') location = 'office';
+        if (type === 'remote_go') location = 'home';
+    }
+
     if (type === 'gtw') {
-        query = 'INSERT INTO lk_ctw (user_id, ip, start_time, platform, date) VALUES (?, ?, NOW(), ?, ?)';
-        queryParams = [userId, ip, platform, date];
+        query = 'INSERT INTO lk_ctw (user_id, ip, start_time, platform, date, location) VALUES (?, ?, NOW(), ?, ?, ?)';
+        queryParams = [userId, ip, platform, date, location];
     } else {
-        query = 'UPDATE lk_ctw SET end_time = NOW(), ip = ?, platform = ? WHERE user_id = ? AND date = ?';
-        queryParams = [ip, platform, userId, date];
+        query = 'UPDATE lk_ctw SET end_time = NOW(), ip = ?, platform = ?, location =? WHERE user_id = ? AND date = ?';
+        queryParams = [ip, platform, location, userId, date];
     }
 
     db.query(query, queryParams, (err, results) => {
         console.log(err);
         if (err) {
             return callback(err, null);
-        }
-
-        let gtwStatus;
-        let location;
-
-        if (type === 'gtw' || type === 'remote_gtw') {
-            gtwStatus = 1;
-            if (type === 'gtw') location = 'office';
-            if (type === 'remote_gtw') location = 'home';
-        } else if (type === 'go' || type === 'remote_go') {
-            gtwStatus = 2;
-            if (type === 'go') location = 'office';
-            if (type === 'remote_go') location = 'home';
         }
 
         console.log(location);
