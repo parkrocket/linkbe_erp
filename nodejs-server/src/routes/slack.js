@@ -211,7 +211,7 @@ router.get('/gtwCheck', async (req, res) => {
             res.status(404).send('User not found');
         }
     } catch (error) {
-        res.status(400).send('Invalid user ID');
+        res.status(400).send('Invalid user ID ');
     }
 });
 
