@@ -66,6 +66,8 @@ exports.register = (req, res) => {
 exports.auth = (req, res) => {
     const token = req.body.x_auth;
 
+    console.log(token);
+
     if (!token) {
         return res.status(200).json({ isAuth: false, error: 'No token provided' });
     }
