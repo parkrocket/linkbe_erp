@@ -48,29 +48,27 @@ const publishHomeView = async (userId, userName, gtwStatus, date, encryptedUserI
                 type: 'mrkdwn',
                 text: '출근 옵션을 선택하세요:',
             },
-            fields: [
+        };
+        actionBlock = {
+            type: 'actions',
+            elements: [
                 {
-                    type: 'actions',
-                    elements: [
-                        {
-                            type: 'button',
-                            text: {
-                                type: 'plain_text',
-                                text: '출근하기',
-                            },
-                            url: `https://hibye.kr/gtw?userId=${encryptedUserId}&type=gtw&platform=slack&slackuser=${userId}`,
-                            action_id: 'clock_in',
-                        },
-                        {
-                            type: 'button',
-                            text: {
-                                type: 'plain_text',
-                                text: '재택출근하기',
-                            },
-                            url: `https://hibye.kr/gtw?userId=${encryptedUserId}&type=remote_gtw&platform=slack&slackuser=${userId}`,
-                            action_id: 'remote_clock_in',
-                        },
-                    ],
+                    type: 'button',
+                    text: {
+                        type: 'plain_text',
+                        text: '출근하기',
+                    },
+                    url: `https://hibye.kr/gtw?userId=${encryptedUserId}&type=gtw&platform=slack&slackuser=${userId}`,
+                    action_id: 'clock_in',
+                },
+                {
+                    type: 'button',
+                    text: {
+                        type: 'plain_text',
+                        text: '재택출근하기',
+                    },
+                    url: `https://hibye.kr/gtw?userId=${encryptedUserId}&type=remote_gtw&platform=slack&slackuser=${userId}`,
+                    action_id: 'remote_clock_in',
                 },
             ],
         };
