@@ -17,6 +17,7 @@ function Auth(ChildrenComponent, option, adminRoute = false, menu = 0, subMenu =
 
         useEffect(() => {
             dispatch(auth(cookies)).then((response) => {
+                console.log(response);
                 if (response.payload.isAuth) {
                     //console.log(response.payload.isAdmin);
                     //로그인 했음

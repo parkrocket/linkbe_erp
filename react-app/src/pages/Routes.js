@@ -5,7 +5,7 @@ import Main from './Main';
 import Login from './Login';
 import Register from './Register';
 import Auth from '../hoc/Auth';
-import Gtw from '../Gtw';
+import Gtw from './Gtw';
 
 export const Routes = () => {
     return (
