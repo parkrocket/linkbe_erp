@@ -38,112 +38,121 @@ router.post('/events', async (req, res) => {
     await slackApp.requestListener()(req, res);
 });
 
+const publishHomeView = async (userId, userName, gtwStatus, date, encryptedUserId) => {
+    let actionBlock;
+
+    if (gtwStatus === 0) {
+        actionBlock = {
+            type: 'section',
+            text: {
+                type: 'mrkdwn',
+                text: `출근하기를 눌러주세요: <https://hibye.kr/node/api/slack/gtwCheck?userId=${encryptedUserId}&type=gtw&platform=slack|출근하기>`,
+            },
+            accessory: {
+                type: 'button',
+                text: {
+                    type: 'plain_text',
+                    text: '출근하기',
+                },
+                action_id: 'clock_in',
+                value: userId,
+            },
+        };
+    } else if (gtwStatus === 1) {
+        actionBlock = {
+            type: 'section',
+            text: {
+                type: 'mrkdwn',
+                text: `퇴근하기를 눌러주세요: <https://hibye.kr/node/api/slack/gtwCheck?userId=${encryptedUserId}&type=go&platform=slack|퇴근하기>`,
+            },
+            accessory: {
+                type: 'button',
+                text: {
+                    type: 'plain_text',
+                    text: '퇴근하기',
+                },
+                action_id: 'clock_out',
+                value: userId,
+            },
+        };
+    } else if (gtwStatus === 2) {
+        actionBlock = {
+            type: 'section',
+            text: {
+                type: 'mrkdwn',
+                text: '오늘 하루 수고하셨습니다!',
+            },
+        };
+    }
+
+    const view = {
+        type: 'home',
+        callback_id: 'home_view',
+        blocks: [
+            {
+                type: 'section',
+                text: {
+                    type: 'mrkdwn',
+                    text: `${date}일 입니다. ${userName}님!`,
+                },
+            },
+            {
+                type: 'divider',
+            },
+            actionBlock,
+        ],
+    };
+
+    try {
+        await client.views.publish({
+            user_id: userId,
+            view: view,
+        });
+    } catch (error) {
+        console.error('Error publishing view:', error);
+    }
+};
+
 router.post('/home', async (req, res) => {
     const { type, challenge, event } = req.body;
 
     if (type === 'url_verification') {
-        // Respond with the challenge parameter
-        res.status(200).send({ challenge: challenge });
-    } else if (type === 'event_callback' && event.type === 'app_home_opened') {
+        return res.status(200).send({ challenge });
+    }
+
+    if (type === 'event_callback' && event.type === 'app_home_opened') {
         const userId = event.user;
 
-        const userInfo = await client.users.info({ user: userId });
-        const date = moment().format('YYYY-MM-DD');
+        try {
+            const userInfo = await client.users.info({ user: userId });
 
-        // Block Kit structure for home tab
-        if (userInfo.ok) {
+            if (!userInfo.ok) {
+                console.error('User info error:', userInfo.error);
+                return res.status(500).send('User info error');
+            }
+
             const userEmail = userInfo.user.profile.email;
-
+            const date = moment().format('YYYY-MM-DD');
             const encryptedUserId = encrypt(`${date}|${userEmail}`);
 
             User.findByEmail(userEmail, async (err, user) => {
-                //return res.status(500).json({ message: 'Login successful', user: user });
-
                 if (err) {
-                    return res.status(200).json({ refreshSuccess: false, error: 'Database query error' });
+                    console.error('Database query error:', err);
+                    return res.status(500).json({ refreshSuccess: false, error: 'Database query error' });
                 }
+
                 if (!user) {
-                    return res.status(200).json({ refreshSuccess: false, error: 'User not found' });
+                    console.log('User not found:', userEmail);
+                    return res.status(404).json({ refreshSuccess: false, error: 'User not found' });
                 }
 
-                // 동적으로 블록 생성
-                let actionBlock;
-                if (user.gtw_status === 0) {
-                    actionBlock = {
-                        type: 'section',
-                        text: {
-                            type: 'mrkdwn',
-                            text: `출근하기를 눌러주세요: <https://hibye.kr/node/api/slack/gtwCheck?userId=${encryptedUserId}&type=gtw&platform=slack|출근하기>`,
-                        },
-                        accessory: {
-                            type: 'button',
-                            text: {
-                                type: 'plain_text',
-                                text: '출근하기',
-                            },
-                            action_id: 'clock_in',
-                            value: user.user_id,
-                        },
-                    };
-                } else if (user.gtw_status === 1) {
-                    actionBlock = {
-                        type: 'section',
-                        text: {
-                            type: 'mrkdwn',
-                            text: `퇴근하기를 눌러주세요: <https://hibye.kr/node/api/slack/gtwCheck?userId=${encryptedUserId}&type=go&platform=slack|퇴근하기>`,
-                        },
-                        accessory: {
-                            type: 'button',
-                            text: {
-                                type: 'plain_text',
-                                text: '퇴근하기',
-                            },
-                            action_id: 'clock_out',
-                            value: user.user_id,
-                        },
-                    };
-                } else if (user.gtw_status === 2) {
-                    actionBlock = {
-                        type: 'section',
-                        text: {
-                            type: 'mrkdwn',
-                            text: '오늘 하루 수고하셨습니다!',
-                        },
-                    };
-                }
+                await publishHomeView(userId, user.user_name, user.gtw_status, date, encryptedUserId);
 
-                const view = {
-                    type: 'home',
-                    callback_id: 'home_view',
-                    blocks: [
-                        {
-                            type: 'section',
-                            text: {
-                                type: 'mrkdwn',
-                                text: `${date}일 입니다. ${user.user_name}님!`,
-                            },
-                        },
-                        {
-                            type: 'divider',
-                        },
-                        actionBlock,
-                    ],
-                };
-
-                // Publish the view
-                try {
-                    await client.views.publish({
-                        user_id: userId,
-                        view: view,
-                    });
-                    res.status(200).send();
-                } catch (error) {
-                    console.error('Error publishing view:', error);
-                    res.status(500).send();
-                }
+                res.status(200).send();
             });
-        } else {
-            console.log('유저정보 에러');
+        } catch (error) {
+            console.error('Error fetching user info:', error);
+            res.status(500).send('Error fetching user info');
         }
     } else {
         res.status(200).send();
@@ -167,46 +176,52 @@ router.get('/gtwCheck', async (req, res) => {
         const decryptedUserId = decrypt(userId);
         const parts = decryptedUserId.split('|');
 
-        if (date === parts[0]) {
-            if (process.env.COMPANY_IP !== ip) {
-                return res.status(404).send('IP가 일치하지 않습니다.');
-            }
-
-            Gtw.findByGtw(parts[1], type, date, async (err, gtw) => {
-                if (err) {
-                    return res.status(200).send('Database query error');
-                }
-
-                if (type === 'gtw' && gtw.length > 0) {
-                    if (gtw[0].end_time === null) {
-                        errorM = '이미 출근중입니다.';
-                    } else {
-                        errorM = '이미 퇴근하셨습니다. 내일도 화이팅.';
-                    }
-                    return res.status(200).send(errorM);
-                }
-
-                Gtw.create(parts[1], type, date, ip, platform, async (err, gtw) => {
-                    if (err) {
-                        return res.status(200).send('Database query error');
-                    }
-
-                    const message = type === 'gtw' ? `${parts[1]}님이 출근하셨습니다.` : `${parts[1]}님이 퇴근하셨습니다.`;
-                    await sendSlackMessage('#출퇴근', message);
-
-                    return res.send('출근완료');
-                });
-            });
-        } else {
+        if (date !== parts[0]) {
             return res.status(404).send('잘못된 접근입니다.');
         }
 
-        const user = await User.findById(decryptedUserId);
-        if (user) {
-            return res.status(200).send(`User authenticated: ${user.user_name}`);
-        } else {
-            return res.status(404).send('User not found');
+        if (process.env.COMPANY_IP !== ip) {
+            return res.status(404).send('IP가 일치하지 않습니다.');
         }
+
+        Gtw.findByGtw(parts[1], type, date, async (err, gtw) => {
+            if (err) {
+                return res.status(500).send('Database query error');
+            }
+
+            if (type === 'gtw' && gtw.length > 0) {
+                if (gtw[0].end_time === null) {
+                    errorM = '이미 출근중입니다.';
+                } else {
+                    errorM = '이미 퇴근하셨습니다. 내일도 화이팅.';
+                }
+                return res.status(200).send(errorM);
+            }
+
+            Gtw.create(parts[1], type, date, ip, platform, async (err) => {
+                if (err) {
+                    return res.status(500).send('Database query error');
+                }
+
+                const message = type === 'gtw' ? `${parts[1]}님이 출근하셨습니다.` : `${parts[1]}님이 퇴근하셨습니다.`;
+                await sendSlackMessage('#출퇴근', message);
+
+                try {
+                    const userInfo = await client.users.info({ user: parts[1] });
+
+                    if (userInfo.ok) {
+                        const userEmail = userInfo.user.profile.email;
+                        const encryptedUserId = encrypt(`${date}|${userEmail}`);
+
+                        await publishHomeView(parts[1], userInfo.user.real_name, type === 'gtw' ? 1 : 2, date, encryptedUserId);
+                    }
+                } catch (publishError) {
+                    console.error('Error publishing view:', publishError);
+                }
+
+                return res.send('출근완료');
+            });
+        });
     } catch (error) {
         return res.status(400).send('Invalid user ID');
     }
