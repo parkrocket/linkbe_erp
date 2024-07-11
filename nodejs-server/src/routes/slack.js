@@ -41,6 +41,8 @@ router.post('/events', async (req, res) => {
 const publishHomeView = async (userId, userName, gtwStatus, gtwLocation, date, encryptedUserId) => {
     let actionBlocks = [];
 
+    console.log(gtwLocation);
+
     if (gtwStatus === 0) {
         actionBlocks.push({
             type: 'section',
@@ -253,6 +255,8 @@ router.get('/gtwCheck', async (req, res) => {
                         } else {
                             gtwStatus = 2;
                         }
+
+                        console.log(location);
                         await publishHomeView(slackuser, userInfo.user.real_name, gtwStatus, location, date, encryptedUserId);
                     }
                 } catch (publishError) {
@@ -274,7 +278,7 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
 
     const { type, user, actions } = payload;
 
-    console.log(actions);
+    //console.log(actions);
 });
 
 module.exports = router;
