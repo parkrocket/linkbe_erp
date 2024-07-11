@@ -79,7 +79,9 @@ function Login() {
 
         dispatch(loginUser(loginData)).then((response) => {
             if (response.payload.loginSuccess) {
-                setCookie('x_auth', response.payload.token);
+                setCookie('x_auth', response.payload.token, {
+                    httpOnly: false,
+                });
                 window.localStorage.setItem('userId', response.payload.user.user_id);
                 navigate('/');
             } else {
