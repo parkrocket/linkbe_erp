@@ -37,6 +37,7 @@ jobs:
         USERNAME: ${{ secrets.EC2_USER }}
         KEY: ${{ secrets.EC2_KEY }}
         PORT: ${{ secrets.EC2_PORT }}
+        NODE_ENV: production
       run: |
         echo "${KEY}" > key.pem
         chmod 400 key.pem
