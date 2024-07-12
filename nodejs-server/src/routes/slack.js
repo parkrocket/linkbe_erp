@@ -215,7 +215,6 @@ router.post('/home', async (req, res) => {
 
 router.get('/gtwCheck', async (req, res) => {
     const { userId, type, platform, slackuser } = req.query;
-
     const date = moment().format('YYYY-MM-DD');
 
     let location;
@@ -243,40 +242,55 @@ router.get('/gtwCheck', async (req, res) => {
             return res.json({ message: 'ip가 일치하지 않습니다.', windowClose: false });
         }
 
-        const gtw = await Gtw.findByGtwAsync(parts[1], date);
-        if (type === 'gtw' && gtw.length > 0) {
-            if (gtw[0].end_time === null) {
-                errorM = '이미 출근중입니다.';
+        try {
+            const gtw = await Gtw.findByGtwAsync(parts[1], date);
+            if (type === 'gtw' && gtw.length > 0) {
+                if (gtw[0].end_time === null) {
+                    errorM = '이미 출근중입니다.';
+                } else {
+                    errorM = '이미 퇴근하셨습니다. 내일도 화이팅.';
+                }
+                return res.json({ message: errorM, windowClose: false });
+            }
+
+            await Gtw.createAsync(parts[1], type, date, ip, platform);
+
+            const message = type === 'gtw' ? `${parts[1]}님이 출근하셨습니다.` : `${parts[1]}님이 퇴근하셨습니다.`;
+            await sendSlackMessage('#출퇴근', message);
+
+            const userInfo = await client.users.info({ user: slackuser });
+            if (userInfo.ok) {
+                const userEmail = userInfo.user.profile.email;
+                const encryptedUserId = encrypt(`${date}|${userEmail}`);
+
+                try {
+                    const user = await User.findByEmailAsync(userEmail);
+                    if (!user) {
+                        console.log('User not found:', userEmail);
+                        return res.status(404).json({ refreshSuccess: false, error: 'User not found' });
+                    }
+
+                    try {
+                        const gtwAll = await Gtw.findByGtwAllAsync(date);
+                        const myGtw = await Gtw.findByGtwAsync(user.user_id, date);
+
+                        await publishHomeView(slackuser, user, gtwAll, myGtw, date, encryptedUserId);
+
+                        return res.json({ message: '출근완료', windowClose: true });
+                    } catch (err) {
+                        console.error('gtw Database query error:', err);
+                        return res.status(500).json({ refreshSuccess: false, error: 'gtw Database query error' });
+                    }
+                } catch (err) {
+                    console.error('Database query error:', err);
+                    return res.status(500).json({ refreshSuccess: false, error: 'Database query error' });
+                }
             } else {
-                errorM = '이미 퇴근하셨습니다. 내일도 화이팅.';
+                return res.status(500).send('Error fetching user info');
             }
-            return res.json({ message: errorM, windowClose: false });
-        }
-
-        await Gtw.createAsync(parts[1], type, date, ip, platform);
-
-        const message = type === 'gtw' ? `${parts[1]}님이 출근하셨습니다.` : `${parts[1]}님이 퇴근하셨습니다.`;
-        await sendSlackMessage('#출퇴근', message);
-
-        const userInfo = await client.users.info({ user: slackuser });
-        if (userInfo.ok) {
-            const userEmail = userInfo.user.profile.email;
-            const encryptedUserId = encrypt(`${date}|${userEmail}`);
-
-            const user = await User.findByEmailAsync(userEmail);
-            if (!user) {
-                console.log('User not found:', userEmail);
-                return res.status(404).json({ refreshSuccess: false, error: 'User not found' });
-            }
-
-            const gtwAll = await Gtw.findByGtwAllAsync(date);
-            const myGtw = await Gtw.findByGtwAsync(user.user_id, date);
-
-            await publishHomeView(slackuser, user, gtwAll, myGtw, date, encryptedUserId);
-
-            res.status(200).send();
-        } else {
-            res.status(500).send('Error fetching user info');
+        } catch (err) {
+            console.error('Database query error:', err);
+            return res.json({ message: 'Database query error', windowClose: false });
         }
     } catch (error) {
         console.error('Error in /gtwCheck route:', error);
