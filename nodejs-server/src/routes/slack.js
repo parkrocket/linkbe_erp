@@ -164,15 +164,16 @@ const publishHomeView = async (userId, user, gtw, myGtw, date, encryptedUserId) 
 
     // 새로운 버튼을 추가합니다.
     actionBlocks.push({
+        type: 'section',
+        text: {
+            type: 'mrkdwn',
+            text: '🏖️ 휴가 및 연차신청',
+        },
+    });
+
+    actionBlocks.push({
         type: 'actions',
         elements: [
-            {
-                type: 'section',
-                text: {
-                    type: 'mrkdwn',
-                    text: '🏖️ 휴가 및 연차신청',
-                },
-            },
             {
                 type: 'button',
                 text: {
@@ -433,7 +434,7 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
 
     if (payload.type === 'block_actions' && payload.actions[0].action_id === 'open_modal') {
         // 모달을 띄우는 함수 호출
-        //await openModal(payload.trigger_id);
+        await openModal(payload.trigger_id);
     }
     res.status(200).send();
     //console.log(actions);
