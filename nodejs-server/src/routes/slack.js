@@ -401,7 +401,7 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
         // 모달을 띄우는 함수 호출
         await openModal(payload.trigger_id);
     }
-
+    res.status(200).send();
     //console.log(actions);
 });
 
