@@ -200,8 +200,8 @@ router.post('/home', async (req, res) => {
                             return res.status(500).json({ refreshSuccess: false, error: 'myGtw Database query error' });
                         }
 
-                        console.log('user', gtw);
-                        console.log('user', myGtw);
+                        console.log('gtw', gtw);
+                        console.log('myGtw', myGtw);
 
                         await publishHomeView(userId, user, gtw, myGtw, date, encryptedUserId);
 
