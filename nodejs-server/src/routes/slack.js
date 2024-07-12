@@ -162,6 +162,22 @@ const publishHomeView = async (userId, user, gtw, myGtw, date, encryptedUserId) 
         });
     }
 
+    // 새로운 버튼을 추가합니다.
+    actionBlocks.push({
+        type: 'actions',
+        elements: [
+            {
+                type: 'button',
+                text: {
+                    type: 'plain_text',
+                    text: '모달 열기',
+                    emoji: true,
+                },
+                action_id: 'open_modal',
+            },
+        ],
+    });
+
     const blocks = [
         {
             type: 'context',
@@ -192,6 +208,50 @@ const publishHomeView = async (userId, user, gtw, myGtw, date, encryptedUserId) 
         });
     } catch (error) {
         console.error('Error publishing view:', error);
+    }
+};
+
+// 모달을 띄우는 함수
+const openModal = async (trigger_id) => {
+    try {
+        await client.views.open({
+            trigger_id: trigger_id,
+            view: {
+                type: 'modal',
+                callback_id: 'modal-identifier',
+                title: {
+                    type: 'plain_text',
+                    text: '모달 제목',
+                },
+                blocks: [
+                    {
+                        type: 'section',
+                        text: {
+                            type: 'mrkdwn',
+                            text: '모달 내용입니다.',
+                        },
+                    },
+                    {
+                        type: 'input',
+                        block_id: 'input_c',
+                        label: {
+                            type: 'plain_text',
+                            text: '입력 란',
+                        },
+                        element: {
+                            type: 'plain_text_input',
+                            action_id: 'dreamy_input',
+                        },
+                    },
+                ],
+                submit: {
+                    type: 'plain_text',
+                    text: '제출',
+                },
+            },
+        });
+    } catch (error) {
+        console.error('Error opening modal:', error);
     }
 };
 
@@ -336,6 +396,11 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
     const payload = JSON.parse(req.body.payload);
 
     const { type, user, actions } = payload;
+
+    if (payload.type === 'block_actions' && payload.actions[0].action_id === 'open_modal') {
+        // 모달을 띄우는 함수 호출
+        await openModal(payload.trigger_id);
+    }
 
     //console.log(actions);
 });
