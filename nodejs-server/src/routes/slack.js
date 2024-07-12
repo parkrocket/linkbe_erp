@@ -48,14 +48,14 @@ const publishHomeView = async (userId, user, gtw, myGtw, date, encryptedUserId) 
         type: 'section',
         text: {
             type: 'mrkdwn',
-            text: gtw,
+            text: gtw[0].user_id,
         },
     });
     actionBlocks.push({
         type: 'section',
         text: {
             type: 'mrkdwn',
-            text: myGtw,
+            text: myGtw.user_id,
         },
     });
 
