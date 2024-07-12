@@ -167,7 +167,7 @@ const publishHomeView = async (userId, user, gtw, myGtw, date, encryptedUserId) 
             type: 'section',
             text: {
                 type: 'mrkdwn',
-                text: `${date}일 입니다. ${userName}님!`,
+                text: `######${date}일 입니다. ${userName}님!`,
             },
         },
         {
