@@ -44,19 +44,29 @@ const publishHomeView = async (userId, user, gtw, myGtw, date, encryptedUserId) 
     const gtwLocation = user.gtw_location;
 
     let actionBlocks = [];
-    actionBlocks.push({
-        type: 'section',
-        text: {
-            type: 'mrkdwn',
-            text: gtw[0].user_id,
-        },
-    });
-    if (myGtw[0]) {
+    // 다른 사람들의 출퇴근 정보 표시
+    if (gtw.length > 0) {
+        let gtwText = '근무중 / 출근시간\n';
+        gtw.forEach((entry) => {
+            let locationIcon = entry.location === 'office' ? '🏢' : '🏠';
+            gtwText += `${locationIcon} ${entry.user_name} : ${entry.start_time}\n`;
+        });
+
         actionBlocks.push({
             type: 'section',
             text: {
                 type: 'mrkdwn',
-                text: myGtw[0].user_id,
+                text: gtwText,
+            },
+        });
+    }
+
+    if (myGtw.length > 0) {
+        actionBlocks.push({
+            type: 'section',
+            text: {
+                type: 'mrkdwn',
+                text: `나의 근무 상태:\n출근 시간: ${myGtw[0].start_time}\n퇴근 시간: ${myGtw[0].end_time}`,
             },
         });
     }
