@@ -277,7 +277,7 @@ router.get('/gtwCheck', async (req, res) => {
                         await publishHomeView(slackuser, user, gtwAll, myGtw, date, encryptedUserId);
 
                         const message =
-                            type === 'gtw'
+                            type === 'gtw' || type === 'remote_gtw'
                                 ? `${user.user_name}님이 ${dateNow}에 출근하셨습니다.`
                                 : `${user.user_name}님이 ${dateNow}에 퇴근하셨습니다.`;
 
