@@ -186,9 +186,14 @@ function RecordTable({ list, date, setRecodeListDate, recodeAxiosLIst, setRecode
                                     <span>{item.status}</span>
                                 </td>
                                 <td>{item.formattedStartTime}</td>
-                                <td>{item.formattedStartTime ? '회사출근' : ''}</td>
+                                <td>
+                                    {item.formattedStartTime &&
+                                        (item.location === 'office' ? '회사출근' : item.location === 'home' ? '재택출근' : '')}
+                                </td>
                                 <td>{item.formattedEndTime}</td>
-                                <td>{item.formattedEndTime ? '회사퇴근' : ''}</td>
+                                <td>
+                                    {item.formattedEndTime && (item.location === 'office' ? '회사퇴근' : item.location === 'home' ? '재택퇴근' : '')}
+                                </td>
                                 <td>{item.workDuration}</td>
                                 <td>{item.remarks}</td>
                             </tr>

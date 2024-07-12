@@ -38,7 +38,11 @@ router.post('/events', async (req, res) => {
     await slackApp.requestListener()(req, res);
 });
 
-const publishHomeView = async (userId, userName, gtwStatus, gtwLocation, date, encryptedUserId) => {
+const publishHomeView = async (userId, user, date, encryptedUserId) => {
+    const userName = user.user_name;
+    const gtwStatus = user.gtw_status;
+    const gtwLocation = user.gtw_location;
+
     let actionBlocks = [];
 
     if (gtwStatus === 0) {
@@ -170,9 +174,7 @@ router.post('/home', async (req, res) => {
                     return res.status(404).json({ refreshSuccess: false, error: 'User not found' });
                 }
 
-                console.log(user.gtw_location);
-
-                await publishHomeView(userId, user.user_name, user.gtw_status, user.gtw_location, date, encryptedUserId);
+                await publishHomeView(userId, user, date, encryptedUserId);
 
                 res.status(200).send();
             });
@@ -247,15 +249,21 @@ router.get('/gtwCheck', async (req, res) => {
                         const userEmail = userInfo.user.profile.email;
                         const encryptedUserId = encrypt(`${date}|${userEmail}`);
 
-                        let gtwStatus;
+                        User.findByEmail(userEmail, async (err, user) => {
+                            if (err) {
+                                console.error('Database query error:', err);
+                                return res.status(500).json({ refreshSuccess: false, error: 'Database query error' });
+                            }
 
-                        if (type === 'gtw' || type === 'remote_gtw') {
-                            gtwStatus = 1;
-                        } else {
-                            gtwStatus = 2;
-                        }
+                            if (!user) {
+                                console.log('User not found:', userEmail);
+                                return res.status(404).json({ refreshSuccess: false, error: 'User not found' });
+                            }
 
-                        await publishHomeView(slackuser, userInfo.user.real_name, gtwStatus, location, date, encryptedUserId);
+                            await publishHomeView(slackuser, user, date, encryptedUserId);
+
+                            res.status(200).send();
+                        });
                     }
                 } catch (publishError) {
                     console.error('Error publishing view:', publishError);

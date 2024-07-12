@@ -56,6 +56,18 @@ Gtw.findByGtw = (userId, type, date, callback) => {
     });
 };
 
+Gtw.findByGtwAll = (date, callback) => {
+    query = 'SELECT * FROM lk_ctw WHERE date = ? ORDER BY date DESC';
+    queryParams = [date];
+
+    db.query(query, queryParams, (err, results) => {
+        if (err) {
+            return callback(err, null);
+        }
+        return callback(null, results);
+    });
+};
+
 //미사용
 Gtw.findByGtwStatus = (userId, date, callback) => {
     db.query('SELECT * FROM lk_ctw WHERE user_id = ? AND DATE(datetime) = ? ORDER BY datetime DESC', [userId, date], (err, results) => {
