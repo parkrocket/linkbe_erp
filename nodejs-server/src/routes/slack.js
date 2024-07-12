@@ -166,8 +166,9 @@ const publishHomeView = async (userId, user, gtw, myGtw, date, encryptedUserId) 
         {
             type: 'header',
             text: {
-                type: 'mrkdwn',
-                text: `*${date}*일 입니다. *${userName}*님!`,
+                type: 'plain_text',
+                text: `${date}일 입니다. ${userName}님!`,
+                emoji: true, // plain_text 필드에 emoji 필드를 추가하여 올바른 스키마를 따르도록 함
             },
         },
         {
