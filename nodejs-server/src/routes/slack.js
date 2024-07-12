@@ -240,6 +240,8 @@ router.get('/gtwCheck', async (req, res) => {
         }
 
         if ((type === 'gtw' || type === 'go') && process.env.COMPANY_IP !== ip) {
+            console.log('ip', ip);
+
             return res.json({ message: 'ip가 일치하지 않습니다.', windowClose: false });
         }
 
