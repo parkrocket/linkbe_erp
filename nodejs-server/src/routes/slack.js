@@ -192,35 +192,18 @@ router.post('/home', async (req, res) => {
             const date = moment().format('YYYY-MM-DD');
             const encryptedUserId = encrypt(`${date}|${userEmail}`);
 
-            User.findByEmail(userEmail, async (err, user) => {
-                if (err) {
-                    console.error('Database query error:', err);
-                    return res.status(500).json({ refreshSuccess: false, error: 'Database query error' });
-                }
+            const user = await User.findByEmailAsync(userEmail);
+            if (!user) {
+                console.log('User not found:', userEmail);
+                return res.status(404).json({ refreshSuccess: false, error: 'User not found' });
+            }
 
-                if (!user) {
-                    console.log('User not found:', userEmail);
-                    return res.status(404).json({ refreshSuccess: false, error: 'User not found' });
-                }
+            const gtw = await Gtw.findByGtwAllAsync(date);
+            const myGtw = await Gtw.findByGtwAsync(user.user_id, date);
 
-                Gtw.findByGtwAll(date, async (err, gtw) => {
-                    if (err) {
-                        console.error('gtw Database query error:', err);
-                        return res.status(500).json({ refreshSuccess: false, error: 'gtw Database query error' });
-                    }
+            await publishHomeView(userId, user, gtw, myGtw, date, encryptedUserId);
 
-                    Gtw.findByGtw(user.user_id, date, async (err, myGtw) => {
-                        if (err) {
-                            console.error('myGtw Database query error:', err);
-                            return res.status(500).json({ refreshSuccess: false, error: 'myGtw Database query error' });
-                        }
-
-                        await publishHomeView(userId, user, gtw, myGtw, date, encryptedUserId);
-
-                        res.status(200).send();
-                    });
-                });
-            });
+            res.status(200).send();
         } catch (error) {
             console.error('Error fetching user info:', error);
             res.status(500).send('Error fetching user info');
@@ -236,7 +219,6 @@ router.get('/gtwCheck', async (req, res) => {
     const date = moment().format('YYYY-MM-DD');
 
     let location;
-
     if (type === 'gtw' || type === 'go') location = 'office';
     if (type === 'remote_gtw' || type === 'remote_go') location = 'home';
 
@@ -257,79 +239,47 @@ router.get('/gtwCheck', async (req, res) => {
             return res.json({ message: '잘못된 접근입니다.', windowClose: false });
         }
 
-        if (type === 'gtw' || type === 'go') {
-            if (process.env.COMPANY_IP !== ip) {
-                return res.json({ message: 'ip가 일치하지 않습니다.', windowClose: false });
-            }
+        if ((type === 'gtw' || type === 'go') && process.env.COMPANY_IP !== ip) {
+            return res.json({ message: 'ip가 일치하지 않습니다.', windowClose: false });
         }
 
-        Gtw.findByGtw(parts[1], date, async (err, gtw) => {
-            if (err) {
-                return res.json({ message: 'Database query error', windowClose: false });
+        const gtw = await Gtw.findByGtwAsync(parts[1], date);
+        if (type === 'gtw' && gtw.length > 0) {
+            if (gtw[0].end_time === null) {
+                errorM = '이미 출근중입니다.';
+            } else {
+                errorM = '이미 퇴근하셨습니다. 내일도 화이팅.';
+            }
+            return res.json({ message: errorM, windowClose: false });
+        }
+
+        await Gtw.createAsync(parts[1], type, date, ip, platform);
+
+        const message = type === 'gtw' ? `${parts[1]}님이 출근하셨습니다.` : `${parts[1]}님이 퇴근하셨습니다.`;
+        await sendSlackMessage('#출퇴근', message);
+
+        const userInfo = await client.users.info({ user: slackuser });
+        if (userInfo.ok) {
+            const userEmail = userInfo.user.profile.email;
+            const encryptedUserId = encrypt(`${date}|${userEmail}`);
+
+            const user = await User.findByEmailAsync(userEmail);
+            if (!user) {
+                console.log('User not found:', userEmail);
+                return res.status(404).json({ refreshSuccess: false, error: 'User not found' });
             }
 
-            if (type === 'gtw' && gtw.length > 0) {
-                if (gtw[0].end_time === null) {
-                    errorM = '이미 출근중입니다.';
-                } else {
-                    errorM = '이미 퇴근하셨습니다. 내일도 화이팅.';
-                }
-                return res.json({ message: errorM, windowClose: false });
-            }
+            const gtwAll = await Gtw.findByGtwAllAsync(date);
+            const myGtw = await Gtw.findByGtwAsync(user.user_id, date);
 
-            Gtw.create(parts[1], type, date, ip, platform, async (err) => {
-                if (err) {
-                    return res.json({ message: 'Database query error', windowClose: false });
-                }
+            await publishHomeView(slackuser, user, gtwAll, myGtw, date, encryptedUserId);
 
-                const message = type === 'gtw' ? `${parts[1]}님이 출근하셨습니다.` : `${parts[1]}님이 퇴근하셨습니다.`;
-                await sendSlackMessage('#출퇴근', message);
-
-                try {
-                    const userInfo = await client.users.info({ user: slackuser });
-
-                    if (userInfo.ok) {
-                        const userEmail = userInfo.user.profile.email;
-                        const encryptedUserId = encrypt(`${date}|${userEmail}`);
-
-                        User.findByEmail(userEmail, async (err, user) => {
-                            if (err) {
-                                console.error('Database query error:', err);
-                                return res.status(500).json({ refreshSuccess: false, error: 'Database query error' });
-                            }
-
-                            if (!user) {
-                                console.log('User not found:', userEmail);
-                                return res.status(404).json({ refreshSuccess: false, error: 'User not found' });
-                            }
-
-                            Gtw.findByGtwAll(date, async (err, gtw) => {
-                                if (err) {
-                                    console.error('gtw Database query error:', err);
-                                    return res.status(500).json({ refreshSuccess: false, error: 'gtw Database query error' });
-                                }
-
-                                Gtw.findByGtw(user.user_id, date, async (err, myGtw) => {
-                                    if (err) {
-                                        console.error('myGtw Database query error:', err);
-                                        return res.status(500).json({ refreshSuccess: false, error: 'myGtw Database query error' });
-                                    }
-
-                                    await publishHomeView(slackuser, user, gtw, myGtw, date, encryptedUserId);
-
-                                    res.status(200).send();
-                                });
-                            });
-                        });
-                    }
-                } catch (publishError) {
-                    console.error('Error publishing view:', publishError);
-                }
-
-                return res.json({ message: '출근완료', windowClose: true });
-            });
-        });
+            res.status(200).send();
+        } else {
+            res.status(500).send('Error fetching user info');
+        }
     } catch (error) {
+        console.error('Error in /gtwCheck route:', error);
         return res.status(400).send('Invalid user ID');
     }
 });

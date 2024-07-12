@@ -46,6 +46,17 @@ User.findByEmail = (userId, callback) => {
     });
 };
 
+User.findByEmailAsync = (email) => {
+    return new Promise((resolve, reject) => {
+        User.findByEmail(email, (err, user) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(user);
+        });
+    });
+};
+
 User.comparePassword = (candidatePassword, hash, callback) => {
     bcrypt.compare(candidatePassword, hash, (err, isMatch) => {
         if (err) {
