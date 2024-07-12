@@ -64,13 +64,25 @@ const publishHomeView = async (userId, user, gtw, myGtw, date, encryptedUserId) 
 
     if (myGtw.length > 0) {
         let formattedStartTime = moment(myGtw[0].start_time).format('HH시 mm분 ss초');
-        let formattedEndTime = myGtw[0].end_time ? moment(myGtw[0].end_time).format('HH시 mm분 ss초') : 'N/A';
+        let formattedEndTime;
+        let endTimeLabel;
+
+        if (myGtw[0].end_time) {
+            // 실제 퇴근 시간이 있는 경우
+            formattedEndTime = moment(myGtw[0].end_time).format('HH시 mm분 ss초');
+            endTimeLabel = '퇴근 시간';
+        } else {
+            // 퇴근 예상 시간을 계산
+            let estimatedEndTime = moment(myGtw[0].start_time).add(9, 'hours').format('HH시 mm분 ss초');
+            formattedEndTime = estimatedEndTime;
+            endTimeLabel = '퇴근 예상시간';
+        }
 
         actionBlocks.push({
             type: 'section',
             text: {
                 type: 'mrkdwn',
-                text: `나의 근무 상태:\n출근 시간: ${formattedStartTime}\n퇴근 시간: ${formattedEndTime}`,
+                text: `나의 근무 상태:\n출근 시간: ${formattedStartTime}\n${endTimeLabel}: ${formattedEndTime}`,
             },
         });
     }
