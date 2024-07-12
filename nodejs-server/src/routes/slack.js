@@ -433,7 +433,7 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
 
     if (payload.type === 'block_actions' && payload.actions[0].action_id === 'open_modal') {
         // 모달을 띄우는 함수 호출
-        await openModal(payload.trigger_id);
+        //await openModal(payload.trigger_id);
     }
     res.status(200).send();
     //console.log(actions);
