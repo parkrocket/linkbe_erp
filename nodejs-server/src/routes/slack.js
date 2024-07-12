@@ -216,6 +216,7 @@ router.post('/home', async (req, res) => {
 router.get('/gtwCheck', async (req, res) => {
     const { userId, type, platform, slackuser } = req.query;
     const date = moment().format('YYYY-MM-DD');
+    const dateNow = moment().format('HH시mm분ss초');
 
     let location;
     if (type === 'gtw' || type === 'go') location = 'office';
@@ -255,9 +256,6 @@ router.get('/gtwCheck', async (req, res) => {
 
             await Gtw.createAsync(parts[1], type, date, ip, platform);
 
-            const message = type === 'gtw' ? `${parts[1]}님이 출근하셨습니다.` : `${parts[1]}님이 퇴근하셨습니다.`;
-            await sendSlackMessage('#출퇴근', message);
-
             const userInfo = await client.users.info({ user: slackuser });
             if (userInfo.ok) {
                 const userEmail = userInfo.user.profile.email;
@@ -275,6 +273,13 @@ router.get('/gtwCheck', async (req, res) => {
                         const myGtw = await Gtw.findByGtwAsync(user.user_id, date);
 
                         await publishHomeView(slackuser, user, gtwAll, myGtw, date, encryptedUserId);
+
+                        const message =
+                            type === 'gtw'
+                                ? `${user.user_name}님이 ${dateNow}에 출근하셨습니다.`
+                                : `${user.user_name}님이 ${dateNow}에 퇴근하셨습니다.`;
+
+                        await sendSlackMessage('#출퇴근', message);
 
                         return res.json({ message: '출근완료', windowClose: true });
                     } catch (err) {
