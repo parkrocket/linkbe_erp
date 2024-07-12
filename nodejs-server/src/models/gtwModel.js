@@ -45,7 +45,8 @@ Gtw.create = (userId, type, date, ip, platform, callback) => {
 };
 
 Gtw.findByGtw = (userId, date, callback) => {
-    query = 'SELECT * FROM lk_ctw WHERE user_id = ?  AND date = ? ORDER BY date DESC LIMIT 1';
+    query =
+        'SELECT * FROM lk_ctw as ctw JOIN LEFT lk_user as user ON ctw.user_id = user.user_id WHERE ctw.user_id = ?  AND ctw.date = ? ORDER BY ctw.date DESC LIMIT 1';
     queryParams = [userId, date];
 
     db.query(query, queryParams, (err, results) => {
@@ -57,7 +58,7 @@ Gtw.findByGtw = (userId, date, callback) => {
 };
 
 Gtw.findByGtwAll = (date, callback) => {
-    query = 'SELECT * FROM lk_ctw WHERE date = ? ORDER BY date DESC';
+    query = 'SELECT * FROM lk_ctw as ctw JOIN LEFT lk_user as user ON ctw.user_id = user.user_id WHERE ctw.date = ? ORDER BY ctw.date DESC';
     queryParams = [date];
 
     db.query(query, queryParams, (err, results) => {

@@ -49,7 +49,8 @@ const publishHomeView = async (userId, user, gtw, myGtw, date, encryptedUserId) 
         let gtwText = '근무중 / 출근시간\n';
         gtw.forEach((entry) => {
             let locationIcon = entry.location === 'office' ? '🏢' : '🏠';
-            gtwText += `${locationIcon} ${entry.user_name} : ${entry.start_time}\n`;
+            let formattedStartTime = moment(entry.start_time).format('HH시 mm분 ss초');
+            gtwText += `${locationIcon} ${entry.user_name} : ${formattedStartTime}\n`;
         });
 
         actionBlocks.push({
