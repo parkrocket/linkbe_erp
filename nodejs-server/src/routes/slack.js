@@ -55,7 +55,7 @@ const publishHomeView = async (userId, user, gtw, myGtw, date, encryptedUserId) 
         type: 'section',
         text: {
             type: 'mrkdwn',
-            text: myGtw.user_id,
+            text: myGtw[0].user_id,
         },
     });
 
