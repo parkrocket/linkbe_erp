@@ -163,20 +163,32 @@ const publishHomeView = async (userId, user, gtw, myGtw, date, encryptedUserId) 
     }
 
     // 새로운 버튼을 추가합니다.
-    actionBlocks.push({
-        type: 'actions',
-        elements: [
-            {
-                type: 'button',
-                text: {
-                    type: 'plain_text',
-                    text: '모달 열기',
-                    emoji: true,
+    actionBlocks.push(
+        {
+            type: 'divider',
+        },
+        {
+            type: 'actions',
+            elements: [
+                {
+                    type: 'section',
+                    text: {
+                        type: 'mrkdwn',
+                        text: '🏖️ 휴가 및 연차신청',
+                    },
                 },
-                action_id: 'open_modal',
-            },
-        ],
-    });
+                {
+                    type: 'button',
+                    text: {
+                        type: 'plain_text',
+                        text: '신청하기',
+                        emoji: true,
+                    },
+                    action_id: 'open_modal',
+                },
+            ],
+        }
+    );
 
     const blocks = [
         {
@@ -221,14 +233,14 @@ const openModal = async (trigger_id) => {
                 callback_id: 'modal-identifier',
                 title: {
                     type: 'plain_text',
-                    text: '모달 제목',
+                    text: '휴가 및 연차신청',
                 },
                 blocks: [
                     {
                         type: 'section',
                         text: {
                             type: 'mrkdwn',
-                            text: '모달 내용입니다.',
+                            text: '휴가 및 연차를 신청해주세요.',
                         },
                     },
                     {
@@ -236,11 +248,38 @@ const openModal = async (trigger_id) => {
                         block_id: 'input_c',
                         label: {
                             type: 'plain_text',
-                            text: '입력 란',
+                            text: '선택 항목',
                         },
                         element: {
-                            type: 'plain_text_input',
-                            action_id: 'dreamy_input',
+                            type: 'static_select',
+                            action_id: 'select_input',
+                            placeholder: {
+                                type: 'plain_text',
+                                text: '옵션을 선택하세요',
+                            },
+                            options: [
+                                {
+                                    text: {
+                                        type: 'plain_text',
+                                        text: '옵션 1',
+                                    },
+                                    value: 'option_1',
+                                },
+                                {
+                                    text: {
+                                        type: 'plain_text',
+                                        text: '옵션 2',
+                                    },
+                                    value: 'option_2',
+                                },
+                                {
+                                    text: {
+                                        type: 'plain_text',
+                                        text: '옵션 3',
+                                    },
+                                    value: 'option_3',
+                                },
+                            ],
                         },
                     },
                 ],
