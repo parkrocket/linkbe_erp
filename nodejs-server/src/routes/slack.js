@@ -63,11 +63,14 @@ const publishHomeView = async (userId, user, gtw, myGtw, date, encryptedUserId) 
     }
 
     if (myGtw.length > 0) {
+        let formattedStartTime = moment(myGtw[0].start_time).format('HH시 mm분 ss초');
+        let formattedEndTime = myGtw[0].end_time ? moment(myGtw[0].end_time).format('HH시 mm분 ss초') : 'N/A';
+
         actionBlocks.push({
             type: 'section',
             text: {
                 type: 'mrkdwn',
-                text: `나의 근무 상태:\n출근 시간: ${myGtw[0].start_time}\n퇴근 시간: ${myGtw[0].end_time}`,
+                text: `나의 근무 상태:\n출근 시간: ${formattedStartTime}\n퇴근 시간: ${formattedEndTime}`,
             },
         });
     }
