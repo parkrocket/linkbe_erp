@@ -38,12 +38,26 @@ router.post('/events', async (req, res) => {
     await slackApp.requestListener()(req, res);
 });
 
-const publishHomeView = async (userId, user, date, encryptedUserId) => {
+const publishHomeView = async (userId, user, gtw, myGtw, date, encryptedUserId) => {
     const userName = user.user_name;
     const gtwStatus = user.gtw_status;
     const gtwLocation = user.gtw_location;
 
     let actionBlocks = [];
+    actionBlocks.push({
+        type: 'section',
+        text: {
+            type: 'mrkdwn',
+            text: gtw,
+        },
+    });
+    actionBlocks.push({
+        type: 'section',
+        text: {
+            type: 'mrkdwn',
+            text: myGtw,
+        },
+    });
 
     if (gtwStatus === 0) {
         actionBlocks.push({
@@ -174,9 +188,23 @@ router.post('/home', async (req, res) => {
                     return res.status(404).json({ refreshSuccess: false, error: 'User not found' });
                 }
 
-                await publishHomeView(userId, user, date, encryptedUserId);
+                Gtw.findByGtwAll(date, async (err, gtw) => {
+                    if (err) {
+                        console.error('gtw Database query error:', err);
+                        return res.status(500).json({ refreshSuccess: false, error: 'gtw Database query error' });
+                    }
 
-                res.status(200).send();
+                    Gtw.findByGtw(user.user_id, '', date, async (err, myGtw) => {
+                        if (err) {
+                            console.error('myGtw Database query error:', err);
+                            return res.status(500).json({ refreshSuccess: false, error: 'myGtw Database query error' });
+                        }
+
+                        await publishHomeView(userId, user, gtw, myGtw, date, encryptedUserId);
+
+                        res.status(200).send();
+                    });
+                });
             });
         } catch (error) {
             console.error('Error fetching user info:', error);
@@ -260,9 +288,23 @@ router.get('/gtwCheck', async (req, res) => {
                                 return res.status(404).json({ refreshSuccess: false, error: 'User not found' });
                             }
 
-                            await publishHomeView(slackuser, user, date, encryptedUserId);
+                            Gtw.findByGtwAll(date, async (err, gtw) => {
+                                if (err) {
+                                    console.error('gtw Database query error:', err);
+                                    return res.status(500).json({ refreshSuccess: false, error: 'gtw Database query error' });
+                                }
 
-                            res.status(200).send();
+                                Gtw.findByGtw(user.user_id, '', date, async (err, myGtw) => {
+                                    if (err) {
+                                        console.error('myGtw Database query error:', err);
+                                        return res.status(500).json({ refreshSuccess: false, error: 'myGtw Database query error' });
+                                    }
+
+                                    await publishHomeView(slackuser, user, gtw, myGtw, date, encryptedUserId);
+
+                                    res.status(200).send();
+                                });
+                            });
                         });
                     }
                 } catch (publishError) {
