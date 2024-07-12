@@ -51,14 +51,15 @@ const publishHomeView = async (userId, user, gtw, myGtw, date, encryptedUserId) 
             text: gtw[0].user_id,
         },
     });
-    actionBlocks.push({
-        type: 'section',
-        text: {
-            type: 'mrkdwn',
-            text: myGtw[0].user_id,
-        },
-    });
-
+    if (myGtw[0]) {
+        actionBlocks.push({
+            type: 'section',
+            text: {
+                type: 'mrkdwn',
+                text: myGtw[0].user_id,
+            },
+        });
+    }
     if (gtwStatus === 0) {
         actionBlocks.push({
             type: 'section',
@@ -194,16 +195,11 @@ router.post('/home', async (req, res) => {
                         return res.status(500).json({ refreshSuccess: false, error: 'gtw Database query error' });
                     }
 
-                    console.log(user.user_id);
-
                     Gtw.findByGtw(user.user_id, date, async (err, myGtw) => {
                         if (err) {
                             console.error('myGtw Database query error:', err);
                             return res.status(500).json({ refreshSuccess: false, error: 'myGtw Database query error' });
                         }
-
-                        console.log('gtw', gtw);
-                        console.log('myGtw', myGtw);
 
                         await publishHomeView(userId, user, gtw, myGtw, date, encryptedUserId);
 
@@ -299,7 +295,7 @@ router.get('/gtwCheck', async (req, res) => {
                                     return res.status(500).json({ refreshSuccess: false, error: 'gtw Database query error' });
                                 }
 
-                                Gtw.findByGtw(user.user_id, '', date, async (err, myGtw) => {
+                                Gtw.findByGtw(user.user_id, date, async (err, myGtw) => {
                                     if (err) {
                                         console.error('myGtw Database query error:', err);
                                         return res.status(500).json({ refreshSuccess: false, error: 'myGtw Database query error' });
