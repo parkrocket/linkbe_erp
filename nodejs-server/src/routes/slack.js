@@ -163,32 +163,27 @@ const publishHomeView = async (userId, user, gtw, myGtw, date, encryptedUserId) 
     }
 
     // 새로운 버튼을 추가합니다.
-    actionBlocks.push(
-        {
-            type: 'divider',
-        },
-        {
-            type: 'actions',
-            elements: [
-                {
-                    type: 'section',
-                    text: {
-                        type: 'mrkdwn',
-                        text: '휴가 및 연차신청',
-                    },
+    actionBlocks.push({
+        type: 'actions',
+        elements: [
+            {
+                type: 'section',
+                text: {
+                    type: 'mrkdwn',
+                    text: '🏖️ 휴가 및 연차신청',
                 },
-                {
-                    type: 'button',
-                    text: {
-                        type: 'plain_text',
-                        text: '신청하기',
-                        emoji: true,
-                    },
-                    action_id: 'open_modal',
+            },
+            {
+                type: 'button',
+                text: {
+                    type: 'plain_text',
+                    text: '신청하기',
+                    emoji: true,
                 },
-            ],
-        }
-    );
+                action_id: 'open_modal',
+            },
+        ],
+    });
 
     const blocks = [
         {
