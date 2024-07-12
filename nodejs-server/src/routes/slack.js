@@ -174,7 +174,7 @@ const publishHomeView = async (userId, user, gtw, myGtw, date, encryptedUserId) 
                     type: 'section',
                     text: {
                         type: 'mrkdwn',
-                        text: '🏖️ 휴가 및 연차신청',
+                        text: '휴가 및 연차신청',
                     },
                 },
                 {
