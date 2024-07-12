@@ -53,13 +53,18 @@ const publishHomeView = async (userId, user, gtw, myGtw, date, encryptedUserId) 
             gtwText += `${locationIcon} ${entry.user_name} : ${formattedStartTime}\n`;
         });
 
-        actionBlocks.push({
-            type: 'section',
-            text: {
-                type: 'mrkdwn',
-                text: gtwText,
+        actionBlocks.push(
+            {
+                type: 'section',
+                text: {
+                    type: 'mrkdwn',
+                    text: gtwText,
+                },
             },
-        });
+            {
+                type: 'divider',
+            }
+        );
     }
 
     if (myGtw.length > 0) {
@@ -78,13 +83,18 @@ const publishHomeView = async (userId, user, gtw, myGtw, date, encryptedUserId) 
             endTimeLabel = '퇴근 예상시간';
         }
 
-        actionBlocks.push({
-            type: 'section',
-            text: {
-                type: 'mrkdwn',
-                text: `나의 근무 상태:\n출근 시간: ${formattedStartTime}\n${endTimeLabel}: ${formattedEndTime}`,
+        actionBlocks.push(
+            {
+                type: 'section',
+                text: {
+                    type: 'mrkdwn',
+                    text: `나의 근무 상태:\n출근 시간: ${formattedStartTime}\n${endTimeLabel}: ${formattedEndTime}`,
+                },
             },
-        });
+            {
+                type: 'divider',
+            }
+        );
     }
     if (gtwStatus === 0) {
         actionBlocks.push({
