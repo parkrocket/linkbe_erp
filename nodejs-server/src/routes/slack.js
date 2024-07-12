@@ -263,7 +263,7 @@ router.get('/gtwCheck', async (req, res) => {
             }
         }
 
-        Gtw.findByGtw(parts[1], type, date, async (err, gtw) => {
+        Gtw.findByGtw(parts[1], date, async (err, gtw) => {
             if (err) {
                 return res.json({ message: 'Database query error', windowClose: false });
             }
