@@ -44,7 +44,7 @@ Gtw.create = (userId, type, date, ip, platform, callback) => {
     });
 };
 
-Gtw.findByGtw = (userId, type, date, callback) => {
+Gtw.findByGtw = (userId, date, callback) => {
     query = 'SELECT * FROM lk_ctw WHERE user_id = ?  AND date = ? ORDER BY date DESC LIMIT 1';
     queryParams = [userId, date];
 

@@ -194,7 +194,9 @@ router.post('/home', async (req, res) => {
                         return res.status(500).json({ refreshSuccess: false, error: 'gtw Database query error' });
                     }
 
-                    Gtw.findByGtw(user.user_id, '', date, async (err, myGtw) => {
+                    console.log(user.user_id);
+
+                    Gtw.findByGtw(user.user_id, date, async (err, myGtw) => {
                         if (err) {
                             console.error('myGtw Database query error:', err);
                             return res.status(500).json({ refreshSuccess: false, error: 'myGtw Database query error' });
