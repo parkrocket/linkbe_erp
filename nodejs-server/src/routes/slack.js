@@ -9,10 +9,13 @@ const { WebClient } = require('@slack/web-api');
 const requestIp = require('request-ip');
 const crypto = require('crypto');
 const { sendSlackMessage } = require('../utils/slack');
+const { google } = require('googleapis');
 
 const algorithm = 'aes-256-cbc';
 const secretKey = 'linkbeflatformlinkbeflatformlink'; // 32바이트 키
 const ivLength = 16; // AES 블록 크기
+
+const oAuth2Client = new google.auth.OAuth2(process.env.GOOGLE_C_ID, process.env.GOOGLE_S_ID, process.env.GOOGLE_CALLBACK_URL);
 
 const encrypt = (text) => {
     const iv = crypto.randomBytes(ivLength); // 암호화마다 다른 IV 사용
