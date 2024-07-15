@@ -1,6 +1,7 @@
 const express = require('express');
 const User = require('../models/userModel');
 const Gtw = require('../models/gtwModel');
+const Vca = require('../models/vacationModel');
 const moment = require('moment');
 const router = express.Router();
 const slackApp = require('../utils/slack');
@@ -463,6 +464,11 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
 
         console.log('Selected Option:', selectedOption);
         console.log('Selected Date:', selectedDate);
+        console.log('UserId:', userId);
+
+        const vacation = await Vca.createAsync(userId, selectedOption, selectedDate);
+
+        console.log(vacation);
 
         // 필요한 데이터 처리 로직 추가
         // 예: DB에 저장, Slack 메시지 보내기 등
