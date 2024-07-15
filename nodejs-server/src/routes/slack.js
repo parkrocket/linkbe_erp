@@ -462,13 +462,31 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
         const selectedOption = view.state.values.input_c.select_input.selected_option.value;
         const selectedDate = view.state.values.input_date.datepicker_input.selected_date;
 
-        console.log('Selected Option:', selectedOption);
-        console.log('Selected Date:', selectedDate);
-        console.log('UserId:', userId);
+        const userInfo = await client.users.info({ user: userId });
+        if (userInfo.ok) {
+            const userEmail = userInfo.user.profile.email;
 
-        const vacation = await Vca.createAsync(userId, selectedOption, selectedDate);
+            const user = await User.findByEmailAsync(userEmail);
 
-        console.log(vacation);
+            console.log('Selected Option:', selectedOption);
+            console.log('Selected Date:', selectedDate);
+            console.log('UserId:', userId);
+
+            const vacation = await Vca.createAsync(userEmail, selectedOption, selectedDate);
+
+            const message =
+                type === 'half'
+                    ? `${user.user_name}님이 ${dateNow}에 반차를 사용하셨습니다.`
+                    : type === 'day'
+                    ? `${user.user_name}님이 ${dateNow}에 연차를 사용하셨습니다.`
+                    : type === 'vacation'
+                    ? `${user.user_name}님이 ${dateNow}에 휴가를 사용하셨습니다.`
+                    : `${user.user_name}님이 ${dateNow}에 알 수 없는 활동을 하셨습니다.`;
+
+            await sendSlackMessage('#출퇴근', message);
+
+            console.log(vacation);
+        }
 
         // 필요한 데이터 처리 로직 추가
         // 예: DB에 저장, Slack 메시지 보내기 등
