@@ -539,8 +539,6 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
 
         // 필요한 데이터 처리 로직 추가
         // 예: DB에 저장, Slack 메시지 보내기 등
-
-        /
     }
 
     res.status(200).send();
