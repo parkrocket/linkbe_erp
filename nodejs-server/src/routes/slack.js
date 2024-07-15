@@ -502,7 +502,7 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
             const calendar = google.calendar({ version: 'v3', auth: auths });
 
             const event = {
-                summary: `${user.user_name}님이 ${selectedOption} 사용.`,
+                summary: `[${user.user_name}] ${selectedOption}`,
                 description: message,
                 start: {
                     date: selectedDate,
@@ -529,7 +529,7 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
         // 필요한 데이터 처리 로직 추가
         // 예: DB에 저장, Slack 메시지 보내기 등
 
-        return res.status(200).json({ response_action: 'clear' });
+        //return res.status(200).json({ response_action: 'clear' });
     }
 
     res.status(200).send();
