@@ -244,36 +244,36 @@ const openModal = async (trigger_id) => {
                         block_id: 'input_c',
                         label: {
                             type: 'plain_text',
-                            text: '선택 항목',
+                            text: '',
                         },
                         element: {
                             type: 'static_select',
                             action_id: 'select_input',
                             placeholder: {
                                 type: 'plain_text',
-                                text: '옵션을 선택하세요',
+                                text: '휴가 및 연차 선택하세요',
                             },
                             options: [
                                 {
                                     text: {
                                         type: 'plain_text',
-                                        text: '옵션 1',
+                                        text: '반차',
                                     },
-                                    value: 'option_1',
+                                    value: 'half',
                                 },
                                 {
                                     text: {
                                         type: 'plain_text',
-                                        text: '옵션 2',
+                                        text: '연차',
                                     },
-                                    value: 'option_2',
+                                    value: 'day',
                                 },
                                 {
                                     text: {
                                         type: 'plain_text',
-                                        text: '옵션 3',
+                                        text: '휴가',
                                     },
-                                    value: 'option_3',
+                                    value: 'vacation',
                                 },
                             ],
                         },
