@@ -15,11 +15,9 @@ const algorithm = 'aes-256-cbc';
 const secretKey = 'linkbeflatformlinkbeflatformlink'; // 32바이트 키
 const ivLength = 16; // AES 블록 크기
 
-const auth = new google.auth.JWT(process.env.GOOGLE_CLIENT_EMAIL, null, process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), [
+const auths = new google.auth.JWT(process.env.GOOGLE_CLIENT_EMAIL, null, process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), [
     'https://www.googleapis.com/auth/calendar',
 ]);
-
-const oAuth2Client = new google.auth.OAuth2(process.env.GOOGLE_C_ID, process.env.GOOGLE_S_ID, process.env.GOOGLE_CALLBACK_URL);
 
 const encrypt = (text) => {
     const iv = crypto.randomBytes(ivLength); // 암호화마다 다른 IV 사용
@@ -41,48 +39,6 @@ const decrypt = (text) => {
 
 const token = process.env.SLACK_BOT_TOKEN;
 const client = new WebClient(token);
-
-function checkToken(req, res, next) {
-    if (fs.existsSync(TOKEN_PATH)) {
-        const token = JSON.parse(fs.readFileSync(TOKEN_PATH, 'utf8'));
-        oAuth2Client.setCredentials(token);
-
-        // 토큰 유효성 검사
-        oAuth2Client.getAccessToken((err, token) => {
-            if (err || !token) {
-                console.log('No valid token found, redirecting to auth');
-                return res.redirect('/api/slack/auth');
-            }
-            next();
-        });
-    } else {
-        console.log('No token found, redirecting to auth');
-        return res.redirect('/api/slack/auth');
-    }
-}
-
-// 인증 URL 생성 (최초 인증을 위해 한번 수행)
-router.get('/auth', (req, res) => {
-    const authUrl = oAuth2Client.generateAuthUrl({
-        access_type: 'offline',
-        scope: ['https://www.googleapis.com/auth/calendar'],
-    });
-    res.redirect(authUrl);
-});
-
-// 인증 후 토큰 저장
-router.get('/oauth2callback', (req, res) => {
-    console.log(req.query.code);
-
-    const code = req.query.code;
-    oAuth2Client.getToken(code, async (err, token) => {
-        if (err) return res.status(400).send('Error retrieving access token');
-        oAuth2Client.setCredentials(token);
-
-        // 토큰을 안전한 곳에 저장하세요 (예: 데이터베이스)
-        res.send('Authentication successful! You can close this tab.');
-    });
-});
 
 router.post('/events', async (req, res) => {
     await slackApp.requestListener()(req, res);
@@ -543,7 +499,7 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
 
             await sendSlackMessage('#출퇴근', message);
 
-            const calendar = google.calendar({ version: 'v3', auth: oAuth2Client });
+            const calendar = google.calendar({ version: 'v3', auth: auths });
 
             const event = {
                 summary: `${user.user_name}님이 ${selectedOption} 사용.`,
