@@ -1,6 +1,6 @@
 const cron = require('node-cron');
 const User = require('../models/userModel');
-const db = require('../config/dbPromise');
+const pool = require('../config/dbPromise');
 
 // 매일 오전 0시 0분에 gtw_status 값을 0으로 업데이트하는 크론 작업 추가
 cron.schedule('*/5 * * * *', async () => {
