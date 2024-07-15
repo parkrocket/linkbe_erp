@@ -483,14 +483,14 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
 
             const message =
                 type === 'half'
-                    ? `${user.user_name}님이 ${dateNow}에 반차를 사용하셨습니다.`
+                    ? `${user.user_name}님이 ${selectedDate}에 반차를 사용하셨습니다.`
                     : type === 'day'
-                    ? `${user.user_name}님이 ${dateNow}에 연차를 사용하셨습니다.`
+                    ? `${user.user_name}님이 ${selectedDate}에 연차를 사용하셨습니다.`
                     : type === 'home'
-                    ? `${user.user_name}님이 ${dateNow}에 재택근무를 사용하셨습니다.`
+                    ? `${user.user_name}님이 ${selectedDate}에 재택근무를 사용하셨습니다.`
                     : type === 'vacation'
-                    ? `${user.user_name}님이 ${dateNow}에 휴가를 사용하셨습니다.`
-                    : `${user.user_name}님이 ${dateNow}에 알 수 없는 활동을 하셨습니다.`;
+                    ? `${user.user_name}님이 ${selectedDate}에 휴가를 사용하셨습니다.`
+                    : `${user.user_name}님이 ${selectedDate}에 알 수 없는 활동을 하셨습니다.`;
 
             await sendSlackMessage('#출퇴근', message);
 
