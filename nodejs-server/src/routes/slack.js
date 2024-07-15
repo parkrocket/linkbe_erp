@@ -15,6 +15,10 @@ const algorithm = 'aes-256-cbc';
 const secretKey = 'linkbeflatformlinkbeflatformlink'; // 32바이트 키
 const ivLength = 16; // AES 블록 크기
 
+const auth = new google.auth.JWT(process.env.GOOGLE_CLIENT_EMAIL, null, process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), [
+    'https://www.googleapis.com/auth/calendar',
+]);
+
 const oAuth2Client = new google.auth.OAuth2(process.env.GOOGLE_C_ID, process.env.GOOGLE_S_ID, process.env.GOOGLE_CALLBACK_URL);
 
 const encrypt = (text) => {
@@ -554,20 +558,16 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
                 },
             };
 
-            calendar.events.insert(
-                {
-                    auth: oAuth2Client,
-                    calendarId: process.env.GOOGLE_CALENDAR_ID, // '링크비 휴가 캘린더'의 ID로 교체하세요
+            try {
+                const response = await calendar.events.insert({
+                    calendarId: process.env.GOOGLE_CALENDAR_ID, // 공유한 캘린더 ID 사용
                     resource: event,
-                },
-                (err, event) => {
-                    if (err) {
-                        console.log('There was an error contacting the Calendar service: ' + err);
-                        return;
-                    }
-                    console.log('Event created: %s', event.htmlLink);
-                }
-            );
+                });
+                res.status(200).send(`Event created: ${response.data.htmlLink}`);
+            } catch (error) {
+                console.error('Error creating event:', error);
+                res.status(500).send('Error creating event');
+            }
         }
 
         // 필요한 데이터 처리 로직 추가
