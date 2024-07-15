@@ -244,7 +244,7 @@ const openModal = async (trigger_id) => {
                         block_id: 'input_c',
                         label: {
                             type: 'plain_text',
-                            text: '',
+                            text: '휴가 및 연차 선택하세요',
                         },
                         element: {
                             type: 'static_select',
