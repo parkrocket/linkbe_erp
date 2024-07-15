@@ -46,6 +46,15 @@ User.findByEmail = (userId, callback) => {
     });
 };
 
+User.calendarTokenUpdate = (userId, token, callback) => {
+    db.query('UPDATE lk_user SET calendar_token = ? WHERE user_id = ?', [token, userId], (err, results) => {
+        if (err) {
+            return callback(err, null);
+        }
+        return callback(null, results);
+    });
+};
+
 User.findByEmailAsync = (email) => {
     return new Promise((resolve, reject) => {
         User.findByEmail(email, (err, user) => {

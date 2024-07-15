@@ -38,6 +38,25 @@ const decrypt = (text) => {
 const token = process.env.SLACK_BOT_TOKEN;
 const client = new WebClient(token);
 
+function checkToken(req, res, next) {
+    if (fs.existsSync(TOKEN_PATH)) {
+        const token = JSON.parse(fs.readFileSync(TOKEN_PATH, 'utf8'));
+        oAuth2Client.setCredentials(token);
+
+        // 토큰 유효성 검사
+        oAuth2Client.getAccessToken((err, token) => {
+            if (err || !token) {
+                console.log('No valid token found, redirecting to auth');
+                return res.redirect('/api/slack/auth');
+            }
+            next();
+        });
+    } else {
+        console.log('No token found, redirecting to auth');
+        return res.redirect('/api/slack/auth');
+    }
+}
+
 // 인증 URL 생성 (최초 인증을 위해 한번 수행)
 router.get('/auth', (req, res) => {
     const authUrl = oAuth2Client.generateAuthUrl({
@@ -52,7 +71,7 @@ router.get('/oauth2callback', (req, res) => {
     console.log(req.query.code);
 
     const code = req.query.code;
-    oAuth2Client.getToken(code, (err, token) => {
+    oAuth2Client.getToken(code, async (err, token) => {
         if (err) return res.status(400).send('Error retrieving access token');
         oAuth2Client.setCredentials(token);
 
@@ -520,7 +539,6 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
 
             await sendSlackMessage('#출퇴근', message);
 
-            // Google Calendar 이벤트 생성
             const calendar = google.calendar({ version: 'v3', auth: oAuth2Client });
 
             const event = {
