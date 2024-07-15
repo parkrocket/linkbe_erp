@@ -533,7 +533,7 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
                 },
             };
 
-            console.log(oAuth2Client, process.env.GOOGLE_CALENDAR_ID);
+            console.log(oAuth2Client, process.env);
 
             calendar.events.insert(
                 {
