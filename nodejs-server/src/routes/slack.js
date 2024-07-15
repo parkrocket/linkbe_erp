@@ -258,6 +258,13 @@ const openModal = async (trigger_id) => {
                                 {
                                     text: {
                                         type: 'plain_text',
+                                        text: '재택',
+                                    },
+                                    value: 'home',
+                                },
+                                {
+                                    text: {
+                                        type: 'plain_text',
                                         text: '반차',
                                     },
                                     value: 'half',
@@ -479,6 +486,8 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
                     ? `${user.user_name}님이 ${dateNow}에 반차를 사용하셨습니다.`
                     : type === 'day'
                     ? `${user.user_name}님이 ${dateNow}에 연차를 사용하셨습니다.`
+                    : type === 'home'
+                    ? `${user.user_name}님이 ${dateNow}에 재택근무를 사용하셨습니다.`
                     : type === 'vacation'
                     ? `${user.user_name}님이 ${dateNow}에 휴가를 사용하셨습니다.`
                     : `${user.user_name}님이 ${dateNow}에 알 수 없는 활동을 하셨습니다.`;
