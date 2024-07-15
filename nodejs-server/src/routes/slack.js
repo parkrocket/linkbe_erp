@@ -38,6 +38,26 @@ const decrypt = (text) => {
 const token = process.env.SLACK_BOT_TOKEN;
 const client = new WebClient(token);
 
+// 인증 URL 생성 (최초 인증을 위해 한번 수행)
+app.get('/auth', (req, res) => {
+    const authUrl = oAuth2Client.generateAuthUrl({
+        access_type: 'offline',
+        scope: ['https://www.googleapis.com/auth/calendar'],
+    });
+    res.redirect(authUrl);
+});
+
+// 인증 후 토큰 저장
+app.get('/oauth2callback', (req, res) => {
+    const code = req.query.code;
+    oAuth2Client.getToken(code, (err, token) => {
+        if (err) return res.status(400).send('Error retrieving access token');
+        oAuth2Client.setCredentials(token);
+        // 토큰을 안전한 곳에 저장하세요 (예: 데이터베이스)
+        res.send('Authentication successful! You can close this tab.');
+    });
+});
+
 router.post('/events', async (req, res) => {
     await slackApp.requestListener()(req, res);
 });
@@ -497,6 +517,36 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
 
             await sendSlackMessage('#출퇴근', message);
 
+            // Google Calendar 이벤트 생성
+            const calendar = google.calendar({ version: 'v3', auth: oAuth2Client });
+
+            const event = {
+                summary: `${user.user_name}님이 ${selectedOption} 사용.`,
+                description: message,
+                start: {
+                    date: selectedDate,
+                    timeZone: 'Asia/Seoul',
+                },
+                end: {
+                    date: selectedDate,
+                    timeZone: 'Asia/Seoul',
+                },
+            };
+
+            calendar.events.insert(
+                {
+                    auth: oAuth2Client,
+                    calendarId: process.env.GOOGLE_CALENDAR_ID, // '링크비 휴가 캘린더'의 ID로 교체하세요
+                    resource: event,
+                },
+                (err, event) => {
+                    if (err) {
+                        console.log('There was an error contacting the Calendar service: ' + err);
+                        return;
+                    }
+                    console.log('Event created: %s', event.htmlLink);
+                }
+            );
             console.log(vacation);
         }
 
