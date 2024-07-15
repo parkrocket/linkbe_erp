@@ -497,12 +497,23 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
                     ? `${user.user_name}님이 ${selectedDate}에 휴가를 사용하셨습니다.`
                     : `${user.user_name}님이 ${selectedDate}에 알 수 없는 활동을 하셨습니다.`;
 
+            const vacaType =
+                selectedOption === 'half'
+                    ? `반차`
+                    : selectedOption === 'day'
+                    ? `연차`
+                    : selectedOption === 'home'
+                    ? `재택`
+                    : selectedOption === 'vacation'
+                    ? `휴가`
+                    : `알수없음`;
+
             await sendSlackMessage('#출퇴근', message);
 
             const calendar = google.calendar({ version: 'v3', auth: auths });
 
             const event = {
-                summary: `[${user.user_name}] ${selectedOption}`,
+                summary: `[${user.user_name}] ${vacaType}`,
                 description: message,
                 start: {
                     date: selectedDate,
