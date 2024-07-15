@@ -39,7 +39,7 @@ const token = process.env.SLACK_BOT_TOKEN;
 const client = new WebClient(token);
 
 // 인증 URL 생성 (최초 인증을 위해 한번 수행)
-app.get('/auth', (req, res) => {
+router.get('/auth', (req, res) => {
     const authUrl = oAuth2Client.generateAuthUrl({
         access_type: 'offline',
         scope: ['https://www.googleapis.com/auth/calendar'],
@@ -48,7 +48,7 @@ app.get('/auth', (req, res) => {
 });
 
 // 인증 후 토큰 저장
-app.get('/oauth2callback', (req, res) => {
+router.get('/oauth2callback', (req, res) => {
     const code = req.query.code;
     oAuth2Client.getToken(code, (err, token) => {
         if (err) return res.status(400).send('Error retrieving access token');
