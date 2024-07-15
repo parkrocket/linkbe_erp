@@ -530,7 +530,7 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
                     calendarId: process.env.GOOGLE_CALENDAR_ID, // 공유한 캘린더 ID 사용
                     resource: event,
                 });
-                res.status(200).send(`Event created: ${response.data.htmlLink}`);
+                return res.status(200).json({ response_action: 'clear' });
             } catch (error) {
                 console.error('Error creating event:', error);
                 res.status(500).send('Error creating event');
@@ -540,7 +540,7 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
         // 필요한 데이터 처리 로직 추가
         // 예: DB에 저장, Slack 메시지 보내기 등
 
-        //return res.status(200).json({ response_action: 'clear' });
+        /
     }
 
     res.status(200).send();
