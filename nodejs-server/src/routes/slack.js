@@ -452,6 +452,24 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
         // 모달을 띄우는 함수 호출
         await openModal(payload.trigger_id);
     }
+
+    if (payload.type === 'view_submission') {
+        const { user, view } = payload;
+        const userId = user.id;
+
+        // 모달에서 제출된 값들 가져오기
+        const selectedOption = view.state.values.input_c.select_input.selected_option.value;
+        const selectedDate = view.state.values.input_date.datepicker_input.selected_date;
+
+        console.log('Selected Option:', selectedOption);
+        console.log('Selected Date:', selectedDate);
+
+        // 필요한 데이터 처리 로직 추가
+        // 예: DB에 저장, Slack 메시지 보내기 등
+
+        return res.status(200).json({ response_action: 'clear' });
+    }
+
     res.status(200).send();
     //console.log(actions);
 });
