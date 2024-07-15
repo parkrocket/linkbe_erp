@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors'); // CORS 미들웨어 불러오기
 const dotenv = require('dotenv');
-const expressSession = require('express-session');
 
 // 환경 변수 로드
 if (process.env.NODE_ENV === 'production') {
@@ -29,14 +28,6 @@ if (process.env.NODE_ENV === 'production') {
 } else {
     dotenv.config();
 }
-
-app.use(
-    expressSession({
-        secret: 'linkbe', // [필수] SID를 생성할 때 사용되는 비밀키로 String or Array 사용 가능.
-        resave: true, // true(default): 변경 사항이 없어도 세션을 다시 저장, false: 변경시에만 다시 저장
-        saveUninitialized: true, // true: 어떠한 데이터도 추가되거나 변경되지 않은 세션 설정 허용, false: 비허용
-    })
-);
 
 // CORS 설정
 
