@@ -535,8 +535,6 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
                 },
             };
 
-            console.log(oAuth2Client, process.env.GOOGLE_CALENDAR_ID);
-
             calendar.events.insert(
                 {
                     auth: oAuth2Client,
@@ -551,7 +549,6 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
                     console.log('Event created: %s', event.htmlLink);
                 }
             );
-            console.log(vacation);
         }
 
         // 필요한 데이터 처리 로직 추가
