@@ -49,12 +49,13 @@ router.get('/auth', (req, res) => {
 
 // 인증 후 토큰 저장
 router.get('/oauth2callback', (req, res) => {
+    console.log(req.query.code);
+
     const code = req.query.code;
     oAuth2Client.getToken(code, (err, token) => {
         if (err) return res.status(400).send('Error retrieving access token');
         oAuth2Client.setCredentials(token);
 
-        console.log(token);
         // 토큰을 안전한 곳에 저장하세요 (예: 데이터베이스)
         res.send('Authentication successful! You can close this tab.');
     });
