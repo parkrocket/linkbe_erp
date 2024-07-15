@@ -278,6 +278,22 @@ const openModal = async (trigger_id) => {
                             ],
                         },
                     },
+                    {
+                        type: 'input',
+                        block_id: 'input_date',
+                        label: {
+                            type: 'plain_text',
+                            text: '날짜를 선택하세요',
+                        },
+                        element: {
+                            type: 'datepicker',
+                            action_id: 'datepicker_input',
+                            placeholder: {
+                                type: 'plain_text',
+                                text: '날짜 선택',
+                            },
+                        },
+                    },
                 ],
                 submit: {
                     type: 'plain_text',
