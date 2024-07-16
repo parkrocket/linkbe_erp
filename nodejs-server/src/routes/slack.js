@@ -10,11 +10,11 @@ const requestIp = require('request-ip');
 const crypto = require('crypto');
 const { sendSlackMessage } = require('../utils/slack');
 const { google } = require('googleapis');
+const axios = require('axios');
 
 const algorithm = 'aes-256-cbc';
 const secretKey = 'linkbeflatformlinkbeflatformlink'; // 32바이트 키
 const ivLength = 16; // AES 블록 크기
-const axios = require('axios');
 
 const auths = new google.auth.JWT(process.env.GOOGLE_CLIENT_EMAIL, null, process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), [
     'https://www.googleapis.com/auth/calendar',
@@ -41,229 +41,118 @@ const decrypt = (text) => {
 const token = process.env.SLACK_BOT_TOKEN;
 const client = new WebClient(token);
 
-router.post('/events', async (req, res) => {
-    await slackApp.requestListener()(req, res);
-});
-
+// Slack 홈뷰 업데이트 함수
 const publishHomeView = async (userId, user, gtw, myGtw, date, encryptedUserId) => {
     const userName = user.user_name;
     const gtwStatus = user.gtw_status;
     const gtwLocation = user.gtw_location;
 
-    const startDate = moment(user.user_doe, 'YYYY-MM-DD'); // 입사일
-    const startDateFormat = moment(user.user_doe).format('YYYY년 MM월 DD일'); // 입사일
-    const today = moment(); // 현재 날짜
-    const workDays = today.diff(startDate, 'days'); // 근무일수 계산
-    const formattedWorkDays = workDays.toLocaleString(); // 근무일수를 천 단위마다 콤마로 구분
+    const startDate = moment(user.user_doe, 'YYYY-MM-DD');
+    const startDateFormat = moment(user.user_doe).format('YYYY년 MM월 DD일');
+    const today = moment();
+    const workDays = today.diff(startDate, 'days');
+    const formattedWorkDays = workDays.toLocaleString();
 
-    let actionBlocks = [];
-    // 다른 사람들의 출퇴근 정보 표시
+    const actionBlocks = [];
+
     if (gtw.length > 0) {
-        let gtwText = '근무중 / 출근시간\n\n';
-        gtw.forEach((entry) => {
-            let locationIcon = entry.location === 'office' ? '🏢' : '🏠';
-            let formattedStartTime = moment(entry.start_time).format('HH시 mm분 ss초');
-            gtwText += `${locationIcon} ${entry.user_name} : ${formattedStartTime}\n`;
-        });
+        const gtwText = gtw.reduce((text, entry) => {
+            const locationIcon = entry.location === 'office' ? '🏢' : '🏠';
+            const formattedStartTime = moment(entry.start_time).format('HH시 mm분 ss초');
+            return `${text}${locationIcon} ${entry.user_name} : ${formattedStartTime}\n`;
+        }, '근무중 / 출근시간\n\n');
 
-        actionBlocks.push(
-            {
-                type: 'section',
-                text: {
-                    type: 'mrkdwn',
-                    text: gtwText,
-                },
-            },
-            {
-                type: 'divider',
-            }
-        );
+        actionBlocks.push({ type: 'section', text: { type: 'mrkdwn', text: gtwText } }, { type: 'divider' });
     }
 
     if (myGtw.length > 0) {
-        let formattedStartTime = moment(myGtw[0].start_time).format('HH시 mm분 ss초');
-        let formattedEndTime;
-        let endTimeLabel;
-
-        if (myGtw[0].end_time) {
-            // 실제 퇴근 시간이 있는 경우
-            formattedEndTime = moment(myGtw[0].end_time).format('HH시 mm분 ss초');
-            endTimeLabel = '퇴근 시간';
-        } else {
-            // 퇴근 예상 시간을 계산
-            let estimatedEndTime = moment(myGtw[0].start_time).add(9, 'hours').format('HH시 mm분 ss초');
-            formattedEndTime = estimatedEndTime;
-            endTimeLabel = '퇴근 예상시간';
-        }
+        const formattedStartTime = moment(myGtw[0].start_time).format('HH시 mm분 ss초');
+        const formattedEndTime = myGtw[0].end_time
+            ? moment(myGtw[0].end_time).format('HH시 mm분 ss초')
+            : moment(myGtw[0].start_time).add(9, 'hours').format('HH시 mm분 ss초');
+        const endTimeLabel = myGtw[0].end_time ? '퇴근 시간' : '퇴근 예상시간';
 
         actionBlocks.push(
             {
                 type: 'section',
-                text: {
-                    type: 'mrkdwn',
-                    text: `나의 근무 상태:\n\n출근 시간: ${formattedStartTime}\n${endTimeLabel}: ${formattedEndTime}`,
-                },
+                text: { type: 'mrkdwn', text: `나의 근무 상태:\n\n출근 시간: ${formattedStartTime}\n${endTimeLabel}: ${formattedEndTime}` },
             },
-            {
-                type: 'divider',
-            }
+            { type: 'divider' }
         );
     }
-    if (gtwStatus === 0) {
-        actionBlocks.push({
-            type: 'section',
-            text: {
-                type: 'mrkdwn',
-                text: '출근 옵션을 선택하세요:',
-            },
-        });
-        actionBlocks.push({
-            type: 'actions',
-            elements: [
-                {
-                    type: 'button',
-                    text: {
-                        type: 'plain_text',
-                        text: '출근하기',
-                    },
-                    url: `https://hibye.kr/gtw?userId=${encryptedUserId}&type=gtw&platform=slack&slackuser=${userId}`,
-                    action_id: 'clock_in',
-                },
-                {
-                    type: 'button',
-                    text: {
-                        type: 'plain_text',
-                        text: '재택출근하기',
-                    },
-                    url: `https://hibye.kr/gtw?userId=${encryptedUserId}&type=remote_gtw&platform=slack&slackuser=${userId}`,
-                    action_id: 'remote_clock_in',
-                },
-            ],
-        });
-    } else if (gtwStatus === 1) {
-        let url;
 
-        if (gtwLocation === 'office') {
-            url = `https://hibye.kr/gtw?userId=${encryptedUserId}&type=go&platform=slack&slackuser=${userId}`;
-        } else {
-            url = `https://hibye.kr/gtw?userId=${encryptedUserId}&type=remote_go&platform=slack&slackuser=${userId}`;
+    const addActionBlocks = () => {
+        if (gtwStatus === 0) {
+            actionBlocks.push(
+                { type: 'section', text: { type: 'mrkdwn', text: '출근 옵션을 선택하세요:' } },
+                {
+                    type: 'actions',
+                    elements: [
+                        {
+                            type: 'button',
+                            text: { type: 'plain_text', text: '출근하기' },
+                            url: `https://hibye.kr/gtw?userId=${encryptedUserId}&type=gtw&platform=slack&slackuser=${userId}`,
+                            action_id: 'clock_in',
+                        },
+                        {
+                            type: 'button',
+                            text: { type: 'plain_text', text: '재택출근하기' },
+                            url: `https://hibye.kr/gtw?userId=${encryptedUserId}&type=remote_gtw&platform=slack&slackuser=${userId}`,
+                            action_id: 'remote_clock_in',
+                        },
+                    ],
+                }
+            );
+        } else if (gtwStatus === 1) {
+            const url =
+                gtwLocation === 'office'
+                    ? `https://hibye.kr/gtw?userId=${encryptedUserId}&type=go&platform=slack&slackuser=${userId}`
+                    : `https://hibye.kr/gtw?userId=${encryptedUserId}&type=remote_go&platform=slack&slackuser=${userId}`;
+
+            actionBlocks.push(
+                { type: 'section', text: { type: 'mrkdwn', text: '퇴근하기를 눌러주세요.' } },
+                {
+                    type: 'actions',
+                    elements: [{ type: 'button', text: { type: 'plain_text', text: '퇴근하기' }, url, action_id: 'clock_out' }],
+                },
+                { type: 'divider' }
+            );
+        } else if (gtwStatus === 2) {
+            actionBlocks.push({ type: 'section', text: { type: 'mrkdwn', text: '오늘 하루 수고하셨습니다!' } });
         }
-
-        actionBlocks.push({
-            type: 'section',
-            text: {
-                type: 'mrkdwn',
-                text: '퇴근하기를 눌러주세요.',
-            },
-        });
 
         actionBlocks.push(
+            { type: 'section', text: { type: 'mrkdwn', text: '🏖️ 휴가 및 연차신청' } },
             {
                 type: 'actions',
-                elements: [
-                    {
-                        type: 'button',
-                        text: {
-                            type: 'plain_text',
-                            text: '퇴근하기',
-                        },
-                        url: url,
-                        action_id: 'clock_out',
-                    },
-                ],
+                elements: [{ type: 'button', text: { type: 'plain_text', text: '신청하기', emoji: true }, action_id: 'open_modal' }],
             },
+            { type: 'divider' },
+            { type: 'section', text: { type: 'mrkdwn', text: '📰 나의 정보' } },
             {
-                type: 'divider',
-            }
-        );
-    } else if (gtwStatus === 2) {
-        actionBlocks.push({
-            type: 'section',
-            text: {
-                type: 'mrkdwn',
-                text: '오늘 하루 수고하셨습니다!',
-            },
-        });
-    }
-
-    // 새로운 버튼을 추가합니다.
-    actionBlocks.push({
-        type: 'section',
-        text: {
-            type: 'mrkdwn',
-            text: '🏖️ 휴가 및 연차신청',
-        },
-    });
-
-    actionBlocks.push(
-        {
-            type: 'actions',
-            elements: [
-                {
-                    type: 'button',
-                    text: {
-                        type: 'plain_text',
-                        text: '신청하기',
-                        emoji: true,
-                    },
-                    action_id: 'open_modal',
+                type: 'section',
+                text: {
+                    type: 'mrkdwn',
+                    text: `나의 입사일 : ${startDateFormat} \n 나의 남은연차 : ${user.user_stip}일 \n 나의 총 근로일 : ${formattedWorkDays}일`,
                 },
-            ],
-        },
-        {
-            type: 'divider',
-        }
-    );
-
-    actionBlocks.push({
-        type: 'section',
-        text: {
-            type: 'mrkdwn',
-            text: '📰 나의 정보',
-        },
-    });
-
-    actionBlocks.push(
-        {
-            type: 'section',
-            text: {
-                type: 'mrkdwn',
-                text: `나의 입사일 : ${startDateFormat} \n 나의 남은연차 : ${user.user_stip}일 \n 나의 총 근로일 : ${formattedWorkDays}일`,
             },
-        },
-        {
-            type: 'divider',
-        }
-    );
+            { type: 'divider' }
+        );
+    };
+
+    addActionBlocks();
 
     const blocks = [
         {
             type: 'context',
-            elements: [
-                {
-                    type: 'plain_text',
-                    text: `🎉 ${date}일 입니다. ${userName}님!`,
-                    emoji: true,
-                },
-            ],
+            elements: [{ type: 'plain_text', text: `🎉 ${date}일 입니다. ${userName}님!`, emoji: true }],
         },
-        {
-            type: 'divider',
-        },
+        { type: 'divider' },
         ...actionBlocks,
     ];
 
-    const view = {
-        type: 'home',
-        callback_id: 'home_view',
-        blocks: blocks,
-    };
-
     try {
-        await client.views.publish({
-            user_id: userId,
-            view: view,
-        });
+        await client.views.publish({ user_id: userId, view: { type: 'home', callback_id: 'home_view', blocks } });
     } catch (error) {
         console.error('Error publishing view:', error);
     }
@@ -273,95 +162,52 @@ const publishHomeView = async (userId, user, gtw, myGtw, date, encryptedUserId) 
 const openModal = async (trigger_id) => {
     try {
         await client.views.open({
-            trigger_id: trigger_id,
+            trigger_id,
             view: {
                 type: 'modal',
                 callback_id: 'modal-identifier',
-                title: {
-                    type: 'plain_text',
-                    text: '휴가 및 연차신청',
-                },
+                title: { type: 'plain_text', text: '휴가 및 연차신청' },
                 blocks: [
-                    {
-                        type: 'section',
-                        text: {
-                            type: 'mrkdwn',
-                            text: '휴가 및 연차를 신청해주세요.',
-                        },
-                    },
+                    { type: 'section', text: { type: 'mrkdwn', text: '휴가 및 연차를 신청해주세요.' } },
                     {
                         type: 'input',
                         block_id: 'input_c',
-                        label: {
-                            type: 'plain_text',
-                            text: '휴가 및 연차 선택하세요',
-                        },
+                        label: { type: 'plain_text', text: '휴가 및 연차 선택하세요' },
                         element: {
                             type: 'static_select',
                             action_id: 'select_input',
-                            placeholder: {
-                                type: 'plain_text',
-                                text: '휴가 및 연차 선택하세요',
-                            },
+                            placeholder: { type: 'plain_text', text: '휴가 및 연차 선택하세요' },
                             options: [
-                                {
-                                    text: {
-                                        type: 'plain_text',
-                                        text: '재택',
-                                    },
-                                    value: 'home',
-                                },
-                                {
-                                    text: {
-                                        type: 'plain_text',
-                                        text: '반차',
-                                    },
-                                    value: 'half',
-                                },
-                                {
-                                    text: {
-                                        type: 'plain_text',
-                                        text: '연차',
-                                    },
-                                    value: 'day',
-                                },
-                                {
-                                    text: {
-                                        type: 'plain_text',
-                                        text: '휴가',
-                                    },
-                                    value: 'vacation',
-                                },
+                                { text: { type: 'plain_text', text: '재택' }, value: 'home' },
+                                { text: { type: 'plain_text', text: '반차' }, value: 'half' },
+                                { text: { type: 'plain_text', text: '연차' }, value: 'day' },
+                                { text: { type: 'plain_text', text: '휴가' }, value: 'vacation' },
                             ],
                         },
                     },
                     {
                         type: 'input',
                         block_id: 'input_date',
-                        label: {
-                            type: 'plain_text',
-                            text: '날짜를 선택하세요',
-                        },
+                        label: { type: 'plain_text', text: '날짜를 선택하세요' },
                         element: {
                             type: 'datepicker',
                             action_id: 'datepicker_input',
-                            placeholder: {
-                                type: 'plain_text',
-                                text: '날짜 선택',
-                            },
+                            placeholder: { type: 'plain_text', text: '날짜 선택' },
                         },
                     },
                 ],
-                submit: {
-                    type: 'plain_text',
-                    text: '제출',
-                },
+                submit: { type: 'plain_text', text: '제출' },
             },
         });
     } catch (error) {
         console.error('Error opening modal:', error);
     }
 };
+
+// Slack 이벤트 핸들러
+router.post('/events', async (req, res) => {
+    await slackApp.requestListener()(req, res);
+});
 
 router.post('/home', async (req, res) => {
     const { type, challenge, event } = req.body;
@@ -406,14 +252,13 @@ router.post('/home', async (req, res) => {
     }
 });
 
+// 출퇴근 체크 핸들러
 router.get('/gtwCheck', async (req, res) => {
     const { userId, type, platform, slackuser } = req.query;
     const date = moment().format('YYYY-MM-DD');
     const dateNow = moment().format('HH시mm분ss초');
 
-    let location;
-    if (type === 'gtw' || type === 'go') location = 'office';
-    if (type === 'remote_gtw' || type === 'remote_go') location = 'home';
+    const location = type.includes('gtw') ? 'office' : 'home';
 
     let ip;
     let errorM = '';
@@ -434,78 +279,48 @@ router.get('/gtwCheck', async (req, res) => {
 
         if ((type === 'gtw' || type === 'go') && process.env.COMPANY_IP !== ip) {
             console.log('ip', ip);
-
             return res.json({ message: '지정된 ip가 아닙니다.', windowClose: false });
         }
 
-        try {
-            const gtw = await Gtw.findByGtwAsync(parts[1], date);
-            if (type === 'gtw' && gtw.length > 0) {
-                if (gtw[0].end_time === null) {
-                    errorM = '이미 출근중입니다.';
-                } else {
-                    errorM = '이미 퇴근하셨습니다. 내일도 화이팅.';
-                }
-                return res.json({ message: errorM, windowClose: false });
+        const gtw = await Gtw.findByGtwAsync(parts[1], date);
+        if (type === 'gtw' && gtw.length > 0) {
+            errorM = gtw[0].end_time === null ? '이미 출근중입니다.' : '이미 퇴근하셨습니다. 내일도 화이팅.';
+            return res.json({ message: errorM, windowClose: false });
+        }
+
+        await Gtw.createAsync(parts[1], type, date, ip, platform);
+
+        const userInfo = await client.users.info({ user: slackuser });
+        if (userInfo.ok) {
+            const userEmail = userInfo.user.profile.email;
+            const encryptedUserId = encrypt(`${date}|${userEmail}`);
+
+            const user = await User.findByEmailAsync(userEmail);
+            if (!user) {
+                console.log('User not found:', userEmail);
+                return res.status(404).json({ refreshSuccess: false, error: 'User not found' });
             }
 
-            await Gtw.createAsync(parts[1], type, date, ip, platform);
+            const gtwAll = await Gtw.findByGtwAllAsync(date);
+            const myGtw = await Gtw.findByGtwAsync(user.user_id, date);
 
-            const userInfo = await client.users.info({ user: slackuser });
-            if (userInfo.ok) {
-                const userEmail = userInfo.user.profile.email;
-                const encryptedUserId = encrypt(`${date}|${userEmail}`);
+            await publishHomeView(slackuser, user, gtwAll, myGtw, date, encryptedUserId);
 
-                try {
-                    const user = await User.findByEmailAsync(userEmail);
-                    if (!user) {
-                        console.log('User not found:', userEmail);
-                        return res.status(404).json({ refreshSuccess: false, error: 'User not found' });
-                    }
+            const message =
+                type === 'gtw' || type === 'remote_gtw'
+                    ? `${user.user_name}님이 ${dateNow}에 출근하셨습니다.`
+                    : `${user.user_name}님이 ${dateNow}에 퇴근하셨습니다.`;
 
-                    try {
-                        const gtwAll = await Gtw.findByGtwAllAsync(date);
-                        const myGtw = await Gtw.findByGtwAsync(user.user_id, date);
+            await sendSlackMessage('#출퇴근', message);
 
-                        await publishHomeView(slackuser, user, gtwAll, myGtw, date, encryptedUserId);
+            const emoji = type === 'gtw' ? '🏢' : '🏠';
+            const emojiText = type === 'gtw' ? '회사 출근중' : '재택 출근중';
 
-                        const message =
-                            type === 'gtw' || type === 'remote_gtw'
-                                ? `${user.user_name}님이 ${dateNow}에 출근하셨습니다.`
-                                : `${user.user_name}님이 ${dateNow}에 퇴근하셨습니다.`;
+            await updateSlackStatus(slackuser, emoji, emojiText);
 
-                        await sendSlackMessage('#출퇴근', message);
-
-                        let emoji;
-                        let emojiText;
-                        if (type === 'gtw') {
-                            emoji = '🏢';
-                            emojiText = '회사 출근중';
-                        } else if (type === 'remote_gtw') {
-                            emoji = '🏠';
-                            emojiText = '재택 출근중';
-                        } else {
-                            emoji = '';
-                            emojiText = '';
-                        }
-
-                        await updateSlackStatus(slackuser, emoji, emojiText);
-
-                        return res.json({ message: '출근완료', windowClose: true });
-                    } catch (err) {
-                        console.error('gtw Database query error:', err);
-                        return res.status(500).json({ refreshSuccess: false, error: 'gtw Database query error' });
-                    }
-                } catch (err) {
-                    console.error('Database query error:', err);
-                    return res.status(500).json({ refreshSuccess: false, error: 'Database query error' });
-                }
-            } else {
-                return res.status(500).send('Error fetching user info');
-            }
-        } catch (err) {
-            console.error('Database query error:', err);
-            return res.json({ message: 'Database query error', windowClose: false });
+            return res.json({ message: '출근완료', windowClose: true });
+        } else {
+            return res.status(500).send('Error fetching user info');
         }
     } catch (error) {
         console.error('Error in /gtwCheck route:', error);
@@ -513,108 +328,80 @@ router.get('/gtwCheck', async (req, res) => {
     }
 });
 
+// 인터랙션 핸들러
 router.post('/interactions', express.urlencoded({ extended: true }), async (req, res) => {
     const date = moment().format('YYYY-MM-DD');
-
     const payload = JSON.parse(req.body.payload);
-
     const { type, user, actions } = payload;
 
-    if (payload.type === 'block_actions' && payload.actions[0].action_id === 'open_modal') {
-        // 모달을 띄우는 함수 호출
+    if (type === 'block_actions' && actions[0].action_id === 'open_modal') {
         await openModal(payload.trigger_id);
     }
 
-    if (payload.type === 'view_submission') {
+    if (type === 'view_submission') {
         const { user, view } = payload;
         const userId = user.id;
 
-        // 모달에서 제출된 값들 가져오기
         const selectedOption = view.state.values.input_c.select_input.selected_option.value;
         const selectedDate = view.state.values.input_date.datepicker_input.selected_date;
 
         const userInfo = await client.users.info({ user: userId });
         if (userInfo.ok) {
             const userEmail = userInfo.user.profile.email;
-
             const user = await User.findByEmailAsync(userEmail);
 
             console.log('Selected Option:', selectedOption);
             console.log('Selected Date:', selectedDate);
             console.log('UserId:', userId);
 
-            const vacation = await Vca.createAsync(userEmail, selectedOption, selectedDate);
+            await Vca.createAsync(userEmail, selectedOption, selectedDate);
 
             const message =
-                selectedOption === 'half'
-                    ? `${user.user_name}님이 ${selectedDate}에 반차를 사용하셨습니다.`
-                    : selectedOption === 'day'
-                    ? `${user.user_name}님이 ${selectedDate}에 연차를 사용하셨습니다.`
-                    : selectedOption === 'home'
-                    ? `${user.user_name}님이 ${selectedDate}에 재택근무를 사용하셨습니다.`
-                    : selectedOption === 'vacation'
-                    ? `${user.user_name}님이 ${selectedDate}에 휴가를 사용하셨습니다.`
-                    : `${user.user_name}님이 ${selectedDate}에 알 수 없는 활동을 하셨습니다.`;
+                {
+                    half: `${user.user_name}님이 ${selectedDate}에 반차를 사용하셨습니다.`,
+                    day: `${user.user_name}님이 ${selectedDate}에 연차를 사용하셨습니다.`,
+                    home: `${user.user_name}님이 ${selectedDate}에 재택근무를 사용하셨습니다.`,
+                    vacation: `${user.user_name}님이 ${selectedDate}에 휴가를 사용하셨습니다.`,
+                }[selectedOption] || `${user.user_name}님이 ${selectedDate}에 알 수 없는 활동을 하셨습니다.`;
 
             const vacaType =
-                selectedOption === 'half'
-                    ? `반차`
-                    : selectedOption === 'day'
-                    ? `연차`
-                    : selectedOption === 'home'
-                    ? `재택`
-                    : selectedOption === 'vacation'
-                    ? `휴가`
-                    : `알수없음`;
+                {
+                    half: '반차',
+                    day: '연차',
+                    home: '재택',
+                    vacation: '휴가',
+                }[selectedOption] || '알수없음';
 
             const stip =
-                selectedOption === 'half'
-                    ? 0.5
-                    : selectedOption === 'day'
-                    ? 1
-                    : selectedOption === 'home'
-                    ? 0
-                    : selectedOption === 'vacation'
-                    ? 0
-                    : 0;
+                {
+                    half: 0.5,
+                    day: 1,
+                    home: 0,
+                    vacation: 0,
+                }[selectedOption] || 0;
 
             await User.stipUpdateAsync(userEmail, stip);
-
             await sendSlackMessage('#출퇴근', message);
 
             const calendar = google.calendar({ version: 'v3', auth: auths });
-
             const event = {
                 summary: `[${user.user_name}] ${vacaType}`,
                 description: message,
-                start: {
-                    date: selectedDate,
-                    timeZone: 'Asia/Seoul',
-                },
-                end: {
-                    date: selectedDate,
-                    timeZone: 'Asia/Seoul',
-                },
+                start: { date: selectedDate, timeZone: 'Asia/Seoul' },
+                end: { date: selectedDate, timeZone: 'Asia/Seoul' },
             };
 
             try {
-                const response = await calendar.events.insert({
-                    calendarId: process.env.GOOGLE_CALENDAR_ID, // 공유한 캘린더 ID 사용
-                    resource: event,
-                });
+                await calendar.events.insert({ calendarId: process.env.GOOGLE_CALENDAR_ID, resource: event });
                 return res.status(200).json({ response_action: 'clear' });
             } catch (error) {
                 console.error('Error creating event:', error);
                 res.status(500).send('Error creating event');
             }
         }
-
-        // 필요한 데이터 처리 로직 추가
-        // 예: DB에 저장, Slack 메시지 보내기 등
     }
 
     res.status(200).send();
-    //console.log(actions);
 });
 
 const updateSlackStatus = async (userId, emoji, text) => {
@@ -624,22 +411,14 @@ const updateSlackStatus = async (userId, emoji, text) => {
     const profile = {
         status_text: text,
         status_emoji: emoji,
-        status_expiration: 0, // 0 means the status doesn't expire
+        status_expiration: 0,
     };
 
     try {
         const response = await axios.post(
             url,
-            {
-                profile: JSON.stringify(profile),
-                user: userId,
-            },
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
-            }
+            { profile: JSON.stringify(profile), user: userId },
+            { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } }
         );
         if (!response.data.ok) {
             throw new Error(`Error updating status: ${response.data.error}`);
