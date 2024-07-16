@@ -46,8 +46,8 @@ User.findByEmail = (userId, callback) => {
     });
 };
 
-User.calendarTokenUpdate = (userId, token, callback) => {
-    db.query('UPDATE lk_user SET calendar_token = ? WHERE user_id = ?', [token, userId], (err, results) => {
+User.stipUpdate = (userId, stip, callback) => {
+    db.query('UPDATE lk_user SET user_stip = user_stip - ? WHERE user_id = ?', [stip, userId], (err, results) => {
         if (err) {
             return callback(err, null);
         }
@@ -58,6 +58,17 @@ User.calendarTokenUpdate = (userId, token, callback) => {
 User.findByEmailAsync = (email) => {
     return new Promise((resolve, reject) => {
         User.findByEmail(email, (err, user) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(user);
+        });
+    });
+};
+
+User.stipUpdateAsync = (userId, stip) => {
+    return new Promise((resolve, reject) => {
+        User.stipUpdate(userId, stip, (err, user) => {
             if (err) {
                 return reject(err);
             }

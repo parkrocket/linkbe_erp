@@ -567,6 +567,19 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
                     ? `휴가`
                     : `알수없음`;
 
+            const stip =
+                selectedOption === 'half'
+                    ? 0.5
+                    : selectedOption === 'day'
+                    ? 1
+                    : selectedOption === 'home'
+                    ? 0
+                    : selectedOption === 'vacation'
+                    ? 0
+                    : 0;
+
+            await User.stipUpdateAsync(userEmail, stip);
+
             await sendSlackMessage('#출퇴근', message);
 
             const calendar = google.calendar({ version: 'v3', auth: auths });
