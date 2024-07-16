@@ -605,7 +605,7 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
 });
 
 const updateSlackStatus = async (userId, emoji, text) => {
-    const token = process.env.SLACK_BOT_TOKEN;
+    const token = process.env.SLACK_USER_TOKEN;
     const url = 'https://slack.com/api/users.profile.set';
 
     const profile = {
