@@ -313,8 +313,8 @@ router.get('/gtwCheck', async (req, res) => {
 
             await sendSlackMessage('#출퇴근', message);
 
-            const emoji = type === 'gtw' ? '🏢' : '🏠';
-            const emojiText = type === 'gtw' ? '회사 출근중' : '재택 출근중';
+            const emoji = type === 'gtw' ? '🏢' : type === 'remote_gtw' ? '🏠' : '';
+            const emojiText = type === 'gtw' ? '회사 출근중' : type === 'remote_gtw' ? '재택 출근중' : '';
 
             await updateSlackStatus(slackuser, emoji, emojiText);
 
