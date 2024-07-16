@@ -146,17 +146,23 @@ const publishHomeView = async (userId, user, gtw, myGtw, date, encryptedUserId) 
             type: 'section',
             text: {
                 type: 'mrkdwn',
-                text: '퇴근하기를 눌러주세요:',
+                text: '퇴근하기를 눌러주세요.',
             },
-            accessory: {
-                type: 'button',
-                text: {
-                    type: 'plain_text',
-                    text: '퇴근하기',
+        });
+
+        actionBlocks.push({
+            type: 'actions',
+            elements: [
+                {
+                    type: 'button',
+                    text: {
+                        type: 'plain_text',
+                        text: '퇴근하기',
+                    },
+                    url: url,
+                    action_id: 'clock_out',
                 },
-                url: url,
-                action_id: 'clock_out',
-            },
+            ],
         });
     } else if (gtwStatus === 2) {
         actionBlocks.push({
@@ -391,7 +397,7 @@ router.get('/gtwCheck', async (req, res) => {
         if ((type === 'gtw' || type === 'go') && process.env.COMPANY_IP !== ip) {
             console.log('ip', ip);
 
-            return res.json({ message: 'ip가 일치하지 않습니다.', windowClose: false });
+            return res.json({ message: '지정된 ip가 아닙니다.', windowClose: false });
         }
 
         try {
