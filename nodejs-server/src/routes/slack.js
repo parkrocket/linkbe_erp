@@ -50,6 +50,7 @@ const publishHomeView = async (userId, user, gtw, myGtw, date, encryptedUserId) 
     const gtwLocation = user.gtw_location;
 
     const startDate = moment(user.user_doe, 'YYYY-MM-DD'); // 입사일
+    const startDateFormat = moment(user.user_doe).format('YYYY년 MM월 DD일'); // 입사일
     const today = moment(); // 현재 날짜
     const workDays = today.diff(startDate, 'days'); // 근무일수 계산
     const formattedWorkDays = workDays.toLocaleString(); // 근무일수를 천 단위마다 콤마로 구분
@@ -226,7 +227,7 @@ const publishHomeView = async (userId, user, gtw, myGtw, date, encryptedUserId) 
             type: 'section',
             text: {
                 type: 'mrkdwn',
-                text: `나의 입사일 : ${startDate} \n 나의 남은연차 : ${user.user_stip}일 \n 나의 총 근로일 : ${formattedWorkDays}일`,
+                text: `나의 입사일 : ${startDateFormat} \n 나의 남은연차 : ${user.user_stip}일 \n 나의 총 근로일 : ${formattedWorkDays}일`,
             },
         },
         {
