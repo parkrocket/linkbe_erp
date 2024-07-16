@@ -49,6 +49,10 @@ const publishHomeView = async (userId, user, gtw, myGtw, date, encryptedUserId) 
     const gtwStatus = user.gtw_status;
     const gtwLocation = user.gtw_location;
 
+    const startDate = moment(user.user_doe, 'YYYY-MM-DD'); // 입사일
+    const today = moment(); // 현재 날짜
+    const workDays = today.diff(startDate, 'days'); // 근무일수 계산
+
     let actionBlocks = [];
     // 다른 사람들의 출퇴근 정보 표시
     if (gtw.length > 0) {
@@ -150,20 +154,25 @@ const publishHomeView = async (userId, user, gtw, myGtw, date, encryptedUserId) 
             },
         });
 
-        actionBlocks.push({
-            type: 'actions',
-            elements: [
-                {
-                    type: 'button',
-                    text: {
-                        type: 'plain_text',
-                        text: '퇴근하기',
+        actionBlocks.push(
+            {
+                type: 'actions',
+                elements: [
+                    {
+                        type: 'button',
+                        text: {
+                            type: 'plain_text',
+                            text: '퇴근하기',
+                        },
+                        url: url,
+                        action_id: 'clock_out',
                     },
-                    url: url,
-                    action_id: 'clock_out',
-                },
-            ],
-        });
+                ],
+            },
+            {
+                type: 'divider',
+            }
+        );
     } else if (gtwStatus === 2) {
         actionBlocks.push({
             type: 'section',
@@ -183,20 +192,46 @@ const publishHomeView = async (userId, user, gtw, myGtw, date, encryptedUserId) 
         },
     });
 
-    actionBlocks.push({
-        type: 'actions',
-        elements: [
-            {
-                type: 'button',
-                text: {
-                    type: 'plain_text',
-                    text: '신청하기',
-                    emoji: true,
+    actionBlocks.push(
+        {
+            type: 'actions',
+            elements: [
+                {
+                    type: 'button',
+                    text: {
+                        type: 'plain_text',
+                        text: '신청하기',
+                        emoji: true,
+                    },
+                    action_id: 'open_modal',
                 },
-                action_id: 'open_modal',
-            },
-        ],
+            ],
+        },
+        {
+            type: 'divider',
+        }
+    );
+
+    actionBlocks.push({
+        type: 'section',
+        text: {
+            type: 'mrkdwn',
+            text: '📰 나의 정보',
+        },
     });
+
+    actionBlocks.push(
+        {
+            type: 'section',
+            text: {
+                type: 'mrkdwn',
+                text: `나의 입사일 : ${user.user_doe} \n 나의 남은 연차갯수 : ${user.user_stip} \n 나의 총근로일 : ${workDays}`,
+            },
+        },
+        {
+            type: 'divider',
+        }
+    );
 
     const blocks = [
         {
