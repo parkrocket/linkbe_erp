@@ -475,6 +475,21 @@ router.get('/gtwCheck', async (req, res) => {
 
                         await sendSlackMessage('#출퇴근', message);
 
+                        let emoji;
+                        let emojiText;
+                        if (type === 'gtw') {
+                            emoji = '🏢';
+                            emojiText = '회사 출근중';
+                        } else if (type === 'remote_gtw') {
+                            emoji = '🏠';
+                            emojiText = '재택 출근중';
+                        } else {
+                            emoji = '';
+                            emojiText = '';
+                        }
+
+                        await updateSlackStatus(slackuser, emoji, emojiText);
+
                         return res.json({ message: '출근완료', windowClose: true });
                     } catch (err) {
                         console.error('gtw Database query error:', err);
@@ -587,5 +602,38 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
     res.status(200).send();
     //console.log(actions);
 });
+
+const updateSlackStatus = async (userId, emoji, text) => {
+    const token = process.env.SLACK_BOT_TOKEN;
+    const url = 'https://slack.com/api/users.profile.set';
+
+    const profile = {
+        status_text: text,
+        status_emoji: emoji,
+        status_expiration: 0, // 0 means the status doesn't expire
+    };
+
+    try {
+        const response = await axios.post(
+            url,
+            {
+                profile: JSON.stringify(profile),
+                user: userId,
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+            }
+        );
+        if (!response.data.ok) {
+            throw new Error(`Error updating status: ${response.data.error}`);
+        }
+    } catch (error) {
+        console.error('Error updating status:', error);
+        throw error;
+    }
+};
 
 module.exports = router;
