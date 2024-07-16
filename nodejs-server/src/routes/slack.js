@@ -14,6 +14,7 @@ const { google } = require('googleapis');
 const algorithm = 'aes-256-cbc';
 const secretKey = 'linkbeflatformlinkbeflatformlink'; // 32바이트 키
 const ivLength = 16; // AES 블록 크기
+const axios = require('axios');
 
 const auths = new google.auth.JWT(process.env.GOOGLE_CLIENT_EMAIL, null, process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), [
     'https://www.googleapis.com/auth/calendar',
