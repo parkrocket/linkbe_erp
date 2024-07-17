@@ -149,9 +149,9 @@ const publishHomeView = async (userId, user, gtw, myGtw, myVa, date, encryptedUs
                 }[entry.type];
 
                 const formattedDate = moment(entry.date).format('YYYY년 MM월 DD일');
-                const formattedVaDatetime = moment(entry.va_datetime).format('YYYY년 MM월 DD일 HH시 mm분');
+                //const formattedVaDatetime = moment(entry.va_datetime).format('YYYY년 MM월 DD일');
 
-                return `${text}${typeText} - 날짜: ${formattedDate}, 신청일: ${formattedVaDatetime}\n`;
+                return `${text}${typeText} - 날짜: ${formattedDate}\n`;
             }, '내가 신청한 휴가 내역:\n\n');
 
             actionBlocks.push({ type: 'section', text: { type: 'mrkdwn', text: myVaText } }, { type: 'divider' });
