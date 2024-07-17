@@ -21,8 +21,6 @@ Vca.findById = (userId, callback) => {
     query = 'SELECT * from lk_vacation WHERE user_id =? AND date >= NOW()';
     queryParams = [userId];
 
-    console.log(userId);
-
     db.query(query, queryParams, (err, results) => {
         console.log(err);
         if (err) {
@@ -50,6 +48,9 @@ Vca.findByIdAsync = (userId) => {
             if (err) {
                 return reject(err);
             }
+
+            console.log(results)
+
             resolve(results);
         });
     });
