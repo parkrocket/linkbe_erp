@@ -44,7 +44,7 @@ Vca.createAsync = (userId, type, date) => {
 
 Vca.findByIdAsync = (userId) => {
     return new Promise((resolve, reject) => {
-        Vca.create(userId, (err, results) => {
+        Vca.findById(userId, (err, results) => {
             if (err) {
                 return reject(err);
             }
