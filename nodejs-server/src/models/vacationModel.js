@@ -21,6 +21,8 @@ Vca.findById = (userId, callback) => {
     query = 'SELECT * from lk_vacation WHERE user_id =? AND date >= NOW()';
     queryParams = [userId];
 
+    console.log(userId);
+
     db.query(query, queryParams, (err, results) => {
         console.log(err);
         if (err) {
