@@ -42,7 +42,7 @@ const token = process.env.SLACK_BOT_TOKEN;
 const client = new WebClient(token);
 
 // Slack 홈뷰 업데이트 함수
-const publishHomeView = async (userId, user, gtw, myGtw, date, encryptedUserId) => {
+const publishHomeView = async (userId, user, gtw, myGtw, myVa, date, encryptedUserId) => {
     const userName = user.user_name;
     const gtwStatus = user.gtw_status;
     const gtwLocation = user.gtw_location;
@@ -138,6 +138,24 @@ const publishHomeView = async (userId, user, gtw, myGtw, date, encryptedUserId) 
             },
             { type: 'divider' }
         );
+
+        if (myVa.length > 0) {
+            const myVaText = myVa.reduce((text, entry) => {
+                const typeText = {
+                    home: '재택',
+                    half: '반차',
+                    day: '연차',
+                    vacation: '휴가'
+                }[entry.type];
+
+                const formattedDate = moment(entry.date).format('YYYY년 MM월 DD일');
+                const formattedVaDatetime = moment(entry.va_datetime).format('YYYY년 MM월 DD일 HH시 mm분');
+
+                return `${text}${typeText} - 날짜: ${formattedDate}, 신청일: ${formattedVaDatetime}\n`;
+            }, '내가 신청한 휴가 내역:\n\n');
+
+            actionBlocks.push({ type: 'section', text: { type: 'mrkdwn', text: myVaText } }, { type: 'divider' });
+        }
     };
 
     addActionBlocks();
@@ -239,8 +257,9 @@ router.post('/home', async (req, res) => {
 
             const gtw = await Gtw.findByGtwAllAsync(date);
             const myGtw = await Gtw.findByGtwAsync(user.user_id, date);
+            const myVa = await Vca.findByIdAsync(user.user_id);
 
-            await publishHomeView(userId, user, gtw, myGtw, date, encryptedUserId);
+            await publishHomeView(userId, user, gtw, myGtw,myVa, date, encryptedUserId);
 
             res.status(200).send();
         } catch (error) {
@@ -303,8 +322,9 @@ router.get('/gtwCheck', async (req, res) => {
 
             const gtwAll = await Gtw.findByGtwAllAsync(date);
             const myGtw = await Gtw.findByGtwAsync(user.user_id, date);
+            const myVa = await Vca.findByIdAsync(user.user_id);
 
-            await publishHomeView(slackuser, user, gtwAll, myGtw, date, encryptedUserId);
+            await publishHomeView(slackuser, user, gtwAll, myGtw,myVa, date, encryptedUserId);
 
             const message =
                 type === 'gtw' || type === 'remote_gtw'
