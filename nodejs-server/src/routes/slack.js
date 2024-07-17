@@ -259,6 +259,8 @@ router.post('/home', async (req, res) => {
             const myGtw = await Gtw.findByGtwAsync(user.user_id, date);
             const myVa = await Vca.findByIdAsync(user.user_id);
 
+            console.log(myVa);
+
             await publishHomeView(userId, user, gtw, myGtw,myVa, date, encryptedUserId);
 
             res.status(200).send();
