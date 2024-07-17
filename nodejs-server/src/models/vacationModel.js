@@ -18,7 +18,7 @@ Vca.create = (userId, type, date, callback) => {
 };
 
 Vca.findById = (userId, callback) => {
-    query = 'SELECT * from lk_vacation WHERE user_id =? AND date >= NOW()';
+    query = 'SELECT * FROM lk_vacation WHERE user_id =? AND date >= NOW()';
     queryParams = [userId];
 
     db.query(query, queryParams, (err, results) => {
@@ -27,7 +27,7 @@ Vca.findById = (userId, callback) => {
             return callback(err, null);
         }
 
-        return callback(null, results.insertId);
+        return callback(null, results);
     });
 };
 
@@ -48,8 +48,6 @@ Vca.findByIdAsync = (userId) => {
             if (err) {
                 return reject(err);
             }
-
-            console.log(results)
 
             resolve(results);
         });
