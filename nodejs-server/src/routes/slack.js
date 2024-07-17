@@ -139,6 +139,7 @@ const publishHomeView = async (userId, user, gtw, myGtw, myVa, date, encryptedUs
             { type: 'divider' }
         );
 
+        /*
         if (myVa.length > 0) {
             const myVaText = myVa.reduce((text, entry) => {
                 const typeText = {
@@ -156,6 +157,7 @@ const publishHomeView = async (userId, user, gtw, myGtw, myVa, date, encryptedUs
 
             actionBlocks.push({ type: 'section', text: { type: 'mrkdwn', text: myVaText } }, { type: 'divider' });
         }
+            */
     };
 
     addActionBlocks();
