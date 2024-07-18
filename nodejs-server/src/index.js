@@ -25,6 +25,9 @@ const slackApp = new App({
 
 // 액션 핸들러 등록
 slackApp.action('select_input', async ({ ack, body, client }) => {
+
+    console.log("asdf");
+
     await ack();
 
     const selectedOption = body.actions[0].selected_option.value;
