@@ -32,11 +32,13 @@ Vca.findById = (userId, callback) => {
 };
 
 Vca.findByAll = (callback) => {
-    query = 'SELECT * FROM lk_vacation WHERE  date >= NOW()';
+    const query = 'SELECT * FROM lk_vacation WHERE date >= NOW()';
 
-    db.query(query,  (err, results) => {
-        console.log(err);
+    console.log(query);
+
+    db.query(query, (err, results) => {
         if (err) {
+            console.log(err);
             return callback(err, null);
         }
 
