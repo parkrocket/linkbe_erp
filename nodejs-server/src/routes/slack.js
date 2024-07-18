@@ -242,7 +242,7 @@ const openModal = async (trigger_id, user) => {
 };
 
 // 액션 핸들러 추가
-router.action('select_input', async ({ ack, body, client }) => {
+app.action('select_input', async ({ ack, body, client }) => {
     await ack();
 
     const selectedOption = body.actions[0].selected_option.value;
