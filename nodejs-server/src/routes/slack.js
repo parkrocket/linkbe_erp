@@ -181,7 +181,7 @@ const publishHomeView = async (userId, user, gtw, myGtw, myVa, date, encryptedUs
 };
 
 // 모달을 띄우는 함수
-const openModal = async (trigger_id) => {
+const openModal = async (trigger_id, user) => {
     try {
         await client.views.open({
             trigger_id,
@@ -191,6 +191,10 @@ const openModal = async (trigger_id) => {
                 title: { type: 'plain_text', text: '휴가 및 연차신청' },
                 blocks: [
                     { type: 'section', text: { type: 'mrkdwn', text: '휴가 및 연차를 신청해주세요.' } },
+                    {
+                        type: 'context',
+                        elements: [{ type: 'plain_text', text: `나의 남은 연차갯수 : ${user.user_stip} \n 나의 남은 휴가갯수 : ${user.user_vaca}`, emoji: true }],
+                    },
                     {
                         type: 'input',
                         block_id: 'input_c',
@@ -361,7 +365,15 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
     const { type, user, actions } = payload;
 
     if (type === 'block_actions' && actions[0].action_id === 'open_modal') {
-        await openModal(payload.trigger_id);
+        const { user } = payload;
+        const userId = user.id;
+        const userInfo = await client.users.info({ user: userId });
+        if (userInfo.ok) {
+            const userEmail = userInfo.user.profile.email;
+            const user = await User.findByEmailAsync(userEmail);
+
+            await openModal(payload.trigger_id, user);
+        }
     }
 
     if (type === 'view_submission') {
