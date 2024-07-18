@@ -159,6 +159,71 @@ const publishHomeView = async (userId, user, gtw, myGtw, myVa, date, encryptedUs
             },
             { type: 'divider' }
         );
+
+        actionBlocks.push({
+            "type": "modal",
+            "callback_id": "vacation_request",
+            "title": {
+                "type": "plain_text",
+                "text": "휴가 및 연차신청"
+            },
+            "blocks": [
+                {
+                    "type": "section",
+                    "block_id": "leave_status",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": "휴가 및 연차를 신청해주세요.\n나의 남은 연차개수: 10.5\n나의 남은 휴가개수: 5"
+                    }
+                },
+                {
+                    "type": "input",
+                    "block_id": "leave_type",
+                    "label": {
+                        "type": "plain_text",
+                        "text": "휴가 및 연차 선택하세요"
+                    },
+                    "element": {
+                        "type": "static_select",
+                        "action_id": "select_leave_type",
+                        "placeholder": {
+                            "type": "plain_text",
+                            "text": "휴가 및 연차 선택하세요"
+                        },
+                        "options": [
+                            {
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "휴가"
+                                },
+                                "value": "vacation"
+                            },
+                            {
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "재택"
+                                },
+                                "value": "home_office"
+                            },
+                            {
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "반차"
+                                },
+                                "value": "half_day"
+                            },
+                            {
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "연차"
+                                },
+                                "value": "annual_leave"
+                            }
+                        ]
+                    }
+                }
+            ]
+        });
        
       
         
