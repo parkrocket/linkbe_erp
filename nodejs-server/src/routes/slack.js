@@ -157,7 +157,7 @@ const publishHomeView = async (userId, user, gtw, myGtw, myVa, date, encryptedUs
                     text: `나의 입사일 : ${startDateFormat} \n 나의 남은연차 : ${user.user_stip}일 \n 나의 남은휴가 : ${user.user_vaca}일 \n 나의 총 근로일 : ${formattedWorkDays}일`,
                 },
             },
-            { type: 'divider' }
+            { type: 'divider' },
         );
 
         actionBlocks.push({
@@ -224,10 +224,6 @@ const publishHomeView = async (userId, user, gtw, myGtw, myVa, date, encryptedUs
                 }
             ]
         });
-       
-      
-        
-          
     };
 
     addActionBlocks();
