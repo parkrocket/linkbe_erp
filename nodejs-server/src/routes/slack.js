@@ -1,3 +1,4 @@
+const { App, ExpressReceiver } = require('@slack/bolt');
 const express = require('express');
 const User = require('../models/userModel');
 const Gtw = require('../models/gtwModel');
@@ -37,6 +38,16 @@ const decrypt = (text) => {
     decrypted += decipher.final('utf8');
     return decrypted;
 };
+
+// ExpressReceiver 생성
+const receiver = new ExpressReceiver({ signingSecret: process.env.SLACK_SIGNING_SECRET });
+
+// Slack Bolt 앱 생성
+const slackApps = new App({
+    token: process.env.SLACK_BOT_TOKEN,
+    receiver,
+});
+
 
 const token = process.env.SLACK_BOT_TOKEN;
 const client = new WebClient(token);
@@ -241,13 +252,14 @@ const openModal = async (trigger_id, user) => {
     }
 };
 
-// 액션 핸들러 추가
 
-/*
-app.action('select_input', async ({ ack, body, client }) => {
+// 액션 핸들러 추가
+slackApps.action('select_input', async ({ ack, body, client }) => {
     await ack();
 
     const selectedOption = body.actions[0].selected_option.value;
+    const trigger_id = body.trigger_id;
+
     let blocks = [
         { type: 'section', text: { type: 'mrkdwn', text: '휴가 및 연차를 신청해주세요.' } },
         {
@@ -320,7 +332,6 @@ app.action('select_input', async ({ ack, body, client }) => {
         },
     });
 });
-*/
 
 // Slack 이벤트 핸들러
 router.post('/events', async (req, res) => {
