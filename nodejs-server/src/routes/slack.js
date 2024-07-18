@@ -1,4 +1,4 @@
-const { App, ExpressReceiver } = require('@slack/bolt');
+
 const express = require('express');
 const User = require('../models/userModel');
 const Gtw = require('../models/gtwModel');
@@ -39,14 +39,6 @@ const decrypt = (text) => {
     return decrypted;
 };
 
-// ExpressReceiver 생성
-const receiver = new ExpressReceiver({ signingSecret: process.env.SLACK_SIGNING_SECRET });
-
-// Slack Bolt 앱 생성
-const slackApps = new App({
-    token: process.env.SLACK_BOT_TOKEN,
-    receiver,
-});
 
 
 const token = process.env.SLACK_BOT_TOKEN;
@@ -252,94 +244,9 @@ const openModal = async (trigger_id, user) => {
     }
 };
 
-
-// 액션 핸들러 추가
-slackApps.action('select_input', async ({ ack, body, client }) => {
-
-    console.log("pppp");
-
-    await ack();
-
-    const selectedOption = body.actions[0].selected_option.value;
-    const trigger_id = body.trigger_id;
-
-    let blocks = [
-        { type: 'section', text: { type: 'mrkdwn', text: '휴가 및 연차를 신청해주세요.' } },
-        {
-            type: 'context',
-            elements: [{ type: 'plain_text', text: `나의 남은 연차갯수 : ${body.user.user_stip} \n 나의 남은 휴가갯수 : ${body.user.user_vaca}`, emoji: true }],
-        },
-        {
-            type: 'input',
-            block_id: 'input_c',
-            label: { type: 'plain_text', text: '휴가 및 연차 선택하세요' },
-            element: {
-                type: 'static_select',
-                action_id: 'select_input',
-                placeholder: { type: 'plain_text', text: '휴가 및 연차 선택하세요' },
-                options: [
-                    { text: { type: 'plain_text', text: '재택' }, value: 'home' },
-                    { text: { type: 'plain_text', text: '반차' }, value: 'half' },
-                    { text: { type: 'plain_text', text: '연차' }, value: 'day' },
-                    { text: { type: 'plain_text', text: '휴가' }, value: 'vacation' },
-                ],
-            },
-        },
-    ];
-
-    if (selectedOption === 'vacation') {
-        blocks.push(
-            {
-                type: 'input',
-                block_id: 'input_start_date',
-                label: { type: 'plain_text', text: '휴가 시작일을 선택하세요' },
-                element: {
-                    type: 'datepicker',
-                    action_id: 'start_datepicker_input',
-                    placeholder: { type: 'plain_text', text: '시작일 선택' },
-                },
-            },
-            {
-                type: 'input',
-                block_id: 'input_end_date',
-                label: { type: 'plain_text', text: '휴가 종료일을 선택하세요' },
-                element: {
-                    type: 'datepicker',
-                    action_id: 'end_datepicker_input',
-                    placeholder: { type: 'plain_text', text: '종료일 선택' },
-                },
-            }
-        );
-    } else {
-        blocks.push({
-            type: 'input',
-            block_id: 'input_date',
-            label: { type: 'plain_text', text: '날짜를 선택하세요' },
-            element: {
-                type: 'datepicker',
-                action_id: 'datepicker_input',
-                placeholder: { type: 'plain_text', text: '날짜 선택' },
-            },
-        });
-    }
-
-    await client.views.update({
-        view_id: body.view.id,
-        hash: body.view.hash,
-        view: {
-            type: 'modal',
-            callback_id: 'modal-identifier',
-            title: { type: 'plain_text', text: '휴가 및 연차신청' },
-            blocks,
-            submit: { type: 'plain_text', text: '제출' },
-        },
-    });
-});
-
 // Slack 이벤트 핸들러
 router.post('/events', async (req, res) => {
 
-    console.log("asdf");
 
     await slackApp.requestListener()(req, res);
 });
@@ -473,7 +380,9 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
     const payload = JSON.parse(req.body.payload);
     const { type, user, actions } = payload;
 
-    console.log(payload);
+    console.log(actions[0].action_id);
+
+
 
     if (type === 'block_actions' && actions[0].action_id === 'open_modal') {
         const { user } = payload;
