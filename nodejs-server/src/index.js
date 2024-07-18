@@ -42,6 +42,7 @@ const userRoutes = require('./routes/user');
 const gtwRoutes = require('./routes/gtw');
 const companyRoutes = require('./routes/company');
 const slackRoutes = require('./routes/slack');
+const vacationRoutes = require('./routes/vacation');
 
 app.use('/api/users', userRoutes);
 
@@ -52,6 +53,8 @@ app.use('/api/list', listRoutes);
 app.use('/api/company', companyRoutes);
 
 app.use('/api/slack', slackRoutes);
+
+app.use('/api/vacation', vacationRoutes);
 
 // /api/test 경로 추가
 app.get('/api/test', (req, res) => {

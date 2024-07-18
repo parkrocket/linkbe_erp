@@ -1,0 +1,96 @@
+import React, { useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import leftArrowImg from '../img/chevron_left_24dp_FILL0_wght400_GRAD0_opsz24.svg';
+import rightArrowImg from '../img/chevron_right_24dp_FILL0_wght400_GRAD0_opsz24.svg';
+//import downloadImg from '../img/download.svg';
+import TableStyle from '../css/RecordTable.module.css';
+import moment from 'moment';
+import Button from '../component/Button';
+import { refresh } from '../_actions/user_action';
+import { gtw } from '../_actions/gtw_action';
+
+function RecordTable({ list, date, setRecodeListDate, recodeAxiosLIst, setRecodeList }) {
+    const [currentDate, setCurrentDate] = useState(date);
+
+    const user = useSelector((state) => state.user);
+
+    const dispatch = useDispatch();
+
+    // 시간 포맷 변경 함수
+    const formatTime = (time) => {
+        if (!time) return '';
+        return moment(time).format('YY년 MM월 DD일');
+    };
+
+    // 근무 시간 계산 함수
+    const calculateWorkDuration = (startTime, endTime) => {
+        if (!startTime || !endTime) return '';
+        const start = moment(startTime);
+        const end = moment(endTime);
+
+        const duration = moment.duration(end.diff(start));
+
+        const hours = Math.floor(duration.asHours());
+        const minutes = duration.minutes();
+        const seconds = duration.seconds();
+        return `${hours}시간 ${minutes}분 ${seconds}초`;
+    };
+
+    // 데이터를 미리 변환
+    const formattedList = list.map((item) => ({
+        ...item,
+        formattedDate: formatTime(item.date),
+        formattedVaDate: formatTime(item.va_datetime),
+        typeChange : (item.type === 'half' ? '반차' : item.type === 'day'  ? '연차' :  item.type === 'vacation'  ? '휴가' :'재택'),
+        stipNumber : (item.type === 'half' ? 0.5 : item.type === 'day'  ? 1 : ''),
+        vacaNumber : (item.type === 'vacation' ? 1 :  ''),
+        status: item.start_time && !item.end_time ? '출근중' : item.start_time && item.end_time ? '퇴근완료' : '미출근',
+        workDuration: item.start_time && item.end_time ? calculateWorkDuration(item.start_time, item.end_time) : '',
+    }));
+
+    const vacaCancelHandler = (id, stipNumber, vacaNumber, userId) => {
+        console.log(id, stipNumber, vacaNumber, userId);
+    };
+
+    return (
+        <section className=" margin-c">
+            <div>
+                <h1 className={TableStyle.title}>연차 및 휴가 목록</h1>
+                
+                {/* 테이블 영역 */}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>이름</th>
+                            <th>타입</th>
+                            <th>날짜</th>
+                            <th>연차갯수</th>
+                            <th>휴가갯수</th>
+                            <th>신청일</th>
+                            <th>신청취소</th>
+                        </tr>
+                    </thead>
+                    <tbody className={TableStyle.work_data}>
+                        {formattedList.map((item, index) => (
+                            <tr key={index}>
+                                <td>{item.user_name}</td>
+                                <td>
+                                    <span>{item.typeChange}</span>
+                                </td>
+                                <td>{item.formattedDate}</td>
+                                <td>{item.stipNumber}</td>
+                                <td>
+                                    {item.vacaNumber}   
+                                </td>
+                                <td> {item.formattedVaDate}</td>
+                                <td><span><button onClick={() => vacaCancelHandler(item.id, item.stipNumber, item.vacaNumber, item.user_id)}>취소하기</button></span></td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    );
+}
+
+export default RecordTable;

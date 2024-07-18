@@ -3,9 +3,9 @@ const bcrypt = require('bcrypt');
 
 const Vca = {};
 
-Vca.create = (userId, type, date, callback) => {
-    query = 'INSERT INTO lk_vacation (user_id, type ,date, va_datetime) VALUES (?, ?, ?, NOW())';
-    queryParams = [userId, type, date];
+Vca.create = (userId, type, date, eventId, callback) => {
+    query = 'INSERT INTO lk_vacation (user_id, type ,date, va_datetime, calendar_id) VALUES (?, ?, ?, NOW(), ?)';
+    queryParams = [userId, type, date, eventId];
 
     db.query(query, queryParams, (err, results) => {
         console.log(err);
@@ -18,7 +18,7 @@ Vca.create = (userId, type, date, callback) => {
 };
 
 Vca.findById = (userId, callback) => {
-    query = 'SELECT * FROM lk_vacation WHERE user_id =? AND date >= NOW()';
+    query = 'SELECT * FROM lk_vacation LEFT JOIN lk_user ON lk_vacation.user_id = lk_user.user_id WHERE lk_vacation.user_id =? AND lk_vacation.date >= NOW()';
     queryParams = [userId];
 
     db.query(query, queryParams, (err, results) => {
@@ -32,9 +32,8 @@ Vca.findById = (userId, callback) => {
 };
 
 Vca.findByAll = (userId,callback) => {
-    const query = 'SELECT * FROM lk_vacation LEFT JOIN lk_user ON lk_vacation.user_id = lk_user.user_id WHERE date >= NOW() ORDER BY date ASC';
+    const query = 'SELECT * FROM lk_vacation LEFT JOIN lk_user ON lk_vacation.user_id = lk_user.user_id WHERE lk_vacation.date >= NOW() ORDER BY lk_vacation.date ASC';
 
-    
 
     db.query(query, (err, results) => {
         if (err) {
@@ -46,9 +45,53 @@ Vca.findByAll = (userId,callback) => {
     });
 };
 
-Vca.createAsync = (userId, type, date) => {
+
+Vca.cancel = (id, stipNumber, vacaNumber, userId) => {
     return new Promise((resolve, reject) => {
-        Vca.create(userId, type, date, (err, results) => {
+        const deleteQuery = 'DELETE FROM lk_vacation WHERE id = ?';
+        
+        db.query(deleteQuery, [id], (err, results) => {
+            if (err) {
+                console.log(err);
+                return reject(err);
+            }
+
+            let updateQuery = 'UPDATE lk_user SET ';
+            const params = [];
+
+            if (stipNumber) {
+                updateQuery += 'user_stip = user_stip + ?';
+                params.push(stipNumber);
+            }
+
+            if (vacaNumber) {
+                if (stipNumber) {
+                    updateQuery += ', ';
+                }
+                updateQuery += 'user_vaca = user_vaca + ?';
+                params.push(vacaNumber);
+            }
+
+            updateQuery += ' WHERE user_id = ?';
+            params.push(userId);
+
+            db.query(updateQuery, params, (err, updateResults) => {
+                if (err) {
+                    console.log(err);
+                    return reject(err);
+                }
+
+                resolve(updateResults);
+            });
+        });
+    });
+};
+
+
+
+Vca.createAsync = (userId, type, date, eventId) => {
+    return new Promise((resolve, reject) => {
+        Vca.create(userId, type, date, eventId, (err, results) => {
             if (err) {
                 return reject(err);
             }
