@@ -152,7 +152,7 @@ const publishHomeView = async (userId, user, gtw, myGtw, myVa, date, encryptedUs
                 const formattedDate = moment(entry.date).format('YYYY년 MM월 DD일');
                 //const formattedVaDatetime = moment(entry.va_datetime).format('YYYY년 MM월 DD일');
 
-                return `${entry.user_name} ${text}${typeText} - ${formattedDate}\n`;
+                return `${text} ${entry.user_name} ${typeText} - ${formattedDate}\n`;
             }, '팀원 휴가 및 연차 내역:\n\n');
 
             actionBlocks.push({ type: 'section', text: { type: 'mrkdwn', text: myVaText } }, { type: 'divider' });
