@@ -34,7 +34,7 @@ Vca.findById = (userId, callback) => {
 Vca.findByAll = (userId,callback) => {
     const query = 'SELECT * FROM lk_vacation WHERE date >= NOW()';
 
-    console.log(query);
+    
 
     db.query(query, (err, results) => {
         if (err) {
@@ -70,8 +70,9 @@ Vca.findByIdAsync = (userId) => {
 };
 
 Vca.findByAllAsync = (userId) => {
+
     return new Promise((resolve, reject) => {
-        Vca.findById(userId, (err, results) => {
+        Vca.findByAll(userId, (err, results) => {
             if (err) {
                 return reject(err);
             }
