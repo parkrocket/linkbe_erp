@@ -139,6 +139,7 @@ const publishHomeView = async (userId, user, gtw, myGtw, myVa, date, encryptedUs
             { type: 'divider' }
         );
 
+        /*
         if (myVa.length > 0) {
             const myVaText = myVa.reduce((text, entry) => {
                 const typeText = {
@@ -156,6 +157,7 @@ const publishHomeView = async (userId, user, gtw, myGtw, myVa, date, encryptedUs
 
             actionBlocks.push({ type: 'section', text: { type: 'mrkdwn', text: myVaText } }, { type: 'divider' });
         }
+            */
     };
 
     addActionBlocks();
@@ -258,6 +260,8 @@ router.post('/home', async (req, res) => {
             const gtw = await Gtw.findByGtwAllAsync(date);
             const myGtw = await Gtw.findByGtwAsync(user.user_id, date);
             const myVa = await Vca.findByAllAsync();
+
+            console.log(myVa);
 
 
             await publishHomeView(userId, user, gtw, myGtw,myVa, date, encryptedUserId);
