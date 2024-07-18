@@ -77,7 +77,6 @@ const publishHomeView = async (userId, user, gtw, myGtw, myVa, date, encryptedUs
                 type: 'section',
                 text: { type: 'mrkdwn', text: `나의 근무 상태:\n\n출근 시간: ${formattedStartTime}\n${endTimeLabel}: ${formattedEndTime}` },
             },
-            { type: 'divider' }
         );
     }
 
@@ -110,7 +109,7 @@ const publishHomeView = async (userId, user, gtw, myGtw, myVa, date, encryptedUs
                     : `https://hibye.kr/gtw?userId=${encryptedUserId}&type=remote_go&platform=slack&slackuser=${userId}`;
 
             actionBlocks.push(
-                { type: 'section', text: { type: 'mrkdwn', text: '퇴근하기를 눌러주세요.' } },
+                
                 {
                     type: 'actions',
                     elements: [{ type: 'button', text: { type: 'plain_text', text: '퇴근하기' }, url, action_id: 'clock_out' }],
@@ -143,7 +142,7 @@ const publishHomeView = async (userId, user, gtw, myGtw, myVa, date, encryptedUs
                     return `${text} ${entry.user_name} ${typeText} - ${formattedDate}\n`;
                 }, '팀원 휴가 및 연차 내역:\n\n');
     
-                actionBlocks.push({ type: 'section', text: { type: 'mrkdwn', text: myVaText } }, { type: 'divider' });
+                actionBlocks.push({ type: 'section', text: { type: 'mrkdwn', text: myVaText } });
             }    
 
         actionBlocks.push({ type: 'divider' },
