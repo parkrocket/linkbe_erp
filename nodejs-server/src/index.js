@@ -1,3 +1,4 @@
+const { App, ExpressReceiver } = require('@slack/bolt');
 const express = require('express');
 const cors = require('cors'); // CORS 미들웨어 불러오기
 const dotenv = require('dotenv');
