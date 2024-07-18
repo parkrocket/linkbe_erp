@@ -31,7 +31,7 @@ Vca.findById = (userId, callback) => {
     });
 };
 
-Vca.findByAll = (callback) => {
+Vca.findByAll = (userId,callback) => {
     const query = 'SELECT * FROM lk_vacation WHERE date >= NOW()';
 
     console.log(query);
@@ -69,9 +69,9 @@ Vca.findByIdAsync = (userId) => {
     });
 };
 
-Vca.findByAllAsync = () => {
+Vca.findByAllAsync = (userId) => {
     return new Promise((resolve, reject) => {
-        Vca.findById( (err, results) => {
+        Vca.findById(userId, (err, results) => {
             if (err) {
                 return reject(err);
             }
