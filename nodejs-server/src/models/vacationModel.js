@@ -32,7 +32,7 @@ Vca.findById = (userId, callback) => {
 };
 
 Vca.findByAll = (userId,callback) => {
-    const query = 'SELECT * FROM lk_vacation WHERE date >= NOW()';
+    const query = 'SELECT * FROM lk_vacation LEFT JOIN lk_user ON lk_vacation.user_id = lk_user.user_id WHERE date >= NOW()';
 
     
 
