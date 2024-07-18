@@ -406,7 +406,7 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
                     vacation: 1,
                 }[selectedOption] || 0;
 
-            await User.stipUpdateAsync(userEmail, stip, selectedDate);
+            await User.stipUpdateAsync(userEmail, stip, selectedOption);
             await sendSlackMessage('#출퇴근', message);
 
             const calendar = google.calendar({ version: 'v3', auth: auths });

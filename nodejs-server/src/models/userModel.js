@@ -48,6 +48,8 @@ User.findByEmail = (userId, callback) => {
 
 User.stipUpdate = (userId, stip, type, callback) => {
 
+    console.log(type);
+
     if(type === "vacation"){
         query = 'UPDATE lk_user SET user_vaca = user_vaca - ? WHERE user_id = ?';
     }else{
