@@ -126,8 +126,27 @@ const publishHomeView = async (userId, user, gtw, myGtw, myVa, date, encryptedUs
             {
                 type: 'actions',
                 elements: [{ type: 'button', text: { type: 'plain_text', text: '신청하기', emoji: true }, action_id: 'open_modal' }],
-            },
-            { type: 'divider' },
+            });
+
+            if (myVa.length > 0) {
+                const myVaText = myVa.reduce((text, entry) => {
+                    const typeText = {
+                        home: '재택',
+                        half: '반차',
+                        day: '연차',
+                        vacation: '휴가'
+                    }[entry.type];
+    
+                    const formattedDate = moment(entry.date).format('YYYY년 MM월 DD일');
+                    //const formattedVaDatetime = moment(entry.va_datetime).format('YYYY년 MM월 DD일');
+    
+                    return `${text} ${entry.user_name} ${typeText} - ${formattedDate}\n`;
+                }, '팀원 휴가 및 연차 내역:\n\n');
+    
+                actionBlocks.push({ type: 'section', text: { type: 'mrkdwn', text: myVaText } }, { type: 'divider' });
+            }    
+
+        actionBlocks.push({ type: 'divider' },
             { type: 'section', text: { type: 'mrkdwn', text: '📰 나의 정보' } },
             {
                 type: 'section',
@@ -138,25 +157,9 @@ const publishHomeView = async (userId, user, gtw, myGtw, myVa, date, encryptedUs
             },
             { type: 'divider' }
         );
-
+       
       
-        if (myVa.length > 0) {
-            const myVaText = myVa.reduce((text, entry) => {
-                const typeText = {
-                    home: '재택',
-                    half: '반차',
-                    day: '연차',
-                    vacation: '휴가'
-                }[entry.type];
-
-                const formattedDate = moment(entry.date).format('YYYY년 MM월 DD일');
-                //const formattedVaDatetime = moment(entry.va_datetime).format('YYYY년 MM월 DD일');
-
-                return `${text} ${entry.user_name} ${typeText} - ${formattedDate}\n`;
-            }, '팀원 휴가 및 연차 내역:\n\n');
-
-            actionBlocks.push({ type: 'section', text: { type: 'mrkdwn', text: myVaText } }, { type: 'divider' });
-        }
+        
           
     };
 
