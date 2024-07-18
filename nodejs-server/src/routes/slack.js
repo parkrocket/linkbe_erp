@@ -70,7 +70,7 @@ const publishHomeView = async (userId, user, gtw, myGtw, myVa, date, encryptedUs
         const formattedEndTime = myGtw[0].end_time
             ? moment(myGtw[0].end_time).format('HH시 mm분 ss초')
             : moment(myGtw[0].start_time).add(9, 'hours').format('HH시 mm분 ss초');
-        const endTimeLabel = myGtw[0].end_time ? '퇴근 시간' : '퇴근 예상시간';
+        const endTimeLabel = myGtw[0].end_time ? '퇴근 시간' : '퇴근 가능시간';
 
         actionBlocks.push(
             {
@@ -151,7 +151,7 @@ const publishHomeView = async (userId, user, gtw, myGtw, myVa, date, encryptedUs
                 type: 'section',
                 text: {
                     type: 'mrkdwn',
-                    text: `나의 입사일 : ${startDateFormat} \n 나의 남은연차 : ${user.user_stip}일 \n 나의 총 근로일 : ${formattedWorkDays}일`,
+                    text: `나의 입사일 : ${startDateFormat} \n 나의 남은연차 : ${user.user_stip}일 \n 나의 남은휴가 : ${user.user_vaca}일 \n 나의 총 근로일 : ${formattedWorkDays}일`,
                 },
             },
             { type: 'divider' }
@@ -403,10 +403,10 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
                     half: 0.5,
                     day: 1,
                     home: 0,
-                    vacation: 0,
+                    vacation: 1,
                 }[selectedOption] || 0;
 
-            await User.stipUpdateAsync(userEmail, stip);
+            await User.stipUpdateAsync(userEmail, stip, selectedDate);
             await sendSlackMessage('#출퇴근', message);
 
             const calendar = google.calendar({ version: 'v3', auth: auths });

@@ -46,14 +46,24 @@ User.findByEmail = (userId, callback) => {
     });
 };
 
-User.stipUpdate = (userId, stip, callback) => {
-    db.query('UPDATE lk_user SET user_stip = user_stip - ? WHERE user_id = ?', [stip, userId], (err, results) => {
+User.stipUpdate = (userId, stip, type, callback) => {
+
+    if(type === "vacation"){
+        query = 'UPDATE lk_user SET user_vaca = user_vaca - ? WHERE user_id = ?';
+    }else{
+        query = 'UPDATE lk_user SET user_stip = user_stip - ? WHERE user_id = ?';
+    }
+    queryParams = [stip, userId];
+
+    db.query(query, queryParams, (err, results) => {
         if (err) {
             return callback(err, null);
         }
         return callback(null, results);
     });
 };
+
+
 
 User.findByEmailAsync = (email) => {
     return new Promise((resolve, reject) => {
@@ -66,9 +76,9 @@ User.findByEmailAsync = (email) => {
     });
 };
 
-User.stipUpdateAsync = (userId, stip) => {
+User.stipUpdateAsync = (userId, stip, type) => {
     return new Promise((resolve, reject) => {
-        User.stipUpdate(userId, stip, (err, user) => {
+        User.stipUpdate(userId, stip, type, (err, user) => {
             if (err) {
                 return reject(err);
             }
