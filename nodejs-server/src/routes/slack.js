@@ -338,6 +338,9 @@ slackApps.action('select_input', async ({ ack, body, client }) => {
 
 // Slack 이벤트 핸들러
 router.post('/events', async (req, res) => {
+
+    console.log("asdf");
+
     await slackApp.requestListener()(req, res);
 });
 
