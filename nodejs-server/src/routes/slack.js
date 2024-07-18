@@ -257,7 +257,7 @@ router.post('/home', async (req, res) => {
 
             const gtw = await Gtw.findByGtwAllAsync(date);
             const myGtw = await Gtw.findByGtwAsync(user.user_id, date);
-            const myVa = await Vca.findByIdAsync(user.user_id);
+            const myVa = await Vca.findByAllAsync();
 
 
             await publishHomeView(userId, user, gtw, myGtw,myVa, date, encryptedUserId);
@@ -323,7 +323,7 @@ router.get('/gtwCheck', async (req, res) => {
 
             const gtwAll = await Gtw.findByGtwAllAsync(date);
             const myGtw = await Gtw.findByGtwAsync(user.user_id, date);
-            const myVa = await Vca.findByIdAsync(user.user_id);
+            const myVa = await Vca.findByAllAsync();
 
             await publishHomeView(slackuser, user, gtwAll, myGtw,myVa, date, encryptedUserId);
 

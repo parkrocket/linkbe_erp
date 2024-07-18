@@ -31,6 +31,19 @@ Vca.findById = (userId, callback) => {
     });
 };
 
+Vca.findByAll = (callback) => {
+    query = 'SELECT * FROM lk_vacation WHERE  date >= NOW()';
+
+    db.query(query,  (err, results) => {
+        console.log(err);
+        if (err) {
+            return callback(err, null);
+        }
+
+        return callback(null, results);
+    });
+};
+
 Vca.createAsync = (userId, type, date) => {
     return new Promise((resolve, reject) => {
         Vca.create(userId, type, date, (err, results) => {
@@ -45,6 +58,18 @@ Vca.createAsync = (userId, type, date) => {
 Vca.findByIdAsync = (userId) => {
     return new Promise((resolve, reject) => {
         Vca.findById(userId, (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+
+            resolve(results);
+        });
+    });
+};
+
+Vca.findByAllAsync = () => {
+    return new Promise((resolve, reject) => {
+        Vca.findById( (err, results) => {
             if (err) {
                 return reject(err);
             }
