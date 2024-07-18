@@ -377,7 +377,6 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
     const payload = JSON.parse(req.body.payload);
     const { type, user, actions } = payload;
 
-    console.log(actions[0].action_id);
 
 
 
@@ -409,7 +408,7 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
             console.log('Selected Date:', selectedDate);
             console.log('UserId:', userId);
 
-            await Vca.createAsync(userEmail, selectedOption, selectedDate);
+            
 
             const message =
                 {
@@ -447,7 +446,11 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
             };
 
             try {
-                await calendar.events.insert({ calendarId: process.env.GOOGLE_CALENDAR_ID, resource: event });
+                const createdEvent = await calendar.events.insert({ calendarId: process.env.GOOGLE_CALENDAR_ID, resource: event });
+                const eventId = createdEvent.data.id;
+
+                await Vca.createAsync(userEmail, selectedOption, selectedDate, eventId);
+
                 return res.status(200).json({ response_action: 'clear' });
             } catch (error) {
                 console.error('Error creating event:', error);
