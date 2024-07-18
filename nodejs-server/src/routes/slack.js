@@ -198,61 +198,6 @@ const openModal = async (trigger_id, user) => {
         if (user.user_vaca >= 1) {
             options.push({ text: { type: 'plain_text', text: '휴가' }, value: 'vacation' });
         }
-        
-        const blocks = [
-            { type: 'section', text: { type: 'mrkdwn', text: '휴가 및 연차를 신청해주세요.' } },
-            {
-                type: 'context',
-                elements: [{ type: 'plain_text', text: `나의 남은 연차갯수 : ${user.user_stip} \n 나의 남은 휴가갯수 : ${user.user_vaca}`, emoji: true }],
-            },
-            {
-                type: 'input',
-                block_id: 'input_c',
-                label: { type: 'plain_text', text: '휴가 및 연차 선택하세요' },
-                element: {
-                    type: 'static_select',
-                    action_id: 'select_input',
-                    placeholder: { type: 'plain_text', text: '휴가 및 연차 선택하세요' },
-                    options,
-                },
-            },
-        ];
-
-        if (options.some(option => option.value === 'vacation')) {
-            blocks.push(
-                {
-                    type: 'input',
-                    block_id: 'input_start_date',
-                    label: { type: 'plain_text', text: '휴가 시작일을 선택하세요' },
-                    element: {
-                        type: 'datepicker',
-                        action_id: 'start_datepicker_input',
-                        placeholder: { type: 'plain_text', text: '시작일 선택' },
-                    },
-                },
-                {
-                    type: 'input',
-                    block_id: 'input_end_date',
-                    label: { type: 'plain_text', text: '휴가 종료일을 선택하세요' },
-                    element: {
-                        type: 'datepicker',
-                        action_id: 'end_datepicker_input',
-                        placeholder: { type: 'plain_text', text: '종료일 선택' },
-                    },
-                }
-            );
-        } else {
-            blocks.push({
-                type: 'input',
-                block_id: 'input_date',
-                label: { type: 'plain_text', text: '날짜를 선택하세요' },
-                element: {
-                    type: 'datepicker',
-                    action_id: 'datepicker_input',
-                    placeholder: { type: 'plain_text', text: '날짜 선택' },
-                },
-            });
-        }
 
         await client.views.open({
             trigger_id,
@@ -260,7 +205,34 @@ const openModal = async (trigger_id, user) => {
                 type: 'modal',
                 callback_id: 'modal-identifier',
                 title: { type: 'plain_text', text: '휴가 및 연차신청' },
-                blocks,
+                blocks: [
+                    { type: 'section', text: { type: 'mrkdwn', text: '휴가 및 연차를 신청해주세요.' } },
+                    {
+                        type: 'context',
+                        elements: [{ type: 'plain_text', text: `나의 남은 연차갯수 : ${user.user_stip} \n 나의 남은 휴가갯수 : ${user.user_vaca}`, emoji: true }],
+                    },
+                    {
+                        type: 'input',
+                        block_id: 'input_c',
+                        label: { type: 'plain_text', text: '휴가 및 연차 선택하세요' },
+                        element: {
+                            type: 'static_select',
+                            action_id: 'select_input',
+                            placeholder: { type: 'plain_text', text: '휴가 및 연차 선택하세요' },
+                            options,
+                        },
+                    },
+                    {
+                        type: 'input',
+                        block_id: 'input_date',
+                        label: { type: 'plain_text', text: '날짜를 선택하세요' },
+                        element: {
+                            type: 'datepicker',
+                            action_id: 'datepicker_input',
+                            placeholder: { type: 'plain_text', text: '날짜 선택' },
+                        },
+                    },
+                ],
                 submit: { type: 'plain_text', text: '제출' },
             },
         });
@@ -268,6 +240,84 @@ const openModal = async (trigger_id, user) => {
         console.error('Error opening modal:', error);
     }
 };
+
+// 액션 핸들러 추가
+router.action('select_input', async ({ ack, body, client }) => {
+    await ack();
+
+    const selectedOption = body.actions[0].selected_option.value;
+    let blocks = [
+        { type: 'section', text: { type: 'mrkdwn', text: '휴가 및 연차를 신청해주세요.' } },
+        {
+            type: 'context',
+            elements: [{ type: 'plain_text', text: `나의 남은 연차갯수 : ${body.user.user_stip} \n 나의 남은 휴가갯수 : ${body.user.user_vaca}`, emoji: true }],
+        },
+        {
+            type: 'input',
+            block_id: 'input_c',
+            label: { type: 'plain_text', text: '휴가 및 연차 선택하세요' },
+            element: {
+                type: 'static_select',
+                action_id: 'select_input',
+                placeholder: { type: 'plain_text', text: '휴가 및 연차 선택하세요' },
+                options: [
+                    { text: { type: 'plain_text', text: '재택' }, value: 'home' },
+                    { text: { type: 'plain_text', text: '반차' }, value: 'half' },
+                    { text: { type: 'plain_text', text: '연차' }, value: 'day' },
+                    { text: { type: 'plain_text', text: '휴가' }, value: 'vacation' },
+                ],
+            },
+        },
+    ];
+
+    if (selectedOption === 'vacation') {
+        blocks.push(
+            {
+                type: 'input',
+                block_id: 'input_start_date',
+                label: { type: 'plain_text', text: '휴가 시작일을 선택하세요' },
+                element: {
+                    type: 'datepicker',
+                    action_id: 'start_datepicker_input',
+                    placeholder: { type: 'plain_text', text: '시작일 선택' },
+                },
+            },
+            {
+                type: 'input',
+                block_id: 'input_end_date',
+                label: { type: 'plain_text', text: '휴가 종료일을 선택하세요' },
+                element: {
+                    type: 'datepicker',
+                    action_id: 'end_datepicker_input',
+                    placeholder: { type: 'plain_text', text: '종료일 선택' },
+                },
+            }
+        );
+    } else {
+        blocks.push({
+            type: 'input',
+            block_id: 'input_date',
+            label: { type: 'plain_text', text: '날짜를 선택하세요' },
+            element: {
+                type: 'datepicker',
+                action_id: 'datepicker_input',
+                placeholder: { type: 'plain_text', text: '날짜 선택' },
+            },
+        });
+    }
+
+    await client.views.update({
+        view_id: body.view.id,
+        hash: body.view.hash,
+        view: {
+            type: 'modal',
+            callback_id: 'modal-identifier',
+            title: { type: 'plain_text', text: '휴가 및 연차신청' },
+            blocks,
+            submit: { type: 'plain_text', text: '제출' },
+        },
+    });
+});
 
 // Slack 이벤트 핸들러
 router.post('/events', async (req, res) => {
