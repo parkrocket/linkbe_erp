@@ -456,6 +456,8 @@ router.post('/interactions', express.urlencoded({ extended: true }), async (req,
     const payload = JSON.parse(req.body.payload);
     const { type, user, actions } = payload;
 
+    console.log(type, actions);
+
     if (type === 'block_actions' && actions[0].action_id === 'open_modal') {
         const { user } = payload;
         const userId = user.id;
