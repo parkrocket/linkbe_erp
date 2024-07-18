@@ -242,6 +242,8 @@ const openModal = async (trigger_id, user) => {
 };
 
 // 액션 핸들러 추가
+
+/*
 app.action('select_input', async ({ ack, body, client }) => {
     await ack();
 
@@ -318,6 +320,7 @@ app.action('select_input', async ({ ack, body, client }) => {
         },
     });
 });
+*/
 
 // Slack 이벤트 핸들러
 router.post('/events', async (req, res) => {
