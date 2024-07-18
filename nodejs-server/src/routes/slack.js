@@ -255,6 +255,9 @@ const openModal = async (trigger_id, user) => {
 
 // 액션 핸들러 추가
 slackApps.action('select_input', async ({ ack, body, client }) => {
+
+    console.log("pppp");
+
     await ack();
 
     const selectedOption = body.actions[0].selected_option.value;
