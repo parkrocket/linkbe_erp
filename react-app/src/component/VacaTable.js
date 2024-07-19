@@ -1,20 +1,10 @@
-import React, { useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import leftArrowImg from '../img/chevron_left_24dp_FILL0_wght400_GRAD0_opsz24.svg';
-import rightArrowImg from '../img/chevron_right_24dp_FILL0_wght400_GRAD0_opsz24.svg';
-//import downloadImg from '../img/download.svg';
+import React from 'react';
 import TableStyle from '../css/RecordTable.module.css';
 import moment from 'moment';
-import Button from '../component/Button';
-import { refresh } from '../_actions/user_action';
-import { gtw } from '../_actions/gtw_action';
+import SERVER_URL from '../Config';
+import axios from 'axios';
 
-function RecordTable({ list, date, setRecodeListDate, recodeAxiosLIst, setRecodeList }) {
-    const [currentDate, setCurrentDate] = useState(date);
-
-    const user = useSelector((state) => state.user);
-
-    const dispatch = useDispatch();
+function RecordTable({ list, setRecodeList }) {
 
     // 시간 포맷 변경 함수
     const formatTime = (time) => {
@@ -27,36 +17,41 @@ function RecordTable({ list, date, setRecodeListDate, recodeAxiosLIst, setRecode
         if (!startTime || !endTime) return '';
         const start = moment(startTime);
         const end = moment(endTime);
-
         const duration = moment.duration(end.diff(start));
-
         const hours = Math.floor(duration.asHours());
         const minutes = duration.minutes();
         const seconds = duration.seconds();
         return `${hours}시간 ${minutes}분 ${seconds}초`;
     };
 
+    
+
     // 데이터를 미리 변환
     const formattedList = list.map((item) => ({
         ...item,
         formattedDate: formatTime(item.date),
         formattedVaDate: formatTime(item.va_datetime),
-        typeChange : (item.type === 'half' ? '반차' : item.type === 'day'  ? '연차' :  item.type === 'vacation'  ? '휴가' :'재택'),
-        stipNumber : (item.type === 'half' ? 0.5 : item.type === 'day'  ? 1 : ''),
-        vacaNumber : (item.type === 'vacation' ? 1 :  ''),
+        typeChange: item.type === 'half' ? '반차' : item.type === 'day' ? '연차' : item.type === 'vacation' ? '휴가' : '재택',
+        stipNumber: item.type === 'half' ? 0.5 : item.type === 'day' ? 1 : '',
+        vacaNumber: item.type === 'vacation' ? 1 : '',
         status: item.start_time && !item.end_time ? '출근중' : item.start_time && item.end_time ? '퇴근완료' : '미출근',
         workDuration: item.start_time && item.end_time ? calculateWorkDuration(item.start_time, item.end_time) : '',
     }));
 
-    const vacaCancelHandler = (id, stipNumber, vacaNumber, userId) => {
-        console.log(id, stipNumber, vacaNumber, userId);
+    const vacaCancelHandler = (id, stipNumber, vacaNumber, userId, calendar_id, type) => {
+        const dataTosubmit = { id, stipNumber, vacaNumber, userId, calendar_id, type };
+        axios.post(`${SERVER_URL}/api/vacation/cancel`, dataTosubmit).then((response) => {
+            if (response.data.vacationCancelSuccess) {
+                alert("취소되었습니다.");
+                setRecodeList(response.data.vacationList);
+            }
+        });
     };
 
     return (
-        <section className=" margin-c">
+        <section className="margin-c">
             <div>
                 <h1 className={TableStyle.title}>연차 및 휴가 목록</h1>
-                
                 {/* 테이블 영역 */}
                 <table>
                     <thead>
@@ -74,16 +69,12 @@ function RecordTable({ list, date, setRecodeListDate, recodeAxiosLIst, setRecode
                         {formattedList.map((item, index) => (
                             <tr key={index}>
                                 <td>{item.user_name}</td>
-                                <td>
-                                    <span>{item.typeChange}</span>
-                                </td>
+                                <td><span>{item.typeChange}</span></td>
                                 <td>{item.formattedDate}</td>
                                 <td>{item.stipNumber}</td>
-                                <td>
-                                    {item.vacaNumber}   
-                                </td>
-                                <td> {item.formattedVaDate}</td>
-                                <td><span><button onClick={() => vacaCancelHandler(item.id, item.stipNumber, item.vacaNumber, item.user_id)}>취소하기</button></span></td>
+                                <td>{item.vacaNumber}</td>
+                                <td>{item.formattedVaDate}</td>
+                                <td><button onClick={() => vacaCancelHandler(item.id, item.stipNumber, item.vacaNumber, item.user_id, item.calendar_id, item.type)}>취소하기</button></td>
                             </tr>
                         ))}
                     </tbody>

@@ -1,52 +1,43 @@
-import React,{useEffect, useState} from 'react'
+import React, { useEffect, useState } from 'react';
 import VacaTable from '../component/VacaTable';
 import axios from 'axios';
 import SERVER_URL from '../Config';
 import { useSelector } from 'react-redux';
 
-
 function Vaca() {
-
-    const [recodeList, setRecodeList] = useState([]);
-
+    const [recordList, setRecordList] = useState([]);
     const user = useSelector((state) => state.user);
-    
 
-    
-    useEffect(() => {
-        
-        recodeAxiosLIst(setRecodeList, user.userData.user.user_id);
-    }, [user.userData.user.user_id]);
+    const recordAxiosList = (setRecordList, userId) => {
+        const dataToSubmit = { user_id: userId };
 
-    
-    const recodeAxiosLIst = (setRecodeList, user) => {
-        const dataTosubmit = { user_id : user };
-
-        axios.post(`${SERVER_URL}/api/vacation/list`, dataTosubmit).then((response) => {
-
-            //console.log(response.data.vacationList);
-            setRecodeList(response.data.vacationList);
+        axios.post(`${SERVER_URL}/api/vacation/list`, dataToSubmit).then((response) => {
+            setRecordList(response.data.vacationList);
         });
     };
 
-    
-  return (
-    <div>
+    useEffect(() => {
+        if (user && user.userData && user.userData.user) {
+            recordAxiosList(setRecordList, user.userData.user.user_id);
+        }
+    }, [user]);
+
+    return (
+        <div>
             <main>
                 <div>
                     <div>
-                        
-                            <div>
-                                <VacaTable
-                                   list= {recodeList}
-                                ></VacaTable>
-                            </div>
-                    
+                        <div>
+                            <VacaTable
+                                list={recordList}
+                                setRecordList={setRecordList}
+                            ></VacaTable>
+                        </div>
                     </div>
                 </div>
             </main>
         </div>
-  )
+    );
 }
 
-export default Vaca
+export default Vaca;
