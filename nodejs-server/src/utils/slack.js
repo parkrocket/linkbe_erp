@@ -6,6 +6,12 @@ const client = new WebClient(token);
 
 
 
+const { google } = require('googleapis');
+
+const auths = new google.auth.JWT(process.env.GOOGLE_CLIENT_EMAIL, null, process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), [
+    'https://www.googleapis.com/auth/calendar',
+]);
+
 
 
 const sendSlackMessage = async (channel, text) => {
