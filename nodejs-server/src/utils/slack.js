@@ -1,4 +1,5 @@
 const { WebClient } = require('@slack/web-api');
+const moment = require('moment');
 
 const token = process.env.SLACK_BOT_TOKEN; // Bot User OAuth Token을 사용
 const web = new WebClient(token);
