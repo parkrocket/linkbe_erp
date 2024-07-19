@@ -143,7 +143,6 @@ const handleGtwCheck = async (req, res) => {
 
 const handleInteractions = async (req, res) => {
 
-    console.log(req.body);
 
     const date = moment().format('YYYY-MM-DD');
     const payload = JSON.parse(req.body.payload);
