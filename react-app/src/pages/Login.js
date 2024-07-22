@@ -2,7 +2,7 @@ import React from 'react';
 import { useState, useRef } from 'react';
 import { useDispatch } from 'react-redux';
 import { loginUser } from '../_actions/user_action';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useCookies } from 'react-cookie';
 import { Link } from 'react-router-dom';
 import LoginStyle from '../css/Login.module.css';
@@ -20,11 +20,12 @@ function Login() {
     const passwordInputRef = useRef(null);
 
     const navigate = useNavigate();
+    const location = useLocation();
 
     const dispatch = useDispatch();
 
     // 메일 주소 유효성 검사
-    const handleEmailInputChange = (e) => {
+    const handleEmailInputChange = e => {
         const emailVal = e.target.value;
         setEmail(emailVal);
         const email_rule = /^[a-z A-Z 0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/i;
@@ -33,10 +34,11 @@ function Login() {
     };
 
     //비밀번호 유효성 검사
-    const handlePasswordInputChange = (e) => {
+    const handlePasswordInputChange = e => {
         const passwordVal = e.target.value;
         setPassword(passwordVal);
-        const password_rule = /^(?=.*[A-Za-z])(?=.*\d|.*[\p{P}\p{S}])[A-Za-z\d\p{P}\p{S}]{8,15}$/u;
+        const password_rule =
+            /^(?=.*[A-Za-z])(?=.*\d|.*[\p{P}\p{S}])[A-Za-z\d\p{P}\p{S}]{8,15}$/u;
         const isValid2 = password_rule.test(passwordVal);
         setIsValidPassword(isValid2);
     };
@@ -56,7 +58,7 @@ function Login() {
         setIsErrorHover2(false);
     };
 
-    const onSubmit = (e) => {
+    const onSubmit = e => {
         e.preventDefault();
 
         if (!isValidEmail) {
@@ -77,13 +79,18 @@ function Login() {
             password,
         };
 
-        dispatch(loginUser(loginData)).then((response) => {
+        dispatch(loginUser(loginData)).then(response => {
             if (response.payload.loginSuccess) {
                 setCookie('x_auth', response.payload.token, {
                     httpOnly: false,
                 });
-                window.localStorage.setItem('userId', response.payload.user.user_id);
-                navigate('/');
+                window.localStorage.setItem(
+                    'userId',
+                    response.payload.user.user_id,
+                );
+                const redirectPath =
+                    new URLSearchParams(location.search).get('redirect') || '/';
+                navigate(redirectPath);
             } else {
                 alert(response.payload.error);
                 navigate('/login');
@@ -98,9 +105,15 @@ function Login() {
                 <div className={LoginStyle.container}>
                     <div className={LoginStyle.wrapper}>
                         <h1>로그인</h1>
-                        <form id={LoginStyle.login_from} name="fsearchbox" onSubmit={onSubmit}>
+                        <form
+                            id={LoginStyle.login_from}
+                            name="fsearchbox"
+                            onSubmit={onSubmit}
+                        >
                             <div className={LoginStyle.form_cont}>
-                                <div className={`${LoginStyle.from_wrap} ${LoginStyle.user_id}`}>
+                                <div
+                                    className={`${LoginStyle.from_wrap} ${LoginStyle.user_id}`}
+                                >
                                     <label htmlFor="userId">이메일</label>
                                     <div className={LoginStyle.input_box}>
                                         <svg
@@ -120,7 +133,13 @@ function Login() {
                                                 height="14"
                                                 fill="black"
                                             >
-                                                <rect fill="white" x="-0.75" y="-0.25" width="19" height="14"></rect>
+                                                <rect
+                                                    fill="white"
+                                                    x="-0.75"
+                                                    y="-0.25"
+                                                    width="19"
+                                                    height="14"
+                                                ></rect>
                                                 <path d="M16.5 0.75H1.5C1.16848 0.75 0.850537 0.881696 0.616116 1.11612C0.381696 1.35054 0.25 1.66848 0.25 2V12C0.25 12.3315 0.381696 12.6495 0.616116 12.8839C0.850537 13.1183 1.16848 13.25 1.5 13.25H16.5C16.8315 13.25 17.1495 13.1183 17.3839 12.8839C17.6183 12.6495 17.75 12.3315 17.75 12V2C17.75 1.66848 17.6183 1.35054 17.3839 1.11612C17.1495 0.881696 16.8315 0.75 16.5 0.75V0.75ZM15.125 2L9 6.2375L2.875 2H15.125ZM1.5 12V2.56875L8.64375 7.5125C8.74837 7.58508 8.87267 7.62397 9 7.62397C9.12733 7.62397 9.25163 7.58508 9.35625 7.5125L16.5 2.56875V12H1.5Z"></path>
                                             </mask>
                                             <path
@@ -142,19 +161,35 @@ function Login() {
                                             name="stx1"
                                             value={email}
                                             onChange={handleEmailInputChange}
-                                            className={isValidEmail ? '' : `${LoginStyle.input_error}`}
+                                            className={
+                                                isValidEmail
+                                                    ? ''
+                                                    : `${LoginStyle.input_error}`
+                                            }
                                             required
                                             ref={emailInputRef}
                                         />
-                                        <div className={`${LoginStyle.error_wrap} ${LoginStyle.error_wrap1} ${isValidEmail ? '' : LoginStyle.on}`}>
+                                        <div
+                                            className={`${
+                                                LoginStyle.error_wrap
+                                            } ${LoginStyle.error_wrap1} ${
+                                                isValidEmail
+                                                    ? ''
+                                                    : LoginStyle.on
+                                            }`}
+                                        >
                                             <svg
                                                 width="20"
                                                 height="20"
                                                 viewBox="0 0 20 20"
                                                 fill="none"
                                                 xmlns="http://www.w3.org/2000/svg"
-                                                onMouseEnter={handleErrorMouseEnter1}
-                                                onMouseLeave={handleErrorMouseLeave1}
+                                                onMouseEnter={
+                                                    handleErrorMouseEnter1
+                                                }
+                                                onMouseLeave={
+                                                    handleErrorMouseLeave1
+                                                }
                                             >
                                                 <path
                                                     d="M10 20C15.5228 20 20 15.5228 20 10C20 4.47715 15.5228 0 10 0C4.47715 0 0 4.47715 0 10C0 15.5228 4.47715 20 10 20Z"
@@ -168,14 +203,26 @@ function Login() {
                                                 ></path>
                                             </svg>
 
-                                            <p className={`${LoginStyle.error_txt} hide1 ${isErrorHover1 ? '' : `${LoginStyle.in}`}`}>
+                                            <p
+                                                className={`${
+                                                    LoginStyle.error_txt
+                                                } hide1 ${
+                                                    isErrorHover1
+                                                        ? ''
+                                                        : `${LoginStyle.in}`
+                                                }`}
+                                            >
                                                 이메일 형식을 확인해주세요.
                                             </p>
                                         </div>
                                     </div>
                                 </div>
-                                <div className={`${LoginStyle.from_wrap} ${LoginStyle.user_password}`}>
-                                    <label htmlFor="userPassword">비밀번호</label>
+                                <div
+                                    className={`${LoginStyle.from_wrap} ${LoginStyle.user_password}`}
+                                >
+                                    <label htmlFor="userPassword">
+                                        비밀번호
+                                    </label>
                                     <div className={LoginStyle.input_box}>
                                         <svg
                                             width="20"
@@ -207,19 +254,35 @@ function Login() {
                                             name="stx2"
                                             value={password}
                                             onChange={handlePasswordInputChange}
-                                            className={isValidPassword ? '' : `${LoginStyle.input_error}`}
+                                            className={
+                                                isValidPassword
+                                                    ? ''
+                                                    : `${LoginStyle.input_error}`
+                                            }
                                             required
                                             ref={passwordInputRef}
                                         />
-                                        <div className={`${LoginStyle.error_wrap} ${LoginStyle.error_wrap2} ${isValidPassword ? '' : LoginStyle.on}`}>
+                                        <div
+                                            className={`${
+                                                LoginStyle.error_wrap
+                                            } ${LoginStyle.error_wrap2} ${
+                                                isValidPassword
+                                                    ? ''
+                                                    : LoginStyle.on
+                                            }`}
+                                        >
                                             <svg
                                                 width="20"
                                                 height="20"
                                                 viewBox="0 0 20 20"
                                                 fill="none"
                                                 xmlns="http://www.w3.org/2000/svg"
-                                                onMouseEnter={handleErrorMouseEnter2}
-                                                onMouseLeave={handleErrorMouseLeave2}
+                                                onMouseEnter={
+                                                    handleErrorMouseEnter2
+                                                }
+                                                onMouseLeave={
+                                                    handleErrorMouseLeave2
+                                                }
                                             >
                                                 <path
                                                     d="M10 20C15.5228 20 20 15.5228 20 10C20 4.47715 15.5228 0 10 0C4.47715 0 0 4.47715 0 10C0 15.5228 4.47715 20 10 20Z"
@@ -233,7 +296,15 @@ function Login() {
                                                     fill="white"
                                                 ></path>
                                             </svg>
-                                            <p className={`${LoginStyle.error_txt} hide2 ${isErrorHover2 ? `${LoginStyle.in}` : ''}`}>
+                                            <p
+                                                className={`${
+                                                    LoginStyle.error_txt
+                                                } hide2 ${
+                                                    isErrorHover2
+                                                        ? `${LoginStyle.in}`
+                                                        : ''
+                                                }`}
+                                            >
                                                 비밀번호를 확인해주세요.
                                             </p>
                                         </div>
@@ -241,10 +312,17 @@ function Login() {
                                 </div>
                             </div>
                             <div className={LoginStyle.submit_cont}>
-                                <button type="submit" className={LoginStyle.login_btn} id="main_login_btn">
+                                <button
+                                    type="submit"
+                                    className={LoginStyle.login_btn}
+                                    id="main_login_btn"
+                                >
                                     로그인
                                 </button>
-                                <Link className={LoginStyle.main_signup_btn} to="/register">
+                                <Link
+                                    className={LoginStyle.main_signup_btn}
+                                    to="/register"
+                                >
                                     가입하기
                                 </Link>
                             </div>

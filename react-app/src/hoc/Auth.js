@@ -7,7 +7,13 @@ import { auth } from '../_actions/user_action';
 import { gtwStatus } from '../_actions/gtw_action';
 import Empty from '../pages/Empty';
 
-function Auth(ChildrenComponent, option, adminRoute = false, menu = 0, subMenu = 0) {
+function Auth(
+    ChildrenComponent,
+    option,
+    adminRoute = false,
+    menu = 0,
+    subMenu = 0,
+) {
     function AuthenticationCheck() {
         const navigate = useNavigate();
         const dispatch = useDispatch();
@@ -16,7 +22,7 @@ function Auth(ChildrenComponent, option, adminRoute = false, menu = 0, subMenu =
         const [view, setView] = useState(false);
 
         useEffect(() => {
-            dispatch(auth(cookies)).then((response) => {
+            dispatch(auth(cookies)).then(response => {
                 if (response.payload.isAuth) {
                     //console.log(response.payload.isAdmin);
                     //로그인 했음
@@ -36,7 +42,7 @@ function Auth(ChildrenComponent, option, adminRoute = false, menu = 0, subMenu =
                     //로그인 안했음
                     if (option === true) {
                         alert('로그인이 필요합니다!');
-                        navigate('/login');
+                        navigate(`/login?redirect=${window.location.pathname}`);
                     }
                     setView(true);
                 }
