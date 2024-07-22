@@ -90,6 +90,7 @@ function Login() {
                 );
                 const redirectPath =
                     new URLSearchParams(location.search).get('redirect') || '/';
+                console.log('Redirecting to:', redirectPath);
                 navigate(redirectPath);
             } else {
                 alert(response.payload.error);
