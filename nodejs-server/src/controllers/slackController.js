@@ -89,8 +89,7 @@ const handleGtwCheck = async (req, res) => {
             return res.json({ message: '잘못된 접근입니다.', windowClose: false });
         }
 
-        if ((type === 'gtw' || type === 'go') && process.env.COMPANY_IP !== ip) {
-            console.log('ip', ip);
+        if (type === 'gtw' && process.env.COMPANY_IP !== ip) {
             return res.json({ message: '지정된 ip가 아닙니다.', windowClose: false });
         }
 

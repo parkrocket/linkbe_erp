@@ -6,6 +6,7 @@ import HeaderRightLogout from '../component/HeaderRightLogout';
 import './../css/Common.css';
 import './../css/Header.css';
 import HeaderLogo from './../img/linkbe_logo.svg';
+import HeaderMenu from '../component/HeaderMenu';
 
 function Header() {
     const user = useSelector((state) => state.user);
@@ -24,7 +25,10 @@ function Header() {
 
                         {user.isAuthenticated ? (
                             <div>
-                                <HeaderRightLogout />
+                                <div><HeaderMenu /></div>
+                                <div>
+                                    <HeaderRightLogout />
+                                </div>
                             </div>
                         ) : (
                             <div>
