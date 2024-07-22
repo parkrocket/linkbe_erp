@@ -31,17 +31,16 @@ export function registerUser(dataTosubmit) {
     };
 }
 
-export const auth = dataTosubmit => async dispatch => {
-    const response = await axios.post(
-        `${SERVER_URL}/api/users/auth`,
-        dataTosubmit,
-    );
-    dispatch({
+export function auth(dataTosubmit) {
+    const request = axios
+        .post(`${SERVER_URL}/api/users/auth`, dataTosubmit)
+        .then(response => response.data);
+
+    return {
         type: AUTH_USER,
-        payload: response.data,
-    });
-    return response.data; // 프로미스를 반환
-};
+        payload: request,
+    };
+}
 
 export function refresh(dataTosubmit) {
     console.log(dataTosubmit);
