@@ -23,6 +23,9 @@ function Gtw() {
                 const params = new URLSearchParams({ userId, type, platform, slackuser });
                 const response = await axios.get(`${SERVER_URL}/api/slack/gtwCheck?${params.toString()}`);
 
+
+                console.log(response);
+
                 if (response.data.windowClose) {
                     window.open('', '_self').close();
                 } else {
