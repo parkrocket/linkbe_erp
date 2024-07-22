@@ -7,6 +7,7 @@ import Register from './Register';
 import Auth from '../hoc/Auth';
 import Gtw from './Gtw';
 import Vaca from './Vaca';
+import Geo from './Geo';
 
 export const Routes = () => {
     return (
@@ -16,6 +17,7 @@ export const Routes = () => {
             <Route path="/register" element={Auth(Register, false)} />
             <Route path="/gtw" element={Auth(Gtw, null)} />
             <Route path="/vaca" element={Auth(Vaca, true)} />
+            <Route path="/geo" element={Auth(Geo, null)} />
         </ReactRouterRoutes>
     );
 };
