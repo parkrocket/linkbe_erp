@@ -9,9 +9,11 @@ import SERVER_URL from '../Config';
 import moment from 'moment';
 
 function Main() {
-    const user = useSelector((state) => state.user);
+    const user = useSelector(state => state.user);
 
-    const [recodeListDate, setRecodeListDate] = useState(moment().format('YYYY-MM-DD'));
+    const [recodeListDate, setRecodeListDate] = useState(
+        moment().format('YYYY-MM-DD'),
+    );
     const [recodeList, setRecodeList] = useState([]);
 
     useEffect(() => {
@@ -21,9 +23,11 @@ function Main() {
     const recodeAxiosLIst = (setRecodeList, recodeListDate) => {
         const dataTosubmit = { date: recodeListDate };
 
-        axios.post(`${SERVER_URL}/api/list/lists`, dataTosubmit).then((response) => {
-            setRecodeList(response.data.list);
-        });
+        axios
+            .post(`${SERVER_URL}/api/list/lists`, dataTosubmit)
+            .then(response => {
+                setRecodeList(response.data.list);
+            });
     };
 
     return (
@@ -43,7 +47,9 @@ function Main() {
                             </div>
                         ) : (
                             <p className="text-align-c">
-                                <Link to="/login">로그인 해주세요!! 수정해봅니다.</Link>
+                                <Link to="/login">
+                                    로그인 해주세요!! 수정해봅니다.
+                                </Link>
                             </p>
                         )}
                     </div>
