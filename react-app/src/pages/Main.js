@@ -48,7 +48,7 @@ function Main() {
                         ) : (
                             <p className="text-align-c">
                                 <Link to="/login">
-                                    로그인 해주세요!! 수정해봅니다.
+                                    링크비 관리 플랫폼에 오신걸 환영합니다 😎😎
                                 </Link>
                             </p>
                         )}
