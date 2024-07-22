@@ -31,6 +31,8 @@ function Auth(
                         alert('관리자가 아닙니다.');
                         navigate('/');
                     } else {
+                        console.log('로그인 됨', option);
+
                         //로그인 안했을때 가능한 페이지를 진입하려고 할때
                         if (option === false) {
                             navigate('/');
