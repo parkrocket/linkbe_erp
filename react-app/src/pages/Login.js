@@ -91,7 +91,7 @@ function Login() {
                 const redirectPath =
                     new URLSearchParams(location.search).get('redirect') || '/';
                 console.log('Redirecting to:', redirectPath);
-                navigate(redirectPath);
+                window.location.href = redirectPath;
             } else {
                 alert(response.payload.error);
                 navigate('/login');
