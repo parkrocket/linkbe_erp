@@ -335,6 +335,9 @@ const updateSlackStatus = async (userId, emoji, text) => {
                 },
             },
         );
+
+        console.log(userId, token);
+
         if (!response.data.ok) {
             throw new Error(`Error updating status: ${response.data.error}`);
         }
