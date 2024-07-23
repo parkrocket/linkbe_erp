@@ -82,6 +82,10 @@ const handleHomeView = async (req, res) => {
 
 const handleGtwCheck = async (req, res) => {
     const { userId, type, platform, slackuser } = req.query;
+
+    console.log(slackuser);
+    return;
+
     const date = moment().format('YYYY-MM-DD');
     const dateNow = moment().format('HH시mm분ss초');
 
