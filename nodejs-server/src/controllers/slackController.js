@@ -83,9 +83,6 @@ const handleHomeView = async (req, res) => {
 const handleGtwCheck = async (req, res) => {
     const { userId, type, platform, slackuser } = req.query;
 
-    console.log(slackuser);
-    return;
-
     const date = moment().format('YYYY-MM-DD');
     const dateNow = moment().format('HH시mm분ss초');
 
@@ -176,7 +173,7 @@ const handleGtwCheck = async (req, res) => {
                     ? '재택 출근중'
                     : '';
 
-            await updateSlackStatus(slackuser, emoji, emojiText);
+            //await updateSlackStatus(slackuser, emoji, emojiText);
 
             return res.json({ message: '출근완료', windowClose: true });
         } else {
