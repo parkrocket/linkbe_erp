@@ -4,14 +4,14 @@ const { google } = require('googleapis');
 const { sendSlackMessage } = require('../utils/slack');
 
 const Vca = {};
-
+/*
 const auths = new google.auth.JWT(
     process.env.GOOGLE_CLIENT_EMAIL,
     null,
     process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
     ['https://www.googleapis.com/auth/calendar'],
 );
-
+*/
 Vca.create = (userId, type, date, eventId, callback) => {
     query =
         'INSERT INTO lk_vacation (user_id, type ,date, va_datetime, calendar_id) VALUES (?, ?, ?, NOW(), ?)';

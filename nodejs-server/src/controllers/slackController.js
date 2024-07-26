@@ -13,12 +13,14 @@ const { WebClient } = require('@slack/web-api');
 
 const { google } = require('googleapis');
 
+/*
 const auths = new google.auth.JWT(
     process.env.GOOGLE_CLIENT_EMAIL,
     null,
     process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
     ['https://www.googleapis.com/auth/calendar'],
 );
+*/
 
 const client = new WebClient(process.env.SLACK_BOT_TOKEN);
 
