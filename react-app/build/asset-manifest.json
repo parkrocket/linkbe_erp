@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/static/css/main.f1ace819.css",
-    "main.js": "/static/js/main.3a376fb7.js",
+    "main.js": "/static/js/main.78e33394.js",
     "static/js/453.6d7673ad.chunk.js": "/static/js/453.6d7673ad.chunk.js",
     "static/media/linkbe_logo.svg": "/static/media/linkbe_logo.0d651ba9f13339f95b4b793b131ada55.svg",
     "index.html": "/index.html",
@@ -9,11 +9,11 @@
     "static/media/chevron_right_24dp_FILL0_wght400_GRAD0_opsz24.svg": "/static/media/chevron_right_24dp_FILL0_wght400_GRAD0_opsz24.a55dcc5ec01bca7fd032f067b6a40a3f.svg",
     "static/media/keyboard_arrow_down_24dp_FILL0_wght400_GRAD0_opsz24.svg": "/static/media/keyboard_arrow_down_24dp_FILL0_wght400_GRAD0_opsz24.ba4b3f743d15db301277.svg",
     "main.f1ace819.css.map": "/static/css/main.f1ace819.css.map",
-    "main.3a376fb7.js.map": "/static/js/main.3a376fb7.js.map",
+    "main.78e33394.js.map": "/static/js/main.78e33394.js.map",
     "453.6d7673ad.chunk.js.map": "/static/js/453.6d7673ad.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.f1ace819.css",
-    "static/js/main.3a376fb7.js"
+    "static/js/main.78e33394.js"
   ]
 }
