@@ -1,5 +1,4 @@
 @charset "UTF-8";
-@import "./Reset.css";
 /* display */
 .display-b {
   display: block;
@@ -126,14 +125,6 @@
 }
 
 /* font family */
-/*
-.font_pretendard {
-  font-family: "Pretendard", sans-serif;
-}
-.font_noto_serif {
-  font-family: "Noto Serif KR", "Pretendard", sans-serif;
-}
-*/
 /*width*/
 .max_400 {
   max-width: 400px;
@@ -156,7 +147,29 @@
 
 .max_1700 {
   max-width: 1700px;
-  width: 96%;
+  width: 94%;
+}
+
+/*기본 영역 꽉 채우기*/
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+  margin-top: 65px;
+}
+
+/* scroll bar(스크롤바)*/
+html::-webkit-scrollbar {
+  width: 6px;
+}
+
+html::-webkit-scrollbar-thumb {
+  background-color: #888;
+  border-radius: 4px;
 }
 
 /*pc padding*/
@@ -240,7 +253,7 @@
   padding-bottom: clamp(40px, 4.17vw, 80px);
 }
 
-.padding-t90 {
+.padding-b90 {
   padding-bottom: clamp(45px, 4.69vw, 90px);
 }
 
