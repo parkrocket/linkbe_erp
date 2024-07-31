@@ -10,7 +10,7 @@ cron.schedule('0 0 * * *', async () => {
 
     try {
         const [results] = await pool.query(query);
-        console.log('gtw_status updated successfully!');
+        console.log('gtw_status updated successfully!!');
     } catch (error) {
         console.error('Error updating gtw_status:', error);
     }

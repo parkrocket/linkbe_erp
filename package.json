@@ -1,12 +1,13 @@
 {
-  "dependencies": {
-    "@slack/bolt": "^3.19.0",
-    "classnames": "^2.5.1",
-    "cors": "^2.8.5",
-    "express": "^4.19.2",
-    "styled-components": "^6.1.11"
-  },
-  "devDependencies": {
-    "sass": "^1.77.6"
-  }
+    "dependencies": {
+        "@slack/bolt": "^3.19.0",
+        "classnames": "^2.5.1",
+        "cors": "^2.8.5",
+        "express": "^4.19.2",
+        "styled-components": "^6.1.11",
+        "sass": "^1.77.6"
+    },
+    "devDependencies": {
+        "sass": "^1.77.6"
+    }
 }
