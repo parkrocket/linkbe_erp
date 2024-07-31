@@ -20,10 +20,10 @@ function Footer() {
                             <br />
                             <span>전화 : 02--000-0000</span> |{' '}
                             <span>이메일 : linkbe.kr</span>{' '}
-                            <p className="copyright">
-                                Copyright 2024. Linkbe. All rights reserved.
-                            </p>{' '}
                         </p>
+                        <p className="copyright">
+                            Copyright 2024. Linkbe. All rights reserved.
+                        </p>{' '}
                     </div>
                 </div>
             </div>
