@@ -6,14 +6,14 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
 
 function HeaderRightLogout() {
-    const user = useSelector((state) => state.user);
+    const user = useSelector(state => state.user);
 
     const navigate = useNavigate();
 
     const dispatch = useDispatch();
     const [, , removeCookie] = useCookies(['x_auth']);
-    const logOutHandler = (event) => {
-        dispatch(logout(user)).then((response) => {
+    const logOutHandler = event => {
+        dispatch(logout(user)).then(response => {
             console.log(response);
             if (response.payload.logoutSuccess === true) {
                 localStorage.removeItem('userId');
@@ -25,15 +25,25 @@ function HeaderRightLogout() {
         });
     };
     return (
-        <div className="header_btn_wrap">
-            <div className="mypage_btn_warp">
+        <div className="util display-f align-items-c">
+            <div className="user">
                 <Link className="mypage_btn" to="/">
-                    {user.userData && user.userData.user && user.userData.user.user_name ? <span>{user.userData.user.user_name}</span> : ''}
+                    {user.userData &&
+                    user.userData.user &&
+                    user.userData.user.user_name ? (
+                        <span>{user.userData.user.user_name}</span>
+                    ) : (
+                        ''
+                    )}
                 </Link>
                 <p>님 안녕하세요.</p>
             </div>
-            <button className="header_signup_btn" onClick={logOutHandler}>
+            <button className="logout_btn" onClick={logOutHandler}>
                 로그아웃
+            </button>
+            <button type="button" className="gnb_btn display-b">
+                <span className="blind">메뉴</span>
+                <div className="line"></div>
             </button>
 
             {/* <p>

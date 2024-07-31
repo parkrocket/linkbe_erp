@@ -9,15 +9,21 @@ import Button from '../component/Button';
 import { refresh } from '../_actions/user_action';
 import { gtw } from '../_actions/gtw_action';
 
-function RecordTable({ list, date, setRecodeListDate, recodeAxiosLIst, setRecodeList }) {
+function RecordTable({
+    list,
+    date,
+    setRecodeListDate,
+    recodeAxiosLIst,
+    setRecodeList,
+}) {
     const [currentDate, setCurrentDate] = useState(date);
 
-    const user = useSelector((state) => state.user);
+    const user = useSelector(state => state.user);
 
     const dispatch = useDispatch();
 
     // 시간 포맷 변경 함수
-    const formatTime = (time) => {
+    const formatTime = time => {
         if (!time) return '';
         return moment(time).format('HH시 mm분');
     };
@@ -37,20 +43,30 @@ function RecordTable({ list, date, setRecodeListDate, recodeAxiosLIst, setRecode
     };
 
     // 데이터를 미리 변환
-    const formattedList = list.map((item) => ({
+    const formattedList = list.map(item => ({
         ...item,
         formattedStartTime: formatTime(item.start_time),
         formattedEndTime: formatTime(item.end_time),
-        status: item.start_time && !item.end_time ? '출근중' : item.start_time && item.end_time ? '퇴근완료' : '미출근',
-        workDuration: item.start_time && item.end_time ? calculateWorkDuration(item.start_time, item.end_time) : '',
+        status:
+            item.start_time && !item.end_time
+                ? '출근중'
+                : item.start_time && item.end_time
+                ? '퇴근완료'
+                : '미출근',
+        workDuration:
+            item.start_time && item.end_time
+                ? calculateWorkDuration(item.start_time, item.end_time)
+                : '',
     }));
 
-    const dateHandleChange = (event) => {
+    const dateHandleChange = event => {
         setRecodeListDate(event.target.value);
     };
 
     const handleLeftArrowClick = () => {
-        const newDate = moment(currentDate).subtract(1, 'days').format('YYYY-MM-DD');
+        const newDate = moment(currentDate)
+            .subtract(1, 'days')
+            .format('YYYY-MM-DD');
         setCurrentDate(newDate);
         setRecodeListDate(newDate);
     };
@@ -77,11 +93,11 @@ function RecordTable({ list, date, setRecodeListDate, recodeAxiosLIst, setRecode
         if (type === 'done') {
             alert('퇴근 완료입니다. 오늘도 수고하셨습니다.');
         } else {
-            dispatch(gtw(dataTosubmit)).then((response) => {
+            dispatch(gtw(dataTosubmit)).then(response => {
                 if (response.payload.gtwSuccess === true) {
                     console.log(userId);
 
-                    dispatch(refresh(dataTosubmit)).then((response) => {
+                    dispatch(refresh(dataTosubmit)).then(response => {
                         if (response.payload.refreshSuccess === true) {
                             recodeAxiosLIst(setRecodeList, date);
                         } else {
@@ -101,14 +117,29 @@ function RecordTable({ list, date, setRecodeListDate, recodeAxiosLIst, setRecode
                 {/* 날짜 및 다운로드 영역 */}
                 <div className={`${TableStyle.wrapper} display-f justify-sb`}>
                     <div className={TableStyle.date_wrapper}>
-                        <span className={TableStyle.left_arrow} onClick={handleLeftArrowClick}>
+                        <span
+                            className={TableStyle.left_arrow}
+                            onClick={handleLeftArrowClick}
+                        >
                             <img src={leftArrowImg} alt="left-arrow" />
                         </span>
-                        <input type="date" id="currentDate" value={date} onChange={dateHandleChange} />
-                        <span className={TableStyle.right_arrow} onClick={handleRightArrowClick}>
+                        <input
+                            type="date"
+                            id="currentDate"
+                            value={date}
+                            onChange={dateHandleChange}
+                        />
+                        <span
+                            className={TableStyle.right_arrow}
+                            onClick={handleRightArrowClick}
+                        >
                             <img src={rightArrowImg} alt="right-arrow" />
                         </span>
-                        <button type="button" name="today" onClick={handleTodayClick}>
+                        <button
+                            type="button"
+                            name="today"
+                            onClick={handleTodayClick}
+                        >
                             오늘
                         </button>
                     </div>
@@ -117,14 +148,14 @@ function RecordTable({ list, date, setRecodeListDate, recodeAxiosLIst, setRecode
                         {user.userData.user.gtw_status === 0 ? (
                             <Button
                                 onClick={() => handleClick('출근하자!', 'gtw')}
-                                className="bg-blue-500 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 p-20  margin-c display-b"
+                                className="bg-blue-500 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 margin-c display-b"
                             >
                                 출근하기
                             </Button>
                         ) : user.userData.user.gtw_status === 1 ? (
                             <Button
                                 onClick={() => handleClick('퇴근하자!', 'go')}
-                                className="bg-red-500 text-white hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300 p-20  margin-c display-b"
+                                className="bg-red-500 text-white hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300 margin-c display-b"
                             >
                                 퇴근하기
                             </Button>
@@ -188,11 +219,20 @@ function RecordTable({ list, date, setRecodeListDate, recodeAxiosLIst, setRecode
                                 <td>{item.formattedStartTime}</td>
                                 <td>
                                     {item.formattedStartTime &&
-                                        (item.location === 'office' ? '회사출근' : item.location === 'home' ? '재택출근' : '')}
+                                        (item.location === 'office'
+                                            ? '회사출근'
+                                            : item.location === 'home'
+                                            ? '재택출근'
+                                            : '')}
                                 </td>
                                 <td>{item.formattedEndTime}</td>
                                 <td>
-                                    {item.formattedEndTime && (item.location === 'office' ? '회사퇴근' : item.location === 'home' ? '재택퇴근' : '')}
+                                    {item.formattedEndTime &&
+                                        (item.location === 'office'
+                                            ? '회사퇴근'
+                                            : item.location === 'home'
+                                            ? '재택퇴근'
+                                            : '')}
                                 </td>
                                 <td>{item.workDuration}</td>
                                 <td>{item.remarks}</td>

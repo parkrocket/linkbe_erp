@@ -1,53 +1,170 @@
 header {
-    width: 100%;
-    height: 72px;
-    padding-top: 30px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 15px 0;
+  z-index: 100;
+  background: #fff;
 }
-header .wrapper {
-    width: 95%;
-    margin: 0 auto;
-    display: flex;
-    justify-content: space-between;
+header .logo {
+  width: 97px;
 }
-.header_btn_wrap {
-    display: flex;
+header .util {
+  margin-left: auto;
+  margin-right: 0;
 }
-.header_btn_wrap a,
-.header_btn_wrap button {
-    height: 37px;
-    line-height: 37px;
-    text-align: center;
-    font-size: 16px;
-    font-weight: 500;
+header .util a,
+header .util button {
+  width: 80px;
+  height: 35px;
+  line-height: 35px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 5px;
+  display: inline-block;
+  transition: 0.3s;
+}
+header .util .login_btn {
+  color: rgb(126, 126, 126);
+  margin-right: 10px;
+}
+header .util .login_btn:hover {
+  background-color: rgb(241, 244, 255);
+}
+header .util .sign_btn,
+header .util .logout_btn {
+  background-color: rgb(53, 98, 228);
+  color: #fff;
+}
+header .util .user {
+  margin-right: 20px;
+}
+header .util .user .mypage_btn {
+  color: rgb(53, 52, 52);
+  height: auto;
+  width: auto;
+  font-weight: bold;
+}
+header .util .user .mypage_btn:hover {
+  text-decoration: underline;
+}
+header .util .user a {
+  font-size: 16px;
+}
+header .util .user p {
+  font-size: 14px;
+  display: inline-block;
+}
+header .util .gnb_btn {
+  display: none;
+}
+header .gnb {
+  margin-left: 70px;
+}
+header .gnb a {
+  font-weight: 600;
+  margin-right: 35px;
+}
+header .gnb .logout_btn {
+  display: none;
+}
+
+@media screen and (max-width: 750px) {
+  header {
+    padding: clamp(20px, 4vw, 30px) 0;
+  }
+  header .logo {
+    width: clamp(100px, 17.33vw, 130px);
+  }
+  header .util a,
+  header .util button {
+    font-size: clamp(14px, 2.4vw, 18px);
+    width: clamp(65px, 13.33vw, 100px);
+    height: clamp(35px, 6vw, 45px);
+    line-height: clamp(35px, 6vw, 45px);
+  }
+  header .util .logout_btn {
+    display: none;
+  }
+  header .util .user {
+    margin-right: 0;
+  }
+  header .util .user p {
+    font-size: clamp(14px, 2.27vw, 17px);
+  }
+  header .util .user a {
+    font-size: clamp(16px, 2.8vw, 21px);
+  }
+  header .util .gnb_btn {
+    display: none;
+    width: clamp(30px, 6vw, 45px);
+    height: clamp(16px, 3.07vw, 23px);
+    position: relative;
+    z-index: 101;
+  }
+  header .util .gnb_btn .line, header .util .gnb_btn::after, header .util .gnb_btn::before {
+    position: absolute;
+    height: clamp(4px, 0.67vw, 5px);
+    background: #ddd;
     border-radius: 5px;
-    width: 84px;
-    display: inline-block;
-}
-.header_btn_wrap .header_login_btn {
-    color: rgb(126, 126, 126);
-    margin-right: 10px;
-}
-.header_btn_wrap .header_login_btn:hover {
-    background-color: rgb(241, 244, 255);
-}
-.header_btn_wrap .header_signup_btn {
-    background-color: rgb(53, 98, 228);
-    color: #fff;
-}
-/* 로그인 했을 때(내 정보, 로그아웃 버튼) */
-.mypage_btn_warp {
-    margin-right: 30px;
-}
-.header_btn_wrap .mypage_btn {
-    color: rgb(53, 52, 52);
-    height: auto;
-    width: auto;
-    font-size: 17px;
-    font-weight: bold;
-}
-.header_btn_wrap .mypage_btn:hover {
-    text-decoration: underline;
-}
-.header_btn_wrap p {
-    display: inline-block;
+    left: 0;
+    transition: 0.4s;
+  }
+  header .util .gnb_btn .line {
+    display: none;
+    width: 60%;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  header .util .gnb_btn::after, header .util .gnb_btn::before {
+    content: "";
+    width: 100%;
+  }
+  header .util .gnb_btn::after {
+    width: 100%;
+    top: 0;
+  }
+  header .util .gnb_btn::before {
+    width: 70%;
+    bottom: 0;
+  }
+  header .util .gnb_btn:hover .line, header .util .gnb_btn:hover::after, header .util .gnb_btn:hover::before {
+    background-color: #226ce0;
+    width: 100%;
+  }
+  header .gnb {
+    display: none;
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 400px;
+    height: 100vh;
+    background-color: #fff;
+    z-index: 100;
+    padding: 100px 4%;
+    border-left: 1px solid #226ce0;
+  }
+  header .gnb .links {
+    flex-wrap: wrap;
+  }
+  header .gnb .links a {
+    width: 100%;
+    font-size: 30px;
+    padding: 20px 0;
+  }
+  header .gnb .logout_btn {
+    display: block;
+    position: absolute;
+    bottom: 10px;
+    right: 4%;
+    font-size: 18px;
+    font-weight: 700;
+    color: #bbb;
+    transition: 0.4s;
+  }
+  header .gnb .logout_btn:hover {
+    color: #226ce0;
+  }
 }

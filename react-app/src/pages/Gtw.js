@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import SERVER_URL from '../Config';
+import GtwStyle from './../css/Gtw.module.css';
 
 function useQuery() {
     return new URLSearchParams(useLocation().search);
@@ -20,9 +21,15 @@ function Gtw() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const params = new URLSearchParams({ userId, type, platform, slackuser });
-                const response = await axios.get(`${SERVER_URL}/api/slack/gtwCheck?${params.toString()}`);
-
+                const params = new URLSearchParams({
+                    userId,
+                    type,
+                    platform,
+                    slackuser,
+                });
+                const response = await axios.get(
+                    `${SERVER_URL}/api/slack/gtwCheck?${params.toString()}`,
+                );
 
                 console.log(response);
 
@@ -36,7 +43,12 @@ function Gtw() {
             }
         };
 
-        if (userId === null || type === null || platform === null || slackuser === null) {
+        if (
+            userId === null ||
+            type === null ||
+            platform === null ||
+            slackuser === null
+        ) {
             alert('정상적인 접근이 아닙니다.');
             //window.open('', '_self').close();
             navigate('/');
@@ -46,8 +58,17 @@ function Gtw() {
     }, [userId, type, platform, slackuser]);
 
     return (
-        <div>
-            <h1>슬랙 로그인 페이지</h1>
+        <div id={GtwStyle.loading_wrapper} className="text-align-c">
+            <div id={GtwStyle.loading}>
+                <div></div>
+            </div>
+            <p className="padding-t40 mo-padding-t40">
+                <span>출</span>
+                <span>근</span>
+                <span>중</span>
+                <span>.</span>
+                <span>.</span>
+            </p>
         </div>
     );
 }

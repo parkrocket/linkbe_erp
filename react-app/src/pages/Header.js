@@ -3,7 +3,6 @@ import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import HeaderRightLogin from '../component/HeaderRightLogin';
 import HeaderRightLogout from '../component/HeaderRightLogout';
-import './../css/Common.css';
 import './../css/Header.css';
 import HeaderLogo from './../img/linkbe_logo.svg';
 import HeaderMenu from '../component/HeaderMenu';
@@ -12,35 +11,25 @@ function Header() {
     const user = useSelector(state => state.user);
 
     return (
-        <div>
-            <header>
-                <div className=" mx-auto">
-                    <div className="wrapper">
-                        <h1>
-                            <Link to="/" className="display-b">
-                                <span className="blind">오늘의 업무 홈</span>
-                                <img src={HeaderLogo} alt="header_logo" />
-                            </Link>
-                        </h1>
+        <header className="">
+            <div className="wrapper max_1700 display-f align-items-c margin-c">
+                <h1 className="logo">
+                    <Link to="/" className="display-b">
+                        <span className="blind">hibye 홈</span>
+                        <img src={HeaderLogo} alt="header_logo" />
+                    </Link>
+                </h1>
 
-                        {user.isAuthenticated ? (
-                            <>
-                                <div>
-                                    <HeaderMenu />
-                                </div>
-                                <div>
-                                    <div>
-                                        <HeaderRightLogout />
-                                    </div>
-                                </div>
-                            </>
-                        ) : (
-                            <div>
-                                <HeaderRightLogin />
-                            </div>
-                        )}
+                {user.isAuthenticated ? (
+                    <>
+                        <HeaderMenu />
+                        <HeaderRightLogout />
+                    </>
+                ) : (
+                    <HeaderRightLogin />
+                )}
 
-                        {/* 
+                {/* 
 
                         <div className="header_btn_wrap">
                             <Link className="header_login_btn" to="/login">
@@ -51,10 +40,8 @@ function Header() {
                             </Link>
                         </div>
 						 */}
-                    </div>
-                </div>
-            </header>
-        </div>
+            </div>
+        </header>
     );
 }
 
