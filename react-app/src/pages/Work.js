@@ -1,11 +1,18 @@
 import React from 'react';
-import LeftGnb from '../component/LeftGnb';
-import LeftGnbStyle from '../css/LeftGnb.module.scss';
 import { useState, useEffect } from 'react';
+
 import moment from 'moment';
 import axios from 'axios';
-import RecordTable from '../component/RecordTable';
 import SERVER_URL from '../Config';
+
+import LeftGnbStyle from '../css/LeftGnb.module.scss';
+
+import LeftGnb from '../component/LeftGnb';
+import RecordTable from '../component/RecordTable';
+import Apply from '../component/Apply';
+import DailyRecord from '../component/DailyRecord';
+import WeeklyRecord from '../component/WeeklyRecord';
+import MemberRecord from '../component/MemberRecord';
 
 function Work() {
     const [recodeListDate, setRecodeListDate] = useState(
@@ -29,13 +36,27 @@ function Work() {
     return (
         <div className={`${LeftGnbStyle.outer} display-f`}>
             <LeftGnb />
-            <RecordTable
-                list={recodeList}
-                date={recodeListDate}
-                setRecodeListDate={setRecodeListDate}
-                recodeAxiosLIst={recodeAxiosLIst}
-                setRecodeList={setRecodeList}
-            ></RecordTable>
+            <section className={` margin-c`}>
+                <Apply />
+                <div className="display-f justify-sb">
+                    <DailyRecord />
+                    <WeeklyRecord />
+                </div>
+                <MemberRecord
+                    list={recodeList}
+                    date={recodeListDate}
+                    setRecodeListDate={setRecodeListDate}
+                    recodeAxiosLIst={recodeAxiosLIst}
+                    setRecodeList={setRecodeList}
+                ></MemberRecord>
+                <RecordTable
+                    list={recodeList}
+                    date={recodeListDate}
+                    setRecodeListDate={setRecodeListDate}
+                    recodeAxiosLIst={recodeAxiosLIst}
+                    setRecodeList={setRecodeList}
+                ></RecordTable>
+            </section>
         </div>
     );
 }

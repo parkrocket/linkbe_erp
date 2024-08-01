@@ -12,3 +12,31 @@ footer {
         width: auto;
     }
 }
+
+@media screen and (max-width: 750px) {
+    footer {
+        .container {
+            &.mo_only {
+                position: fixed;
+                z-index: 100;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                background: #fff;
+                border-top: 1px solid #ddd;
+            }
+        }
+        .links {
+            grid-template-columns: repeat(5, 1fr);
+            a {
+                font-weight: 600;
+                font-size: clamp(11px, 2.67vw, 20px);
+                svg {
+                    width: clamp(18px, 5.33vw, 40px);
+                    height: clamp(18px, 5.33vw, 40px);
+                    margin-bottom: clamp(8px, 2vw, 15px);
+                }
+            }
+        }
+    }
+}
