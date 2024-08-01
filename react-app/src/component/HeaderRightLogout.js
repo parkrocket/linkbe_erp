@@ -5,6 +5,10 @@ import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
 
+import { faCommentDots } from '@fortawesome/free-solid-svg-icons';
+import { faRightFromBracket } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+
 function HeaderRightLogout() {
     const user = useSelector(state => state.user);
 
@@ -26,31 +30,36 @@ function HeaderRightLogout() {
     };
     return (
         <div className="util display-f align-items-c">
-            <div className="user">
-                <Link className="mypage_btn" to="/">
-                    {user.userData &&
-                    user.userData.user &&
-                    user.userData.user.user_name ? (
-                        <span>{user.userData.user.user_name}</span>
-                    ) : (
-                        ''
-                    )}
-                </Link>
-                <p>님 안녕하세요.</p>
-            </div>
-            <button className="logout_btn" onClick={logOutHandler}>
-                로그아웃
+            {' '}
+            <button type="button" className="alarm display-b">
+                <span className="blind">알림</span>
+                <FontAwesomeIcon
+                    icon={faCommentDots}
+                    style={{ color: '#3562e4' }}
+                    size="lg"
+                />
+            </button>{' '}
+            <button
+                type="button"
+                className="logout_btn display-b"
+                onClick={logOutHandler}
+            >
+                <span className="blind">로그아웃</span>
+                <FontAwesomeIcon
+                    icon={faRightFromBracket}
+                    style={{ color: '#3562e4' }}
+                    size="lg"
+                />
             </button>
-            <button type="button" className="gnb_btn display-b">
-                <span className="blind">메뉴</span>
-                <div className="line"></div>
-            </button>
-
-            {/* <p>
-                <a href="#!" onClick={logOutHandler}>
-                    {user.userData.user.mb_id}로그아웃
-                </a>
-            </p> */}
+            <Link className="user" to="/">
+                {user.userData &&
+                user.userData.user &&
+                user.userData.user.user_name ? (
+                    <span>{user.userData.user.user_name.charAt(0)}</span>
+                ) : (
+                    ''
+                )}
+            </Link>
         </div>
     );
 }

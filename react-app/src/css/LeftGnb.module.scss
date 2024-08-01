@@ -11,11 +11,6 @@ main > div > div {
 }
 .outer {
     width: 100%;
-    section {
-        width: calc(100% - 200px);
-        background: #f9f9f9;
-        padding: 20px;
-    }
     .left_gnb {
         width: 200px;
         background: #fff;
@@ -24,12 +19,17 @@ main > div > div {
         left: 0;
         padding: 20px;
     }
+    section {
+        width: calc(100% - 200px);
+        background: #f9f9f9;
+        padding: 20px;
+    }
 }
 
 .left_gnb {
     h3 {
         font-weight: 700;
-        font-size: 20px;
+        font-size: 18px;
         padding-bottom: 30px;
     }
     .gnb_list {
@@ -42,6 +42,19 @@ main > div > div {
                 background: #f1f4ff;
                 color: #3562e4;
             }
+        }
+    }
+}
+@media (max-width: 750px) {
+    main {
+        border-top: none;
+    }
+    .outer {
+        .left_gnb {
+            display: none;
+        }
+        section {
+            width: 100%;
         }
     }
 }

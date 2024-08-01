@@ -3,11 +3,14 @@ header {
     top: 0;
     left: 0;
     width: 100%;
-    padding: 15px 0;
+    padding: 20px 0;
     z-index: 100;
     background: #fff;
+    .wrapper {
+        padding: 0 20px;
+    }
     .logo {
-        width: 97px;
+        width: 100px;
     }
     .util {
         margin-left: auto;
@@ -15,48 +18,53 @@ header {
         a,
         button {
             width: 80px;
-            height: 35px;
-            line-height: 35px;
+            height: 37px;
+            line-height: 37px;
             text-align: center;
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 500;
             border-radius: 5px;
             display: inline-block;
             transition: 0.3s;
         }
         .login_btn {
-            color: rgb(126, 126, 126);
+            color: #7e7e7e;
             margin-right: 10px;
             &:hover {
                 background-color: rgb(241, 244, 255);
             }
         }
-        .sign_btn,
-        .logout_btn {
-            background-color: rgb(53, 98, 228);
+        .sign_btn {
+            background-color: #3562e4;
             color: #fff;
         }
-        .user {
-            margin-right: 20px;
-            .mypage_btn {
-                color: rgb(53, 52, 52);
-                height: auto;
-                width: auto;
-                font-weight: bold;
-                &:hover {
-                    text-decoration: underline;
-                }
+
+        .user,
+        .alarm,
+        .logout_btn {
+            width: 35px;
+            height: 35px;
+            line-height: 35px;
+            margin-right: 10px;
+            border-radius: 100%;
+            // filter: sepia(61%);
+            filter: grayscale(0.5);
+            svg {
+                transition: 0.4s;
             }
-            a {
-                font-size: 16px;
-            }
-            p {
-                font-size: 14px;
-                display: inline-block;
+            &:hover {
+                filter: sepia(0);
             }
         }
-        .gnb_btn {
-            display: none;
+        .user {
+            font-size: 18px;
+            background: #226ce0;
+            color: #fff;
+            margin-right: 0;
+        }
+        .alarm,
+        .logout_btn {
+            background: #e3e5ec;
         }
     }
     .gnb {
@@ -73,8 +81,10 @@ header {
 
 @media screen and (max-width: 750px) {
     header {
-        padding: clamp(20px, 4vw, 30px) 0;
-
+        padding: clamp(15px, 4vw, 30px) 0;
+        .wrapper {
+            padding: 0 3vw;
+        }
         .logo {
             width: clamp(100px, 17.33vw, 130px);
         }
@@ -86,63 +96,20 @@ header {
                 height: clamp(35px, 6vw, 45px);
                 line-height: clamp(35px, 6vw, 45px);
             }
+
+            .user,
+            .alarm,
             .logout_btn {
-                display: none;
+                width: clamp(30px, 6.67vw, 50px);
+                height: clamp(30px, 6.67vw, 50px);
+                line-height: clamp(30px, 6.67vw, 50px);
             }
             .user {
-                margin-right: 0;
-                // margin-right: clamp(10px, 4vw, 30px);
-                p {
-                    font-size: clamp(14px, 2.27vw, 17px);
-                }
-                a {
-                    font-size: clamp(16px, 2.8vw, 21px);
-                }
+                font-size: clamp(18px, 3.33vw, 25px);
             }
-            .gnb_btn {
-                display: none;
-                // display: block;
-                width: clamp(30px, 6vw, 45px);
-                height: clamp(16px, 3.07vw, 23px);
-                position: relative;
-                z-index: 101;
-                .line,
-                &::after,
-                &::before {
-                    position: absolute;
-                    height: clamp(4px, 0.67vw, 5px);
-                    background: #ddd;
-                    border-radius: 5px;
-                    left: 0;
-                    transition: 0.4s;
-                }
-                .line {
-                    display: none;
-                    width: 60%;
-                    top: 50%;
-                    transform: translateY(-50%);
-                }
-                &::after,
-                &::before {
-                    content: '';
-                    width: 100%;
-                }
-                &::after {
-                    width: 100%;
-                    top: 0;
-                }
-                &::before {
-                    width: 70%;
-                    bottom: 0;
-                }
-                &:hover {
-                    .line,
-                    &::after,
-                    &::before {
-                        background-color: #226ce0;
-                        width: 100%;
-                    }
-                }
+            .alarm,
+            .logout_btn {
+                // display: none;
             }
         }
         .gnb {

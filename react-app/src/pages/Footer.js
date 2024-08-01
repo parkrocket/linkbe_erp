@@ -1,12 +1,13 @@
 import React from 'react';
-import HeaderLogo from './../img/linkbe_logo.svg';
-import { Link } from 'react-router-dom';
+
 import './../css/Footer.css';
+
+import FooterMobileMenu from '../component/FooterMobileMenu';
 
 function Footer() {
     return (
         <footer>
-            <div className="container padding-t30 padding-b30">
+            <div className="container pc_only padding-t30 padding-b30">
                 <div className="wrapper max_1700 margin-c">
                     <div className="info ">
                         <p>
@@ -25,6 +26,11 @@ function Footer() {
                             Copyright 2024. Linkbe. All rights reserved.
                         </p>{' '}
                     </div>
+                </div>
+            </div>
+            <div className="container mo_only padding-t30 padding-b30">
+                <div className="wrapper max_1700 margin-c">
+                    <FooterMobileMenu />
                 </div>
             </div>
         </footer>
