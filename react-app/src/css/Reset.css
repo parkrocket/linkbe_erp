@@ -1,5 +1,5 @@
 @charset "UTF-8";
-@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css");
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css');
 /* 여백 초기화 */
 html,
 body,
@@ -39,8 +39,8 @@ article,
 footer,
 div,
 span {
-  margin: 0;
-  padding: 0;
+    margin: 0;
+    padding: 0;
 }
 
 /* 리스트 타입 초기화 */
@@ -50,19 +50,19 @@ li,
 dl,
 dd,
 dt {
-  list-style: none;
+    list-style: none;
 }
 
 /* 이미지, 필드셋 테두리 제거 */
 /* iE 10에서 링크가 걸렸을 때 테두리 제거*/
 img,
 fieldset {
-  border: 0 none;
+    border: 0 none;
 }
 
 /* 스크롤 부드럽게 */
 html {
-  scroll-behavior: smooth;
+    scroll-behavior: smooth;
 }
 
 /* 타이포 설정 */
@@ -75,15 +75,15 @@ h5,
 h6,
 th,
 td {
-  font-family: "Pretendard";
-  font-size: 16px;
-  word-break: keep-all;
-  color: #231815;
-  line-height: normal;
-  font-weight: normal;
-  font-style: normal;
-  letter-spacing: -0.03em;
-  -webkit-text-size-adjust: 100%; /* ios 방향 변경시 글꼴 크기 조정 방지 */
+    font-family: 'Pretendard Variable';
+    font-size: 16px;
+    word-break: keep-all;
+    color: #231815;
+    line-height: normal;
+    font-weight: normal;
+    font-style: normal;
+    letter-spacing: -0.03em;
+    -webkit-text-size-adjust: 100%; /* ios 방향 변경시 글꼴 크기 조정 방지 */
 }
 
 /* 폰트 스타일 강제 상속 */
@@ -93,48 +93,48 @@ optgroup,
 select,
 option,
 textarea {
-  color: inherit;
-  font-family: inherit;
-  font-size: 100%;
-  line-height: normal;
+    color: inherit;
+    font-family: inherit;
+    font-size: 100%;
+    line-height: normal;
 }
 
 /* a요소 장식 제거, 글자색상 변경 */
 a,
 a:active,
 a:hover {
-  text-decoration: none;
-  color: inherit;
-  background: transparent; /* IE10에서 배경색 그레이 방지 */
+    text-decoration: none;
+    color: inherit;
+    background: transparent; /* IE10에서 배경색 그레이 방지 */
 }
 
 /* float clear설정 */
 .clearfix::after {
-  content: "";
-  display: block;
-  clear: both;
+    content: '';
+    display: block;
+    clear: both;
 }
 
 /* 컨텐츠 화면에서 숨기기 */
 .blind {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  overflow: hidden;
-  clip-path: polygon(0 0, 0 0, 0 0);
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: polygon(0 0, 0 0, 0 0);
 }
 
 /* 박스 계산법 변경 */
 *,
 *::before,
 *::after {
-  box-sizing: border-box;
+    box-sizing: border-box;
 }
 
 /* 인라인요소 수직정렬 */
 img {
-  vertical-align: top;
+    vertical-align: top;
 }
 
 input,
@@ -143,61 +143,61 @@ select,
 option,
 optgroup,
 textarea {
-  vertical-align: middle;
+    vertical-align: middle;
 }
 
 /* iE에서 block 처리 */
 main {
-  display: block;
+    display: block;
 }
 
 /* Firefox, Edge, iE 에서 스타일 매칭*/
 hr {
-  height: 0;
-  overflow: visible;
+    height: 0;
+    overflow: visible;
 }
 
 /* Chrome ,Edge, Safari에서 스타일 매칭*/
 b,
 strong {
-  font-weight: bolder;
+    font-weight: bolder;
 }
 
 /* 윗첨자, 아래첨자 */
 /* 상위, 하위 요소의 line hight에 영향을 주지 않기 위해*/
 sub,
 sup {
-  font-size: 75%;
-  line-height: 0;
-  position: relative;
-  vertical-align: baseline;
+    font-size: 75%;
+    line-height: 0;
+    position: relative;
+    vertical-align: baseline;
 }
 
 sub {
-  bottom: -1em; /* 디자인에 따라 값 변경하기*/
+    bottom: -1em; /* 디자인에 따라 값 변경하기*/
 }
 
 sup {
-  top: -1em; /* 디자인에 따라 값 변경하기*/
+    top: -1em; /* 디자인에 따라 값 변경하기*/
 }
 
 /*--------------------------------------------------*/
 img {
-  width: 100%;
-  height: auto;
+    width: 100%;
+    height: auto;
 }
 
 table {
-  border-collapse: collapse; /* 라인 하나 */
-  border-spacing: 0; /*라인 간격 0*/
+    border-collapse: collapse; /* 라인 하나 */
+    border-spacing: 0; /*라인 간격 0*/
 }
 
 button {
-  border: 0 none;
-  background: transparent;
-  cursor: pointer;
+    border: 0 none;
+    background: transparent;
+    cursor: pointer;
 }
 
 input:focus {
-  outline: none;
+    outline: none;
 }
