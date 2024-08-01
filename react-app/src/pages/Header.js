@@ -12,7 +12,7 @@ function Header() {
 
     return (
         <header className="">
-            <div className="wrapper max_1700 display-f align-items-c margin-c">
+            <div className="wrapper display-f align-items-c margin-c">
                 <h1 className="logo">
                     <Link to="/" className="display-b">
                         <span className="blind">hibye 홈</span>

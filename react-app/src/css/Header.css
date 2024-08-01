@@ -3,12 +3,15 @@ header {
   top: 0;
   left: 0;
   width: 100%;
-  padding: 15px 0;
+  padding: 20px 0;
   z-index: 100;
   background: #fff;
 }
+header .wrapper {
+  padding: 0 20px;
+}
 header .logo {
-  width: 97px;
+  width: 100px;
 }
 header .util {
   margin-left: auto;
@@ -17,48 +20,55 @@ header .util {
 header .util a,
 header .util button {
   width: 80px;
-  height: 35px;
-  line-height: 35px;
+  height: 37px;
+  line-height: 37px;
   text-align: center;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   border-radius: 5px;
   display: inline-block;
   transition: 0.3s;
 }
 header .util .login_btn {
-  color: rgb(126, 126, 126);
+  color: #7e7e7e;
   margin-right: 10px;
 }
 header .util .login_btn:hover {
   background-color: rgb(241, 244, 255);
 }
-header .util .sign_btn,
-header .util .logout_btn {
-  background-color: rgb(53, 98, 228);
+header .util .sign_btn {
+  background-color: #3562e4;
   color: #fff;
 }
+header .util .user,
+header .util .alarm,
+header .util .logout_btn {
+  width: 35px;
+  height: 35px;
+  line-height: 35px;
+  margin-right: 10px;
+  border-radius: 100%;
+  filter: grayscale(0.5);
+}
+header .util .user svg,
+header .util .alarm svg,
+header .util .logout_btn svg {
+  transition: 0.4s;
+}
+header .util .user:hover,
+header .util .alarm:hover,
+header .util .logout_btn:hover {
+  filter: sepia(0);
+}
 header .util .user {
-  margin-right: 20px;
+  font-size: 18px;
+  background: #226ce0;
+  color: #fff;
+  margin-right: 0;
 }
-header .util .user .mypage_btn {
-  color: rgb(53, 52, 52);
-  height: auto;
-  width: auto;
-  font-weight: bold;
-}
-header .util .user .mypage_btn:hover {
-  text-decoration: underline;
-}
-header .util .user a {
-  font-size: 16px;
-}
-header .util .user p {
-  font-size: 14px;
-  display: inline-block;
-}
-header .util .gnb_btn {
-  display: none;
+header .util .alarm,
+header .util .logout_btn {
+  background: #e3e5ec;
 }
 header .gnb {
   margin-left: 70px;
@@ -73,7 +83,10 @@ header .gnb .logout_btn {
 
 @media screen and (max-width: 750px) {
   header {
-    padding: clamp(20px, 4vw, 30px) 0;
+    padding: clamp(15px, 4vw, 30px) 0;
+  }
+  header .wrapper {
+    padding: 0 3vw;
   }
   header .logo {
     width: clamp(100px, 17.33vw, 130px);
@@ -85,54 +98,15 @@ header .gnb .logout_btn {
     height: clamp(35px, 6vw, 45px);
     line-height: clamp(35px, 6vw, 45px);
   }
+  header .util .user,
+  header .util .alarm,
   header .util .logout_btn {
-    display: none;
+    width: clamp(30px, 6.67vw, 50px);
+    height: clamp(30px, 6.67vw, 50px);
+    line-height: clamp(30px, 6.67vw, 50px);
   }
   header .util .user {
-    margin-right: 0;
-  }
-  header .util .user p {
-    font-size: clamp(14px, 2.27vw, 17px);
-  }
-  header .util .user a {
-    font-size: clamp(16px, 2.8vw, 21px);
-  }
-  header .util .gnb_btn {
-    display: none;
-    width: clamp(30px, 6vw, 45px);
-    height: clamp(16px, 3.07vw, 23px);
-    position: relative;
-    z-index: 101;
-  }
-  header .util .gnb_btn .line, header .util .gnb_btn::after, header .util .gnb_btn::before {
-    position: absolute;
-    height: clamp(4px, 0.67vw, 5px);
-    background: #ddd;
-    border-radius: 5px;
-    left: 0;
-    transition: 0.4s;
-  }
-  header .util .gnb_btn .line {
-    display: none;
-    width: 60%;
-    top: 50%;
-    transform: translateY(-50%);
-  }
-  header .util .gnb_btn::after, header .util .gnb_btn::before {
-    content: "";
-    width: 100%;
-  }
-  header .util .gnb_btn::after {
-    width: 100%;
-    top: 0;
-  }
-  header .util .gnb_btn::before {
-    width: 70%;
-    bottom: 0;
-  }
-  header .util .gnb_btn:hover .line, header .util .gnb_btn:hover::after, header .util .gnb_btn:hover::before {
-    background-color: #226ce0;
-    width: 100%;
+    font-size: clamp(18px, 3.33vw, 25px);
   }
   header .gnb {
     display: none;

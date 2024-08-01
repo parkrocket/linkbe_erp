@@ -3,8 +3,11 @@ import VacaTable from '../component/VacaTable';
 import axios from 'axios';
 import SERVER_URL from '../Config';
 import { useSelector } from 'react-redux';
+
 import LeftGnbStyle from '../css/LeftGnb.module.scss';
+
 import LeftGnb from '../component/LeftGnb';
+import Apply from '../component/Apply';
 
 function Vaca() {
     const [recordList, setRecordList] = useState([]);
@@ -29,10 +32,13 @@ function Vaca() {
     return (
         <div className={`${LeftGnbStyle.outer} display-f`}>
             <LeftGnb />
-            <VacaTable
-                list={recordList}
-                setRecordList={setRecordList}
-            ></VacaTable>
+            <section className={` margin-c`}>
+                <Apply />
+                <VacaTable
+                    list={recordList}
+                    setRecordList={setRecordList}
+                ></VacaTable>
+            </section>
         </div>
     );
 }

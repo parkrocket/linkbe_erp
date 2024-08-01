@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 
 import { Link } from 'react-router-dom';
-import RecordTable from '../component/RecordTable';
 
 function Main() {
     const user = useSelector(state => state.user);

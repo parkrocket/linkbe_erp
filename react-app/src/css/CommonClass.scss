@@ -102,11 +102,9 @@
 }
 
 /* 모바일 */
-.mo_br {
-    display: none;
-}
-
-.mo_img {
+.mo_br,
+.mo_img,
+.mo_only {
     display: none;
 }
 
@@ -159,7 +157,7 @@
 }
 main {
     flex: 1;
-    margin-top: 65px;
+    margin-top: 75px;
 }
 
 /* scroll bar(스크롤바)*/
@@ -280,7 +278,10 @@ html::-webkit-scrollbar-thumb {
     padding-bottom: clamp(150px, 10.42vw, 200px);
 }
 
-@media (max-width: 720px) {
+@media (max-width: 750px) {
+    main {
+        margin-top: clamp(60px, 14.67vw, 110px);
+    }
     .max_1100,
     .max_1300,
     .max_1500 {
@@ -289,11 +290,13 @@ html::-webkit-scrollbar-thumb {
         padding-right: 5.56vw; /* 40px */
     }
     .pc_br,
-    .pc_img {
+    .pc_img,
+    .pc_only {
         display: none;
     }
     .mo_br,
-    .mo_img {
+    .mo_img,
+    .mo_only {
         display: block;
     }
     /* mo padding */

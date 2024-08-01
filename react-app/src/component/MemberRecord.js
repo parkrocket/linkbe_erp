@@ -116,7 +116,7 @@ function RecordTable({
     return (
         <div className={RightContStyle.box01}>
             <h3 className={`${RightContStyle.tit01} text-align-c`}>
-                날짜별 근무 기록
+                멤버별 근무 기록
             </h3>
             {/* 날짜 및 다운로드 영역 */}
             <div className={`${TableStyle.wrapper} display-f justify-sb`}>

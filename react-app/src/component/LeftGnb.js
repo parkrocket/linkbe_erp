@@ -7,7 +7,7 @@ function LeftGnb() {
     const location = useLocation();
 
     useEffect(() => {
-        setLeftGnbHeight(window.innerHeight - 78);
+        setLeftGnbHeight(window.innerHeight - 75);
     }, []);
     // console.log(leftGnbHeight);
 
