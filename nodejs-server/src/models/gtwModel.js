@@ -21,10 +21,12 @@ Gtw.create = (userId, type, date, ip, platform, callback) => {
     }
 
     if (type === 'gtw' || type === 'remote_gtw') {
-        query = 'INSERT INTO lk_ctw (user_id, ip, start_time, platform, date, location) VALUES (?, ?, NOW(), ?, ?, ?)';
+        query =
+            'INSERT INTO lk_ctw (user_id, ip, start_time, platform, date, location) VALUES (?, ?, NOW(), ?, ?, ?)';
         queryParams = [userId, ip, platform, date, location];
     } else {
-        query = 'UPDATE lk_ctw SET end_time = NOW(), ip = ?, platform = ?, location =? WHERE user_id = ? AND date = ?';
+        query =
+            'UPDATE lk_ctw SET end_time = NOW(), ip = ?, platform = ?, location =? WHERE user_id = ? AND date = ?';
         queryParams = [ip, platform, location, userId, date];
     }
 
@@ -34,13 +36,17 @@ Gtw.create = (userId, type, date, ip, platform, callback) => {
             return callback(err, null);
         }
 
-        db.query('UPDATE lk_user SET gtw_status = ?, gtw_location = ? WHERE user_id = ?', [gtwStatus, location, userId], (err, results) => {
-            if (err) {
-                return callback(err, null);
-            }
+        db.query(
+            'UPDATE lk_user SET gtw_status = ?, gtw_location = ? WHERE user_id = ?',
+            [gtwStatus, location, userId],
+            (err, results) => {
+                if (err) {
+                    return callback(err, null);
+                }
 
-            return callback(null, results.insertId);
-        });
+                return callback(null, results.insertId);
+            },
+        );
     });
 };
 
@@ -58,7 +64,8 @@ Gtw.findByGtw = (userId, date, callback) => {
 };
 
 Gtw.findByGtwAll = (date, callback) => {
-    query = 'SELECT * FROM lk_ctw as ctw LEFT JOIN lk_user as user ON ctw.user_id = user.user_id WHERE ctw.date = ? ORDER BY ctw.date DESC';
+    query =
+        'SELECT * FROM lk_ctw as ctw LEFT JOIN lk_user as user ON ctw.user_id = user.user_id WHERE ctw.date = ? ORDER BY ctw.date DESC';
     queryParams = [date];
 
     db.query(query, queryParams, (err, results) => {
@@ -69,7 +76,7 @@ Gtw.findByGtwAll = (date, callback) => {
     });
 };
 
-Gtw.findByGtwAllAsync = (date) => {
+Gtw.findByGtwAllAsync = date => {
     return new Promise((resolve, reject) => {
         Gtw.findByGtwAll(date, (err, results) => {
             if (err) {
@@ -104,12 +111,17 @@ Gtw.createAsync = (userId, type, date, ip, platform) => {
 
 //미사용
 Gtw.findByGtwStatus = (userId, date, callback) => {
-    db.query('SELECT * FROM lk_ctw WHERE user_id = ? AND DATE(datetime) = ? ORDER BY datetime DESC', [userId, date], (err, results) => {
-        if (err) {
-            return callback(err, null);
-        }
-        return callback(null, results);
-    });
+    db.query(
+        'SELECT * FROM lk_ctw WHERE user_id = ? AND DATE(date) = ?',
+        [userId, date],
+        (err, results) => {
+            if (err) {
+                return callback(err, null);
+            }
+
+            return callback(null, results[0]);
+        },
+    );
 };
 
 module.exports = Gtw;

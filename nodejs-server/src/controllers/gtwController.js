@@ -15,18 +15,24 @@ exports.companyIn = (req, res) => {
     if (process.env.NODE_ENV === 'development') {
         ip = process.env.DEV_IP;
     } else {
-        ip = req.clientIp.includes('::ffff:') ? req.clientIp.split('::ffff:')[1] : req.clientIp;
+        ip = req.clientIp.includes('::ffff:')
+            ? req.clientIp.split('::ffff:')[1]
+            : req.clientIp;
     }
 
     const { userId, type, platform } = req.body;
 
     if (process.env.COMPANY_IP !== ip) {
-        return res.status(200).json({ gtwSuccess: false, error: 'IP가 일치하지 않습니다.' });
+        return res
+            .status(200)
+            .json({ gtwSuccess: false, error: 'IP가 일치하지 않습니다.' });
     }
 
     Gtw.findByGtw(userId, type, date, (err, gtw) => {
         if (err) {
-            return res.status(200).json({ gtwSuccess: false, error: 'Database query error' });
+            return res
+                .status(200)
+                .json({ gtwSuccess: false, error: 'Database query error' });
         }
 
         if (type === 'gtw' && gtw.length > 0) {
@@ -40,11 +46,16 @@ exports.companyIn = (req, res) => {
 
         Gtw.create(userId, type, date, ip, platform, async (err, gtw) => {
             if (err) {
-                return res.status(200).json({ gtwSuccess: false, error: 'Database query error' });
+                return res
+                    .status(200)
+                    .json({ gtwSuccess: false, error: 'Database query error' });
             }
 
             // Slack 메시지 전송
-            const message = type === 'gtw' ? `${userId}님이 출근하셨습니다.` : `${userId}님이 퇴근하셨습니다.`;
+            const message =
+                type === 'gtw'
+                    ? `${userId}님이 출근하셨습니다.`
+                    : `${userId}님이 퇴근하셨습니다.`;
             await sendSlackMessage('#출퇴근', message);
 
             return res.json({ gtwSuccess: true, message: '출근완료', gtw });
@@ -53,15 +64,20 @@ exports.companyIn = (req, res) => {
 };
 
 exports.gtwStatus = (req, res) => {
-    const date = moment().format('YYYY-MM-DD');
+    //const date = moment().format('YYYY-MM-DD');
 
-    const { userId } = req.body;
+    const { userId, date } = req.body;
+
+    console.log(date);
 
     Gtw.findByGtwStatus(userId, date, (err, gtw) => {
         if (err) {
-            return res.status(200).json({ gtwSuccess: false, error: 'Database query error' });
+            return res
+                .status(200)
+                .json({ gtwSuccess: false, error: 'Database query error' });
         }
 
-        console.log(gtw);
+        //console.log(gtw);
+        return res.status(200).json({ gtwSuccess: true, gtw });
     });
 };

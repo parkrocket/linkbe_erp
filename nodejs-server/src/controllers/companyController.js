@@ -9,12 +9,45 @@ exports.list = (req, res) => {
 
     Company.findByList((err, list) => {
         if (err) {
-            return res.status(200).json({ companyListSuccess: false, error: 'Database query error' });
+            return res.status(200).json({
+                companyListSuccess: false,
+                error: 'Database query error',
+            });
         }
         if (!list) {
-            return res.status(200).json({ companyListSuccess: false, error: 'list not found' });
+            return res
+                .status(200)
+                .json({ companyListSuccess: false, error: 'list not found' });
         }
 
-        return res.json({ companyListSuccess: true, message: 'list successful', list });
+        return res.json({
+            companyListSuccess: true,
+            message: 'list successful',
+            list,
+        });
+    });
+};
+
+exports.info = (req, res) => {
+    const { cpId } = req.body;
+
+    Company.findById(cpId, (err, info) => {
+        if (err) {
+            return res.status(200).json({
+                companyListSuccess: false,
+                error: 'Database query error',
+            });
+        }
+        if (!info) {
+            return res
+                .status(200)
+                .json({ companyListSuccess: false, error: 'info not found' });
+        }
+
+        return res.json({
+            companyListSuccess: true,
+            message: 'info successful',
+            info,
+        });
     });
 };

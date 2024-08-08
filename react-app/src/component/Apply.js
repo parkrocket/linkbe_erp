@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useLocation } from 'react-router-dom';
 
 import RightContStyle from '../css/RightCont.module.scss';
 
-function Apply() {
+function Apply(info) {
     const user = useSelector(state => state.user);
 
     const location = useLocation();
@@ -13,7 +13,17 @@ function Apply() {
 
     if (location.pathname.startsWith('/work')) {
         titleText = '내 근무 현황';
-        subTitleText = '님의 근무유형은 시차 출퇴근제 입니다.';
+        let shiftTypeText = '';
+
+        if (info.companyInfo.cp_shift_type === 'fix') {
+            shiftTypeText = '고정근무';
+        } else if (info.companyInfo.cp_shift_type === 'free') {
+            shiftTypeText = '시차 자율근무';
+        } else {
+            shiftTypeText = '알 수 없는 근무유형'; // 필요한 경우 기본값 추가
+        }
+
+        subTitleText = `님의 근무유형은 ${shiftTypeText} 입니다.`;
     } else if (location.pathname.startsWith('/vaca')) {
         titleText = '내 연차/휴가 현황';
         subTitleText = '님! 연차/휴가를 신청하세요!';
