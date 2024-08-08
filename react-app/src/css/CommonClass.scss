@@ -213,7 +213,9 @@ html::-webkit-scrollbar-thumb {
 .padding-t110 {
     padding-top: clamp(75px, 5.73vw, 110px);
 }
-
+.padding-t150 {
+    padding-top: clamp(100px, 7.81vw, 150px);
+}
 .padding-t200 {
     padding-top: clamp(150px, 10.42vw, 200px);
 }

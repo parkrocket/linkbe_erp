@@ -1,10 +1,12 @@
 import React from 'react';
+import { useSelector } from 'react-redux';
 
 import './../css/Footer.css';
 
 import FooterMobileMenu from '../component/FooterMobileMenu';
 
 function Footer() {
+    const user = useSelector(state => state.user);
     return (
         <footer>
             <div className="container pc_only padding-t30 padding-b30">
@@ -28,11 +30,17 @@ function Footer() {
                     </div>
                 </div>
             </div>
-            <div className="container mo_only padding-t30 padding-b30">
-                <div className="wrapper max_1700 margin-c">
-                    <FooterMobileMenu />
+            {user.isAuthenticated ? (
+                // 로그인 했을 때
+                <div className="container mo_only padding-t30 padding-b30">
+                    <div className="wrapper max_1700 margin-c">
+                        <FooterMobileMenu />
+                    </div>
                 </div>
-            </div>
+            ) : (
+                // 로그인 안했을 때
+                ''
+            )}
         </footer>
     );
 }

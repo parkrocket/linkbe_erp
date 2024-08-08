@@ -151,12 +151,12 @@ function Login() {
                                         mask="url(#path-1-outside-1_8_2)"
                                     ></path>
                                 </svg>
-
                                 <input
                                     id="userId"
                                     type="text"
                                     placeholder="이메일을 입력해주세요."
                                     name="stx1"
+                                    maxLength={30}
                                     value={email}
                                     onChange={handleEmailInputChange}
                                     className={
@@ -192,14 +192,13 @@ function Login() {
                                             fill="white"
                                         ></path>
                                     </svg>
-
                                     <p
                                         className={`${
                                             LoginStyle.error_txt
                                         } hide1 ${
                                             isErrorHover1
-                                                ? ''
-                                                : `${LoginStyle.in}`
+                                                ? `${LoginStyle.in}`
+                                                : ''
                                         }`}
                                     >
                                         이메일 형식을 확인해주세요.
@@ -238,8 +237,9 @@ function Login() {
                                 <input
                                     id="userPassword"
                                     type="password"
-                                    placeholder="영문 대소문자,숫자,특수문자 중 2종류 조합의 8-15자"
+                                    placeholder="영문,숫자,특수문자 중 2종류 조합의 8-15자"
                                     name="stx2"
+                                    maxLength={15}
                                     value={password}
                                     onChange={handlePasswordInputChange}
                                     className={
