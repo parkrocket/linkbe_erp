@@ -6,6 +6,7 @@ import rightArrowImg from '../img/chevron_right_24dp_FILL0_wght400_GRAD0_opsz24.
 //import downloadImg from '../img/download.svg';
 import RightContStyle from '../css/RightCont.module.scss';
 import TableStyle from '../css/RecordTable.module.css';
+import MemberRecordStyle from '../css/MemberRecord.module.scss';
 
 import moment from 'moment';
 import Button from '../component/Button';
@@ -119,6 +120,7 @@ function RecordTable({
                 멤버별 근무 기록
             </h3>
             {/* 날짜 및 다운로드 영역 */}
+            <div className={MemberRecordStyle.wrapper}></div>
             <div className={`${TableStyle.wrapper} display-f justify-sb`}>
                 <div className={TableStyle.date_wrapper}>
                     <span
