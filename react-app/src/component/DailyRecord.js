@@ -18,6 +18,7 @@ function DailyRecord(props) {
     const [remainingTime, setRemainingTime] = useState('');
     const [overtime, setOvertime] = useState('');
     const [percentage, setPercentage] = useState(0);
+    const [percentageCss, setPercentageCss] = useState(0);
     const [today, setToday] = useState(moment().format('YYYY-MM-DD'));
 
     useEffect(() => {
@@ -59,7 +60,10 @@ function DailyRecord(props) {
         const overtimeMinutes = Math.max(overtimeDuration.minutes(), 0);
 
         const totalWorkedMinutes = workedHours * 60 + workedMinutes;
-        const percentageWorked = Math.min(
+
+        const percentageWorked = Math.floor((totalWorkedMinutes / 540) * 100);
+
+        const percentageWorkedCss = Math.min(
             Math.floor((totalWorkedMinutes / 540) * 100),
             100,
         );
@@ -78,6 +82,7 @@ function DailyRecord(props) {
         setRemainingTime(remainingTimeString);
         setOvertime(overtimeString);
         setPercentage(percentageWorked);
+        setPercentageCss(percentageWorkedCss);
     }, [dayGtw]);
 
     const gtwAxiosDay = (setDayGtw, userId, today) => {
@@ -116,6 +121,19 @@ function DailyRecord(props) {
         ? moment(dayGtw.end_time).format('HH:mm')
         : moment(dayGtw.start_time).add(9, 'hours').format('HH:mm');
 
+    const backgroundColor = percentage > 100 ? 'red' : '#3562e4';
+
+    const getRelativeDayLabel = () => {
+        const daysDifference = moment(today)
+            .startOf('day')
+            .diff(moment().startOf('day'), 'days');
+        if (daysDifference === -1) return '1일 전';
+        if (daysDifference < 0) return `${Math.abs(daysDifference)}일 전`;
+        if (daysDifference === 1) return '1일 후';
+        if (daysDifference > 0) return `${daysDifference}일 후`;
+        return '오늘';
+    };
+
     return (
         <div className={`${RightContStyle.box01} ${RightContStyle.half}`}>
             <h3 className={`${RightContStyle.tit01} text-align-c`}>
@@ -139,9 +157,10 @@ function DailyRecord(props) {
                     />
                 </button>
                 <dl>
-                    {isToday && (
-                        <dt className={`${RightContStyle.tit02}`}>오늘</dt>
-                    )}
+                    <dt className={`${RightContStyle.tit02}`}>
+                        {getRelativeDayLabel()}
+                    </dt>
+
                     <dd>{date}</dd>
                 </dl>
                 <button
@@ -188,7 +207,10 @@ function DailyRecord(props) {
                         <div className={`${RightContStyle.percentage}`}>
                             <div
                                 className={`${RightContStyle.current} text-align-c`}
-                                style={{ width: `${percentage}%` }}
+                                style={{
+                                    width: `${percentageCss}%`,
+                                    background: backgroundColor,
+                                }}
                             >
                                 {percentage}%
                             </div>{' '}

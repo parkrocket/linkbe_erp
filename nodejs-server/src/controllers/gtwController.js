@@ -68,8 +68,6 @@ exports.gtwStatus = (req, res) => {
 
     const { userId, date } = req.body;
 
-    console.log(date);
-
     Gtw.findByGtwStatus(userId, date, (err, gtw) => {
         if (err) {
             return res
