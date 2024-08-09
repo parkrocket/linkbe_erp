@@ -21,7 +21,6 @@ function Work() {
     );
     const [recodeList, setRecodeList] = useState([]);
     const [shiftType, setShiftType] = useState({});
-    const [dayGtw, setDayGtw] = useState({});
 
     const [today, setToday] = useState(moment().format('YYYY-MM-DD'));
 
@@ -30,7 +29,6 @@ function Work() {
     useEffect(() => {
         recodeAxiosLIst(setRecodeList, recodeListDate);
         companyAxiosInfo(setShiftType, user.userData.user.cp_id);
-        gtwAxiosDay(setDayGtw, user.userData.user.user_id, today);
     }, [recodeListDate, user.userData.user.user_id, today]);
 
     const recodeAxiosLIst = (setRecodeList, recodeListDate) => {
@@ -53,18 +51,6 @@ function Work() {
             });
     };
 
-    const gtwAxiosDay = (setDayGtw, userId, today) => {
-        console.log(today);
-
-        const dataTosubmit = { userId: userId, date: today };
-
-        axios
-            .post(`${SERVER_URL}/api/gtw/gtwStatus`, dataTosubmit)
-            .then(response => {
-                setDayGtw(response.data.gtw);
-            });
-    };
-
     return (
         <div className={`${LeftGnbStyle.outer} display-f`}>
             <LeftGnb />
@@ -72,9 +58,9 @@ function Work() {
                 <Apply companyInfo={shiftType} />
                 <div className="display-f justify-sb">
                     <DailyRecord
-                        dayGtw={dayGtw}
                         today={today}
                         setToday={setToday}
+                        user={user}
                     />
                     <WeeklyRecord />
                 </div>
