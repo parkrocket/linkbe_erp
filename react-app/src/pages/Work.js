@@ -62,7 +62,11 @@ function Work() {
                         setToday={setToday}
                         user={user}
                     />
-                    <WeeklyRecord />
+                    <WeeklyRecord
+                        today={today}
+                        setToday={setToday}
+                        user={user}
+                    />
                 </div>
                 <MemberRecord
                     list={recodeList}

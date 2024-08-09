@@ -205,7 +205,7 @@ function DailyRecord(props) {
                             </dl>
                             <dl className="display-f align-items-c justify-sb">
                                 <dt>휴게시간</dt>
-                                <dd>1시간30분(12:00 - 13:30)</dd>
+                                <dd>1시간(12:00 - 13:00)</dd>
                             </dl>
                             <dl className="display-f align-items-c justify-sb">
                                 <dt>초과 근무 시간</dt>

@@ -109,7 +109,6 @@ Gtw.createAsync = (userId, type, date, ip, platform) => {
     });
 };
 
-//미사용
 Gtw.findByGtwStatus = (userId, date, callback) => {
     db.query(
         'SELECT * FROM lk_ctw WHERE user_id = ? AND DATE(date) = ?',
@@ -120,6 +119,20 @@ Gtw.findByGtwStatus = (userId, date, callback) => {
             }
 
             return callback(null, results[0]);
+        },
+    );
+};
+
+Gtw.findByGtwWeeklyStatus = (userId, date, callback) => {
+    db.query(
+        'SELECT * FROM lk_ctw WHERE user_id = ? AND YEAR(date) = YEAR(?) AND WEEK(date, 1) = WEEK(?, 1)',
+        [userId, date, date],
+        (err, results) => {
+            if (err) {
+                return callback(err, null);
+            }
+
+            return callback(null, results);
         },
     );
 };
