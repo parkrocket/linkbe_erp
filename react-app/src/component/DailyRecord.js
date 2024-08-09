@@ -161,7 +161,7 @@ function DailyRecord(props) {
             </div>
             <div className="max_400 margin-c ">
                 {Object.keys(dayGtw).length === 0 ? (
-                    <div>출근 기록이 없습니다</div>
+                    <div>출퇴근 기록이 없습니다</div>
                 ) : (
                     <>
                         <div
