@@ -65,7 +65,7 @@ Gtw.findByGtw = (userId, date, callback) => {
 
 Gtw.findByGtwAll = (date, callback) => {
     query =
-        'SELECT * FROM lk_ctw as ctw LEFT JOIN  ON ctw.user_id = user.user_id WHERE ctw.date = ? ORDER BY ctw.date DESC';
+        'SELECT * FROM lk_ctw as ctw LEFT JOIN lk_user as user ON ctw.user_id = user.user_id WHERE ctw.date = ? ORDER BY ctw.date DESC';
     queryParams = [date];
 
     db.query(query, queryParams, (err, results) => {
