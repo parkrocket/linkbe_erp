@@ -24,6 +24,7 @@ function WeeklyRecord(props) {
 
     useEffect(() => {
         gtwAxiosWeekly(props.user.userData.user.user_id, startOfWeek);
+        vcaAxiosWeekly(props.user.userData.user.user_id, startOfWeek);
     }, [props.user.userData.user.user_id, startOfWeek]);
 
     const gtwAxiosWeekly = (userId, startOfWeek) => {
@@ -74,6 +75,19 @@ function WeeklyRecord(props) {
 
                 const maxWorkTime = 40 * 60;
                 setOvertime(Math.max(totalMinutes - maxWorkTime, 0));
+            });
+    };
+
+    const vcaAxiosWeekly = (userId, startOfWeek) => {
+        const dataTosubmit = {
+            userId: userId,
+            date: startOfWeek.format('YYYY-MM-DD'),
+        };
+
+        axios
+            .post(`${SERVER_URL}/api/vacation/vcaWeeklyStatus`, dataTosubmit)
+            .then(response => {
+                console.log(response);
             });
     };
 

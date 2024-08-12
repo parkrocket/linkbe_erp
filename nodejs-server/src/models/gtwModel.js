@@ -63,10 +63,16 @@ Gtw.findByGtw = (userId, date, callback) => {
     });
 };
 
-Gtw.findByGtwAll = (date, callback) => {
-    query =
-        'SELECT * FROM lk_ctw as ctw LEFT JOIN lk_user as user ON ctw.user_id = user.user_id WHERE ctw.date = ? ORDER BY ctw.date DESC';
-    queryParams = [date];
+Gtw.findByGtwAll = (date, cpId, callback) => {
+    const query = `
+        SELECT *, vac.date as vac_date 
+        FROM lk_user as user 
+        LEFT JOIN lk_ctw as ctw ON ctw.user_id = user.user_id AND ctw.date = ? 
+        LEFT JOIN lk_vacation as vac ON vac.user_id = user.user_id AND vac.date = ? 
+        WHERE user.cp_id = ? 
+        ORDER BY ctw.date DESC
+    `;
+    const queryParams = [date, date, cpId];
 
     db.query(query, queryParams, (err, results) => {
         if (err) {

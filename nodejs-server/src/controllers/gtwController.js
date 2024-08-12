@@ -96,3 +96,21 @@ exports.gtwWeeklyStatus = (req, res) => {
         return res.status(200).json({ gtwSuccess: true, gtw });
     });
 };
+
+exports.gtwStatusAll = (req, res) => {
+    //const date = moment().format('YYYY-MM-DD');
+
+    const { date, cpId } = req.body;
+
+    console.log(req.body);
+
+    Gtw.findByGtwAll(date, cpId, (err, gtw) => {
+        if (err) {
+            return res
+                .status(200)
+                .json({ gtwSuccess: false, error: 'Database query error' });
+        }
+
+        return res.status(200).json({ gtwSuccess: true, gtw });
+    });
+};

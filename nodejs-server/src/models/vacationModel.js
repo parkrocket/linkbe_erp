@@ -163,4 +163,18 @@ Vca.findByAllAsync = userId => {
     });
 };
 
+Vca.findByVcaWeeklyStatus = (userId, date, callback) => {
+    db.query(
+        'SELECT * FROM lk_vacation WHERE user_id = ? AND YEAR(date) = YEAR(?) AND WEEK(date, 1) = WEEK(?, 1)',
+        [userId, date, date],
+        (err, results) => {
+            if (err) {
+                return callback(err, null);
+            }
+
+            return callback(null, results);
+        },
+    );
+};
+
 module.exports = Vca;
