@@ -63,7 +63,20 @@ Gtw.findByGtw = (userId, date, callback) => {
     });
 };
 
-Gtw.findByGtwAll = (date, cpId, callback) => {
+Gtw.findByGtwAll = (date, callback) => {
+    query =
+        'SELECT * FROM lk_ctw as ctw LEFT JOIN  ON ctw.user_id = user.user_id WHERE ctw.date = ? ORDER BY ctw.date DESC';
+    queryParams = [date];
+
+    db.query(query, queryParams, (err, results) => {
+        if (err) {
+            return callback(err, null);
+        }
+        return callback(null, results);
+    });
+};
+
+Gtw.findByGtwAllWeb = (date, cpId, callback) => {
     const query = `
         SELECT *, vac.date as vac_date 
         FROM lk_user as user 
