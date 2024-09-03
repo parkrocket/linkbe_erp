@@ -1,0 +1,7 @@
+.summary {
+    li {
+        border: 1px solid #ddd;
+        width: calc((100% - (2% * 4)) / 5);
+        padding: 20px;
+    }
+}

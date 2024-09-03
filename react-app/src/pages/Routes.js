@@ -9,6 +9,7 @@ import Gtw from './Gtw';
 import Vaca from './Vaca';
 import Geo from './Geo';
 import Work from './Work';
+import WorkHistory from './WorkHistory';
 import Sent from './Sent';
 
 export const Routes = () => {
@@ -22,6 +23,7 @@ export const Routes = () => {
                 <Route path="/vaca" element={Auth(Vaca, true)} />
                 <Route path="/geo" element={Auth(Geo, null)} />
                 <Route path="/work" element={Auth(Work, null)} />
+                <Route path="/workHistory" element={Auth(WorkHistory, null)} />
                 <Route path="/sent" element={Auth(Sent, null)} />
             </ReactRouterRoutes>
         </main>

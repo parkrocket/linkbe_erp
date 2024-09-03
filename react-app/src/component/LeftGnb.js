@@ -30,6 +30,12 @@ function LeftGnb() {
                         <Link to="/vaca" className={getLinkClassName('/vaca')}>
                             연차/휴가
                         </Link>
+                        <Link
+                            to="/workHistory"
+                            className={getLinkClassName('/workHistory')}
+                        >
+                            내 근태 신청내역
+                        </Link>
                     </div>
                 </>
             );

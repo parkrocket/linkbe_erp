@@ -54,14 +54,14 @@ section .wrapper {
     display: flex;
     align-items: center;
     justify-content: center;
-}
-.download_wrapper img {
-    width: auto;
-}
-.download_wrapper a {
-    font-size: 14px;
-    color: rgb(141, 141, 141);
-    margin-left: 3px;
+    img {
+        width: auto;
+    }
+    a {
+        font-size: 14px;
+        color: rgb(141, 141, 141);
+        margin-left: 3px;
+    }
 }
 
 .work_wrapper {
@@ -71,30 +71,30 @@ section .wrapper {
     flex-direction: row;
     margin-bottom: 30px;
     align-items: center;
-}
-.work_wrapper ul {
-    display: flex;
-    gap: 0 20px;
-}
-.work_wrapper ul li a {
-    color: rgb(141, 141, 141);
-}
-.work_wrapper ul > .click {
-    position: relative;
-}
-.work_wrapper ul > .click::after {
-    content: '';
-    position: absolute;
-    top: 20px;
-    right: 0;
-    left: 0;
-    bottom: 0;
-    width: 100%;
-    height: 2px;
-    background-color: #000;
-}
-.work_wrapper ul > .click a {
-    color: #000;
+    ul {
+        display: flex;
+        gap: 0 20px;
+        li a {
+            color: rgb(141, 141, 141);
+        }
+        > .click {
+            position: relative;
+            &::after {
+                content: '';
+                position: absolute;
+                top: 20px;
+                right: 0;
+                left: 0;
+                bottom: 0;
+                width: 100%;
+                height: 2px;
+                background-color: #000;
+            }
+            a {
+                color: #000;
+            }
+        }
+    }
 }
 #workview {
     height: 35px;
