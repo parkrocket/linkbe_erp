@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import moment from 'moment';
 import 'moment/locale/ko';
-import SERVER_URL from '../Config';
+import SERVER_URL from '../../Config';
 import axios from 'axios';
 
-import { faChevronRight } from '@fortawesome/free-solid-svg-icons';
-import { faChevronLeft } from '@fortawesome/free-solid-svg-icons';
+import {
+    faChevronRight,
+    faChevronLeft,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
-import RightContStyle from '../css/RightCont.module.scss';
+import RightContStyle from '../../css/RightCont.module.scss';
 
 function WeeklyRecord(props) {
     moment.locale('ko'); // 한국어 설정

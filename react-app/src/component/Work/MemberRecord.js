@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 
-import leftArrowImg from '../img/chevron_left_24dp_FILL0_wght400_GRAD0_opsz24.svg';
-import rightArrowImg from '../img/chevron_right_24dp_FILL0_wght400_GRAD0_opsz24.svg';
+import leftArrowImg from '../../img/chevron_left_24dp_FILL0_wght400_GRAD0_opsz24.svg';
+import rightArrowImg from '../../img/chevron_right_24dp_FILL0_wght400_GRAD0_opsz24.svg';
 //import downloadImg from '../img/download.svg';
-import RightContStyle from '../css/RightCont.module.scss';
-import TableStyle from '../css/RecordTable.module.css';
-import MemberRecordStyle from '../css/MemberRecord.module.scss';
+import RightContStyle from '../../css/RightCont.module.scss';
+import TableStyle from '../../css/RecordTable.module.scss';
+import MemberRecordStyle from '../../css/MemberRecord.module.scss';
 
 import moment from 'moment';
-import Button from '../component/Button';
-import { refresh } from '../_actions/user_action';
-import { gtw } from '../_actions/gtw_action';
+import { refresh } from '../../_actions/user_action';
+import { gtw } from '../../_actions/gtw_action';
 
 function RecordTable({
     list,
@@ -29,7 +28,7 @@ function RecordTable({
     // 시간 포맷 변경 함수
     const formatTime = time => {
         if (!time) return '';
-        return moment(time).format('HH시 mm분');
+        return moment(time).format('HH:mm');
     };
 
     // 근무 시간 계산 함수
@@ -43,7 +42,8 @@ function RecordTable({
         const hours = Math.floor(duration.asHours());
         const minutes = duration.minutes();
         const seconds = duration.seconds();
-        return `${hours}시간 ${minutes}분 ${seconds}초`;
+        // return `${hours}시간 ${minutes}분 ${seconds}초`;
+        return `${hours}시간 ${minutes}분`;
     };
 
     // 데이터를 미리 변환
@@ -53,10 +53,10 @@ function RecordTable({
         formattedEndTime: formatTime(item.end_time),
         status:
             item.start_time && !item.end_time
-                ? '출근중'
+                ? '근무중'
                 : item.start_time && item.end_time
-                ? '퇴근완료'
-                : '미출근',
+                ? '업무완료'
+                : '근무전',
         workDuration:
             item.start_time && item.end_time
                 ? calculateWorkDuration(item.start_time, item.end_time)
@@ -150,6 +150,7 @@ function RecordTable({
                     </button>
                 </div>
 
+                {/*  
                 <div className={TableStyle.download_wrapper}>
                     {user.userData.user.gtw_status === 0 ? (
                         <Button
@@ -174,7 +175,9 @@ function RecordTable({
                         </Button>
                     )}
                 </div>
+				*/}
             </div>
+
             {/* 탭 선택 및 정렬 영역 */}
             {/*
                 <div className={TableStyle.work_wrapper}>
@@ -205,13 +208,13 @@ function RecordTable({
             <table>
                 <thead>
                     <tr>
-                        <th>닉네임</th>
-                        <th>근무 상태</th>
+                        <th>이름</th>
+                        <th>상태</th>
+                        <th>신청한 근태</th>
                         <th>출근 시간</th>
-                        <th>출근 방법</th>
                         <th>퇴근 시간</th>
-                        <th>퇴근 방법</th>
-                        <th>근무 시간</th>
+                        <th>총근무시간</th>
+                        {/*<th>근무 시간</th>*/}
                         <th>비고</th>
                     </tr>
                 </thead>
@@ -222,8 +225,18 @@ function RecordTable({
                             <td>
                                 <span>{item.status}</span>
                             </td>
-                            <td>{item.formattedStartTime}</td>
                             <td>
+                                <span>연차</span>
+                                <span>반차(오전)</span>
+                                <span>반차(오후)</span>
+                                <span>월차</span>
+                                <span>휴가</span>
+                                <span>재택</span>
+                            </td>
+                            <td>{item.formattedStartTime}</td>
+
+                            <td>{item.formattedEndTime}</td>
+                            {/*<td>
                                 {item.formattedStartTime &&
                                     (item.location === 'office'
                                         ? '회사출근'
@@ -231,15 +244,14 @@ function RecordTable({
                                         ? '재택출근'
                                         : '')}
                             </td>
-                            <td>{item.formattedEndTime}</td>
-                            <td>
+							<td>
                                 {item.formattedEndTime &&
                                     (item.location === 'office'
                                         ? '회사퇴근'
                                         : item.location === 'home'
                                         ? '재택퇴근'
                                         : '')}
-                            </td>
+                            </td>*/}
                             <td>{item.workDuration}</td>
                             <td>{item.remarks}</td>
                         </tr>

@@ -9,11 +9,11 @@ import SERVER_URL from '../Config';
 import LeftGnbStyle from '../css/LeftGnb.module.scss';
 
 import LeftGnb from '../component/LeftGnb';
-import RecordTable from '../component/RecordTable';
 import Apply from '../component/Apply';
-import DailyRecord from '../component/DailyRecord';
-import WeeklyRecord from '../component/WeeklyRecord';
-import MemberRecord from '../component/MemberRecord';
+import DailyRecord from '../component/Work/DailyRecord';
+import WeeklyRecord from '../component/Work/WeeklyRecord';
+import MemberRecord from '../component/Work/MemberRecord';
+import MonthlyRecord from '../component/Work/MonthlyRecord';
 
 function Work() {
     const [recodeListDate, setRecodeListDate] = useState(
@@ -75,13 +75,13 @@ function Work() {
                     recodeAxiosLIst={recodeAxiosLIst}
                     setRecodeList={setRecodeList}
                 ></MemberRecord>
-                <RecordTable
+                <MonthlyRecord
                     list={recodeList}
                     date={recodeListDate}
                     setRecodeListDate={setRecodeListDate}
                     recodeAxiosLIst={recodeAxiosLIst}
                     setRecodeList={setRecodeList}
-                ></RecordTable>
+                ></MonthlyRecord>
             </section>
         </div>
     );
