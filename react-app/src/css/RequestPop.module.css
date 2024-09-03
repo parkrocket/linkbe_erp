@@ -14,7 +14,7 @@
   z-index: 110;
   padding: 30px;
 }
-.pop::before {
+.pop .bg {
   position: absolute;
   content: "";
   width: 100vw;

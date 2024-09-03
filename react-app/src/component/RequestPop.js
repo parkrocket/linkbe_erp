@@ -5,6 +5,7 @@ import RequestPopStyle from '../css/RequestPop.module.scss';
 function RequestPop({ onClose }) {
     return (
         <div className={`${RequestPopStyle.pop}`}>
+            <div className={`${RequestPopStyle.bg}`} onClick={onClose}></div>
             <div className={`${RequestPopStyle.cont}`}>
                 <h3 className={`text-align-c padding-b30`}>근태 신청</h3>
                 <div className={`${RequestPopStyle.summary}  padding-b30`}>

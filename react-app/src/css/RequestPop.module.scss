@@ -13,7 +13,7 @@
         z-index: 110;
         padding: 30px;
     }
-    &::before {
+    .bg {
         position: absolute;
         content: '';
         width: 100vw;
