@@ -30,8 +30,11 @@ function GtwStatus(props) {
     useEffect(() => {
         if (dayGtw && dayGtw.start_time) {
             const startMoment = moment(dayGtw.start_time);
-            const now = moment();
-            const duration = moment.duration(now.diff(startMoment));
+            const endMoment = dayGtw.end_time
+                ? moment(dayGtw.end_time)
+                : moment(); // end_time이 있으면 그 시간을 사용, 없으면 현재 시간 사용
+
+            const duration = moment.duration(endMoment.diff(startMoment));
 
             const workedHours = String(Math.floor(duration.asHours())).padStart(
                 2,
@@ -43,16 +46,17 @@ function GtwStatus(props) {
             );
 
             if (dayGtw.end_time) {
-                setEndTime(moment(dayGtw.end_time).format('HH:mm'));
+                setEndTime(endMoment.format('HH:mm'));
             } else {
                 setEndTime(startMoment.add(9, 'hours').format('HH:mm'));
             }
 
-            // 프로그레스 바 백분율 계산 및 소수점 버림 처리
+            // 프로그레스 바 백분율 계산 및 소수점 버림 처리, 최대값 100으로 제한
             const totalWorkedMinutes = duration.asMinutes();
-            const percentageWorked = Math.floor(
-                (totalWorkedMinutes / 540) * 100,
-            ); // 소수점 버림
+            const percentageWorked = Math.min(
+                Math.floor((totalWorkedMinutes / 540) * 100),
+                100,
+            ); // 최대값 100으로 제한
             setProgress(percentageWorked); // 프로그레스 상태 업데이트
         } else {
             // 출근 전일 경우 초기값 설정

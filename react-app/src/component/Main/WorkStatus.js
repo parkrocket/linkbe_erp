@@ -97,7 +97,7 @@ function WorkStatus() {
                 } else {
                     // 근무 시간 계산: 분 단위 비교
                     const workDuration = endTime.diff(startTime, 'minutes'); // 분 단위로 계산
-                    const standardWorkDuration = 9 * 60 + 10; // 9시간 10분을 분으로 환산 (550분)
+                    const standardWorkDuration = 9 * 60; // 9시간 10분을 분으로 환산 (550분)
 
                     if (workDuration < standardWorkDuration) {
                         underworkCount++;
@@ -132,7 +132,9 @@ function WorkStatus() {
         let statusIcon;
         let listItemClass;
 
-        if (!member.start_time && !member.end_time) {
+        console.log(member.type);
+
+        if (!member.start_time && !member.end_time && member.type === null) {
             statusText = '출근전';
             listItemClass = UserMainStyle.leave_work;
         } else if (
@@ -276,12 +278,21 @@ function WorkStatus() {
                                 {statusText} {statusIcon}
                             </p>
                             <p className={`${UserMainStyle.time} text-align-l`}>
-                                {moment(member.start_time).format('HH:mm')} ~
-                                {member.end_time
-                                    ? moment(member.end_time).format('HH:mm')
-                                    : moment(member.start_time)
-                                          .add(9, 'hours')
-                                          .format('HH:mm')}
+                                {member.start_time && (
+                                    <>
+                                        {moment(member.start_time).format(
+                                            'HH:mm',
+                                        )}{' '}
+                                        ~{' '}
+                                        {member.end_time
+                                            ? moment(member.end_time).format(
+                                                  'HH:mm',
+                                              )
+                                            : moment(member.start_time)
+                                                  .add(9, 'hours')
+                                                  .format('HH:mm')}
+                                    </>
+                                )}
                             </p>
                         </li>
                     );
