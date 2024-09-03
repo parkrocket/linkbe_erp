@@ -36,7 +36,13 @@ function Register() {
     const [companyList, setCompanyList] = useState([]);
 
     const { email, password, passwordCheck, name, phone } = form;
-    const { isValidEmail, isValidPassword, isValidPasswordCheck, isValidName, isValidPhone } = validity;
+    const {
+        isValidEmail,
+        isValidPassword,
+        isValidPasswordCheck,
+        isValidName,
+        isValidPhone,
+    } = validity;
 
     const emailInputRef = useRef(null);
     const passwordInputRef = useRef(null);
@@ -47,10 +53,12 @@ function Register() {
     const navigate = useNavigate();
     const dispatch = useDispatch();
 
-    const handleInputChange = (e) => {
+    const handleInputChange = e => {
         const { name, value } = e.target;
         if (name === 'companyName') {
-            const selectedCompany = companyList.find((company) => company.cp_name === value);
+            const selectedCompany = companyList.find(
+                company => company.cp_name === value,
+            );
             if (selectedCompany) {
                 setForm({
                     ...form,
@@ -70,32 +78,58 @@ function Register() {
         }
 
         if (name === 'email') {
-            const emailRule = /^[a-z A-Z 0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/i;
+            const emailRule =
+                /^[a-z A-Z 0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/i;
             setValidity({ ...validity, isValidEmail: emailRule.test(value) });
         } else if (name === 'password') {
-            const passwordRule = /^(?=.*[A-Za-z])(?=.*\d|.*[\p{P}\p{S}])[A-Za-z\d\p{P}\p{S}]{8,15}$/u;
-            setValidity({ ...validity, isValidPassword: passwordRule.test(value) });
-            setValidity({ ...validity, isValidPasswordCheck: value === passwordCheck });
+            const passwordRule =
+                /^(?=.*[A-Za-z])(?=.*\d|.*[\p{P}\p{S}])[A-Za-z\d\p{P}\p{S}]{8,15}$/u;
+            setValidity({
+                ...validity,
+                isValidPassword: passwordRule.test(value),
+            });
+            setValidity({
+                ...validity,
+                isValidPasswordCheck: value === passwordCheck,
+            });
         } else if (name === 'passwordCheck') {
-            setValidity({ ...validity, isValidPasswordCheck: value === password });
+            setValidity({
+                ...validity,
+                isValidPasswordCheck: value === password,
+            });
         } else if (name === 'name') {
             const nameRule = /^[가-힣]+$/;
-            setValidity({ ...validity, isValidName: value.length >= 2 && nameRule.test(value) });
+            setValidity({
+                ...validity,
+                isValidName: value.length >= 2 && nameRule.test(value),
+            });
         } else if (name === 'phone') {
             let formattedValue = value.replace(/[^0-9]/g, '');
             if (formattedValue.length <= 3) {
                 e.target.value = formattedValue;
             } else if (formattedValue.length <= 7) {
-                e.target.value = `${formattedValue.slice(0, 3)}-${formattedValue.slice(3)}`;
+                e.target.value = `${formattedValue.slice(
+                    0,
+                    3,
+                )}-${formattedValue.slice(3)}`;
             } else {
-                e.target.value = `${formattedValue.slice(0, 3)}-${formattedValue.slice(3, 7)}-${formattedValue.slice(7, 11)}`;
+                e.target.value = `${formattedValue.slice(
+                    0,
+                    3,
+                )}-${formattedValue.slice(3, 7)}-${formattedValue.slice(
+                    7,
+                    11,
+                )}`;
             }
-            setValidity({ ...validity, isValidPhone: e.target.value.length === 13 });
+            setValidity({
+                ...validity,
+                isValidPhone: e.target.value.length === 13,
+            });
         }
     };
 
     useEffect(() => {
-        axios.post(`${SERVER_URL}/api/company/list`).then((response) => {
+        axios.post(`${SERVER_URL}/api/company/list`).then(response => {
             console.log(response.data);
 
             setCompanyList(response.data.list);
@@ -105,7 +139,7 @@ function Register() {
         setAgreeCheckAll(allChecked);
     }, [termsChecked, privacyChecked, marketingChecked, form]);
 
-    const handleAgreeCheckAllChange = (e) => {
+    const handleAgreeCheckAllChange = e => {
         const checked = e.target.checked;
         setAgreeCheckAll(checked);
         setTermsChecked(checked);
@@ -113,7 +147,7 @@ function Register() {
         setMarketingChecked(checked);
     };
 
-    const onSubmit = (e) => {
+    const onSubmit = e => {
         e.preventDefault();
 
         if (!isValidEmail) {
@@ -142,7 +176,7 @@ function Register() {
             return;
         }
 
-        dispatch(registerUser(form)).then((response) => {
+        dispatch(registerUser(form)).then(response => {
             if (response.payload.registerSuccess) {
                 navigate('/login');
             } else {
@@ -152,15 +186,23 @@ function Register() {
     };
 
     return (
-        <div>
+        <div className="margin-c">
             <h2 className={RegisterStyle.tit}>회원가입</h2>
-            <form className={RegisterStyle.register_form} name="register_form" onSubmit={onSubmit}>
+            <form
+                className={RegisterStyle.register_form}
+                name="register_form"
+                onSubmit={onSubmit}
+            >
                 <h3>계정정보</h3>
                 <div className={RegisterStyle.essential_area}>
                     <div>
                         <div className={RegisterStyle.label_area}>
                             <label htmlFor="email">이메일</label>
-                            <p className={`${RegisterStyle.error} ${RegisterStyle.error_email} ${isValidEmail ? '' : RegisterStyle.on}`}>
+                            <p
+                                className={`${RegisterStyle.error} ${
+                                    RegisterStyle.error_email
+                                } ${isValidEmail ? '' : RegisterStyle.on}`}
+                            >
                                 올바르지 않은 이메일 형식입니다.
                             </p>
                         </div>
@@ -180,8 +222,13 @@ function Register() {
                     <div>
                         <div className={RegisterStyle.label_area}>
                             <label htmlFor="password">비밀번호</label>
-                            <p className={`${RegisterStyle.error} ${RegisterStyle.error_password} ${isValidPassword ? '' : RegisterStyle.on}`}>
-                                영어 대소문자, 숫자, 특수문자 중 2종류 조합의 8-15자
+                            <p
+                                className={`${RegisterStyle.error} ${
+                                    RegisterStyle.error_password
+                                } ${isValidPassword ? '' : RegisterStyle.on}`}
+                            >
+                                영어 대소문자, 숫자, 특수문자 중 2종류 조합의
+                                8-15자
                             </p>
                         </div>
                         <input
@@ -199,8 +246,16 @@ function Register() {
                     </div>
                     <div>
                         <div className={RegisterStyle.label_area}>
-                            <label htmlFor="passwordConfirm">비밀번호 확인</label>
-                            <p className={`${RegisterStyle.error} ${RegisterStyle.error_confirm} ${isValidPasswordCheck ? '' : RegisterStyle.on}`}>
+                            <label htmlFor="passwordConfirm">
+                                비밀번호 확인
+                            </label>
+                            <p
+                                className={`${RegisterStyle.error} ${
+                                    RegisterStyle.error_confirm
+                                } ${
+                                    isValidPasswordCheck ? '' : RegisterStyle.on
+                                }`}
+                            >
                                 비밀번호가 일치하지 않습니다.
                             </p>
                         </div>
@@ -212,7 +267,9 @@ function Register() {
                             name="passwordCheck"
                             required
                             onChange={handleInputChange}
-                            className={isValidPasswordCheck ? '' : RegisterStyle.on}
+                            className={
+                                isValidPasswordCheck ? '' : RegisterStyle.on
+                            }
                             ref={passwordCheckInputRef}
                         />
                     </div>
@@ -259,7 +316,10 @@ function Register() {
                         >
                             <option value="">회사명을 선택해 주세요</option>
                             {companyList.map((company, index) => (
-                                <option key={company.cp_id} value={company.cp_name}>
+                                <option
+                                    key={company.cp_id}
+                                    value={company.cp_name}
+                                >
                                     {company.cp_name}
                                 </option>
                             ))}
@@ -303,16 +363,30 @@ function Register() {
                                     type="radio"
                                     name="vacation_type"
                                     value="finance_year"
-                                    checked={form.companyStandard === 'finance_year'}
+                                    checked={
+                                        form.companyStandard === 'finance_year'
+                                    }
                                     readOnly
                                 />
-                                <span className={RegisterStyle.label}>회계연도 기준</span>
+                                <span className={RegisterStyle.label}>
+                                    회계연도 기준
+                                </span>
                             </label>
                         </div>
                         <div>
                             <label>
-                                <input type="radio" name="vacation_type" value="entrydate" checked={form.companyStandard === 'entrydate'} readOnly />
-                                <span className={RegisterStyle.label}>입사일 기준</span>
+                                <input
+                                    type="radio"
+                                    name="vacation_type"
+                                    value="entrydate"
+                                    checked={
+                                        form.companyStandard === 'entrydate'
+                                    }
+                                    readOnly
+                                />
+                                <span className={RegisterStyle.label}>
+                                    입사일 기준
+                                </span>
                             </label>
                         </div>
                         <div>
@@ -321,10 +395,15 @@ function Register() {
                                     type="radio"
                                     name="vacation_type"
                                     value="finance_year_by_entrydate"
-                                    checked={form.companyStandard === 'finance_year_by_entrydate'}
+                                    checked={
+                                        form.companyStandard ===
+                                        'finance_year_by_entrydate'
+                                    }
                                     readOnly
                                 />
-                                <span className={RegisterStyle.label}>회계연도 기준(입사일 기준 부여)</span>
+                                <span className={RegisterStyle.label}>
+                                    회계연도 기준(입사일 기준 부여)
+                                </span>
                             </label>
                         </div>
                     </div>
@@ -359,7 +438,9 @@ function Register() {
                 </div>
 
                 <h3>약관동의</h3>
-                <div className={`${RegisterStyle.checkbox_wrap} ${RegisterStyle.border}`}>
+                <div
+                    className={`${RegisterStyle.checkbox_wrap} ${RegisterStyle.border}`}
+                >
                     <label>
                         <input
                             id="selectAll"
@@ -380,10 +461,12 @@ function Register() {
                             className={RegisterStyle.checkbox}
                             name="check01"
                             required
-                            onChange={(e) => setTermsChecked(e.target.checked)}
+                            onChange={e => setTermsChecked(e.target.checked)}
                             checked={termsChecked}
                         />
-                        <span className={RegisterStyle.label}>이용약관 동의 (필수)</span>
+                        <span className={RegisterStyle.label}>
+                            이용약관 동의 (필수)
+                        </span>
                     </label>
                     <a href="#">자세히보기</a>
                 </div>
@@ -394,23 +477,31 @@ function Register() {
                             className={RegisterStyle.checkbox}
                             name="check02"
                             required
-                            onChange={(e) => setPrivacyChecked(e.target.checked)}
+                            onChange={e => setPrivacyChecked(e.target.checked)}
                             checked={privacyChecked}
                         />
-                        <span className={RegisterStyle.label}>개인정보 수집 및 이용 동의 (필수)</span>
+                        <span className={RegisterStyle.label}>
+                            개인정보 수집 및 이용 동의 (필수)
+                        </span>
                     </label>
                     <a href="#">자세히보기</a>
                 </div>
-                <div className={`${RegisterStyle.checkbox_wrap} ${RegisterStyle.border_box}`}>
+                <div
+                    className={`${RegisterStyle.checkbox_wrap} ${RegisterStyle.border_box}`}
+                >
                     <label>
                         <input
                             type="checkbox"
                             className={RegisterStyle.checkbox}
                             name="check03"
-                            onChange={(e) => setMarketingChecked(e.target.checked)}
+                            onChange={e =>
+                                setMarketingChecked(e.target.checked)
+                            }
                             checked={marketingChecked}
                         />
-                        <span className={RegisterStyle.label}>마케팅 정보 수신에 대한 동의 (선택)</span>
+                        <span className={RegisterStyle.label}>
+                            마케팅 정보 수신에 대한 동의 (선택)
+                        </span>
                     </label>
                     <a href="#">자세히보기</a>
                 </div>

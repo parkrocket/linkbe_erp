@@ -132,7 +132,13 @@ function WorkStatus() {
         let statusIcon;
         let listItemClass;
 
-        if (!member.start_time && !member.end_time) {
+        if (
+            !member.start_time &&
+            !member.end_time &&
+            member.type !== 'day' &&
+            member.type !== 'half' &&
+            member.type !== 'vacation'
+        ) {
             statusText = '출근전';
             listItemClass = UserMainStyle.leave_work;
         } else if (
@@ -141,13 +147,16 @@ function WorkStatus() {
             member.gtw_location === 'office'
         ) {
             statusText = '근무중';
-            statusIcon = (
-                <FontAwesomeIcon
-                    icon={faStopwatch}
-                    style={{ color: '#226ce0' }}
-                />
-            );
             listItemClass = UserMainStyle.go_work;
+
+            if (moment(member.start_time).isAfter(moment('10:00', 'HH:mm'))) {
+                statusIcon = (
+                    <FontAwesomeIcon
+                        icon={faStopwatch}
+                        style={{ color: '#226ce0' }}
+                    />
+                );
+            }
         } else if (
             member.start_time &&
             !member.end_time &&
@@ -263,7 +272,6 @@ function WorkStatus() {
                 {dayGtw.map((member, index) => {
                     const { statusText, statusIcon, listItemClass } =
                         getStatus(member);
-
                     return (
                         <li
                             key={index}
@@ -276,12 +284,23 @@ function WorkStatus() {
                                 {statusText} {statusIcon}
                             </p>
                             <p className={`${UserMainStyle.time} text-align-l`}>
-                                {moment(member.start_time).format('HH:mm')} ~
-                                {member.end_time
-                                    ? moment(member.end_time).format('HH:mm')
-                                    : moment(member.start_time)
-                                          .add(9, 'hours')
-                                          .format('HH:mm')}
+                                {member.start_time ? (
+                                    <>
+                                        {moment(member.start_time).format(
+                                            'HH:mm',
+                                        )}{' '}
+                                        ~
+                                        {member.end_time
+                                            ? moment(member.end_time).format(
+                                                  'HH:mm',
+                                              )
+                                            : moment(member.start_time)
+                                                  .add(9, 'hours')
+                                                  .format('HH:mm')}
+                                    </>
+                                ) : (
+                                    '-'
+                                )}
                             </p>
                         </li>
                     );
