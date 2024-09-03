@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import VacaTable from '../component/VacaTable';
 import axios from 'axios';
 import SERVER_URL from '../Config';
 import { useSelector } from 'react-redux';
 
 import LeftGnbStyle from '../css/LeftGnb.module.scss';
 
+import VacaTable from '../component/Vacation/VacaTable';
 import LeftGnb from '../component/LeftGnb';
 import Apply from '../component/Apply';
 

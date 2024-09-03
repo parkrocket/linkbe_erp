@@ -71,7 +71,7 @@ function MonthlyRecord() {
                     <span>2</span>
                 </li>
                 <li className={`display-f justify-sb`}>
-                    <span>초관근무</span>
+                    <span>초과근무</span>
                     <span>2</span>
                 </li>
                 <li className={`display-f justify-sb`}>

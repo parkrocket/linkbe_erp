@@ -1,9 +1,9 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 
-import './../css/Footer.css';
+import './../css/Footer.scss';
 
-import FooterMobileMenu from '../component/FooterMobileMenu';
+import FooterMobileMenu from '../component/HeadFoot/FooterMobileMenu';
 
 function Footer() {
     const user = useSelector(state => state.user);

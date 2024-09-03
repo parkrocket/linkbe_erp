@@ -1,10 +1,10 @@
 import React from 'react';
-import TableStyle from '../css/RecordTable.module.css';
 import moment from 'moment';
-import SERVER_URL from '../Config';
+import SERVER_URL from '../../Config';
 import axios from 'axios';
 
-import RightContStyle from '../css/RightCont.module.scss';
+import TableStyle from '../../css/RecordTable.module.scss';
+import RightContStyle from '../../css/RightCont.module.scss';
 
 function RecordTable({ list, setRecodeList }) {
     // 시간 포맷 변경 함수

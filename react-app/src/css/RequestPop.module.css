@@ -1,0 +1,53 @@
+.pop {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  width: 400px;
+  box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.4);
+  z-index: 110;
+}
+.pop .cont {
+  background: #fff;
+  position: relative;
+  z-index: 110;
+  padding: 30px;
+}
+.pop .bg {
+  position: absolute;
+  content: "";
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 109;
+}
+.pop h3 {
+  font-weight: bold;
+  font-size: 20px;
+}
+.pop .summary {
+  line-height: 1.5;
+}
+.pop form label {
+  font-weight: bold;
+}
+.pop form input,
+.pop form select {
+  border: 1px solid #999;
+  width: 100%;
+  padding: 10px;
+}
+.pop form .form_submit button {
+  color: #fff;
+  background: #999;
+  width: 70px;
+  line-height: 2.5;
+}
+.pop form .form_submit button:last-child {
+  margin-left: 10px;
+  background: #3562e4;
+}

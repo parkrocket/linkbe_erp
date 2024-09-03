@@ -160,7 +160,6 @@ function DailyRecord(props) {
                     <dt className={`${RightContStyle.tit02}`}>
                         {getRelativeDayLabel()}
                     </dt>
-
                     <dd>{date}</dd>
                 </dl>
                 <button
