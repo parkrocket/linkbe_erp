@@ -1,0 +1,57 @@
+.pop {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    width: 400px;
+    box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.4);
+    z-index: 110;
+    .cont {
+        background: #fff;
+        position: relative;
+        z-index: 110;
+        padding: 30px;
+    }
+    &::before {
+        position: absolute;
+        content: '';
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.4);
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 109;
+    }
+    h3 {
+        font-weight: bold;
+        font-size: 20px;
+    }
+    .summary {
+        line-height: 1.5;
+    }
+    form {
+        label {
+            font-weight: bold;
+        }
+        input,
+        select {
+            border: 1px solid #999;
+            width: 100%;
+            padding: 10px;
+        }
+        .form_submit {
+            button {
+                color: #fff;
+                background: #999;
+                width: 70px;
+                line-height: 2.5;
+                &:last-child {
+                    margin-left: 10px;
+                    background: #3562e4;
+                }
+            }
+        }
+    }
+}

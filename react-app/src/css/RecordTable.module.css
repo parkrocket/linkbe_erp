@@ -55,11 +55,9 @@ section .wrapper {
   align-items: center;
   justify-content: center;
 }
-
 .download_wrapper img {
   width: auto;
 }
-
 .download_wrapper a {
   font-size: 14px;
   color: rgb(141, 141, 141);
@@ -74,20 +72,16 @@ section .wrapper {
   margin-bottom: 30px;
   align-items: center;
 }
-
 .work_wrapper ul {
   display: flex;
   gap: 0 20px;
 }
-
 .work_wrapper ul li a {
   color: rgb(141, 141, 141);
 }
-
 .work_wrapper ul > .click {
   position: relative;
 }
-
 .work_wrapper ul > .click::after {
   content: "";
   position: absolute;
@@ -99,7 +93,6 @@ section .wrapper {
   height: 2px;
   background-color: #000;
 }
-
 .work_wrapper ul > .click a {
   color: #000;
 }

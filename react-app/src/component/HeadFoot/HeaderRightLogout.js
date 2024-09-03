@@ -1,5 +1,5 @@
 import React from 'react';
-import { logout } from '../_actions/user_action';
+import { logout } from '../../_actions/user_action';
 import { useCookies } from 'react-cookie';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
