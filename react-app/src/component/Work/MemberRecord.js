@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 
 import leftArrowImg from '../../img/chevron_left_24dp_FILL0_wght400_GRAD0_opsz24.svg';
@@ -11,20 +11,34 @@ import MemberRecordStyle from '../../css/MemberRecord.module.scss';
 import moment from 'moment';
 import { refresh } from '../../_actions/user_action';
 import { gtw } from '../../_actions/gtw_action';
+import axios from 'axios';
+import SERVER_URL from '../../Config';
 
-function RecordTable({
-    list,
-    date,
-    today,
-    setRecodeListDate,
-    recodeAxiosLIst,
-    setRecodeList,
-}) {
+function RecordTable({ date, today }) {
+    const [recodeListDate, setRecodeListDate] = useState(
+        moment().format('YYYY-MM-DD'),
+    );
     const [currentDate, setCurrentDate] = useState(date);
+    const [recodeList, setRecodeList] = useState([]);
 
     const user = useSelector(state => state.user);
 
     const dispatch = useDispatch();
+
+    useEffect(() => {
+        recodeAxiosLIst(setRecodeList, recodeListDate);
+    }, [recodeListDate, user.userData.user.user_id, today]);
+
+    const recodeAxiosLIst = (setRecodeList, recodeListDate) => {
+        const dataTosubmit = { date: recodeListDate };
+
+        axios
+            .post(`${SERVER_URL}/api/list/listsMember`, dataTosubmit)
+            .then(response => {
+                // console.log(response.data.list);
+                setRecodeList(response.data.list);
+            });
+    };
 
     //멤버 전원 데이터 없을 때 체크
     const dataCheck = item => {
@@ -193,7 +207,7 @@ function RecordTable({
         }
     };
 
-    const formattedList = list.map(item => {
+    const formattedList = recodeList.map(item => {
         return {
             ...item,
             dataCheck: dataCheck(item),
@@ -278,7 +292,7 @@ function RecordTable({
                     <input
                         type="date"
                         id="currentDate"
-                        value={date}
+                        value={recodeListDate}
                         onChange={dateHandleChange}
                     />
                     <span

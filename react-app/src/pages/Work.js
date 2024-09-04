@@ -16,10 +16,12 @@ import MemberRecord from '../component/Work/MemberRecord';
 import MonthlyRecord from '../component/Work/MonthlyRecord';
 
 function Work() {
+    console.log('리로딩');
+
     const [recodeListDate, setRecodeListDate] = useState(
         moment().format('YYYY-MM-DD'),
     );
-    const [recodeList, setRecodeList] = useState([]);
+
     const [shiftType, setShiftType] = useState({});
 
     const [today, setToday] = useState(moment().format('YYYY-MM-DD'));
@@ -27,20 +29,8 @@ function Work() {
     const user = useSelector(state => state.user);
 
     useEffect(() => {
-        recodeAxiosLIst(setRecodeList, recodeListDate);
         companyAxiosInfo(setShiftType, user.userData.user.cp_id);
     }, [recodeListDate, user.userData.user.user_id, today]);
-
-    const recodeAxiosLIst = (setRecodeList, recodeListDate) => {
-        const dataTosubmit = { date: recodeListDate };
-
-        axios
-            .post(`${SERVER_URL}/api/list/listsMember`, dataTosubmit)
-            .then(response => {
-                // console.log(response.data.list);
-                setRecodeList(response.data.list);
-            });
-    };
 
     const companyAxiosInfo = (setShiftType, cpId) => {
         const dataTosubmit = { cpId: cpId };
@@ -70,20 +60,11 @@ function Work() {
                     />
                 </div>
                 <MemberRecord
-                    list={recodeList}
                     date={recodeListDate}
                     today={today}
                     setRecodeListDate={setRecodeListDate}
-                    recodeAxiosLIst={recodeAxiosLIst}
-                    setRecodeList={setRecodeList}
                 ></MemberRecord>
-                <MonthlyRecord
-                    list={recodeList}
-                    date={recodeListDate}
-                    setRecodeListDate={setRecodeListDate}
-                    recodeAxiosLIst={recodeAxiosLIst}
-                    setRecodeList={setRecodeList}
-                ></MonthlyRecord>
+                <MonthlyRecord></MonthlyRecord>
             </section>
         </div>
     );
