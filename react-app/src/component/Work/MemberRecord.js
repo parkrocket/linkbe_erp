@@ -46,22 +46,98 @@ function RecordTable({
         return `${hours}시간 ${minutes}분`;
     };
 
+    //근무 시간 계산 : 분 단위 비교
+    const workingTimeCalculate = (startTime, endTime) => {
+        const end = moment(endTime);
+        const workingTime = endTime.diff(startTime, 'minutes'); //근무시간 분단위 변환
+        const standardWorkingTime = 9 * 60; //기준 근무시간
+
+        if (workingTime < standardWorkingTime) {
+            return '근무미달';
+        }
+    };
+
     // 데이터를 미리 변환
-    const formattedList = list.map(item => ({
-        ...item,
-        formattedStartTime: formatTime(item.start_time),
-        formattedEndTime: formatTime(item.end_time),
-        status:
-            item.start_time && !item.end_time
-                ? '근무중'
-                : item.start_time && item.end_time
-                ? '업무완료'
-                : '근무전',
-        workDuration:
-            item.start_time && item.end_time
-                ? calculateWorkDuration(item.start_time, item.end_time)
-                : '',
-    }));
+    const formatStatus = item => {
+        if (['day', 'half', 'vacation'].includes(item.type)) {
+            return '-';
+        }
+        if (item.start_time && !item.end_time) {
+            return '근무중';
+        }
+        if (item.start_time && item.end_time) {
+            return '업무완료';
+        }
+        return '근무전';
+    };
+
+    const formatWorkDuration = item => {
+        if (['day', 'half', 'vacation'].includes(item.type)) {
+            return '-';
+        }
+        if (item.start_time && item.end_time) {
+            return calculateWorkDuration(item.start_time, item.end_time);
+        }
+        return '';
+    };
+
+    let str = '';
+
+    const formatRemarks = item => {
+        if (['day', 'half', 'vacation'].includes(item.type)) {
+            return '';
+        }
+
+        if (moment(item.start_time).isAfter(moment('10:00', 'HH:mm'))) {
+            str = str + '지각';
+        }
+
+        if (item.start_time && item.end_time) {
+            const workDuration = calculateWorkDuration(
+                item.start_time,
+                item.end_time,
+            );
+            if (workDuration > '9시간') {
+                str = str + '초과근무';
+            }
+            if (workDuration < '9시간') {
+                //str = str + '근무미달';
+            }
+        }
+        return str;
+    };
+
+    const formatType = type => {
+        switch (type) {
+            case 'day':
+                return '연차';
+            case 'half':
+                return '반차';
+            case 'vacation':
+                return '휴가';
+            case 'home':
+                return '재택';
+            default:
+                return '-';
+        }
+    };
+
+    const formattedList = list.map(item => {
+        str = '';
+        return {
+            ...item,
+            formattedStartTime: ['day', 'half', 'vacation'].includes(item.type)
+                ? '-'
+                : formatTime(item.start_time),
+            formattedEndTime: ['day', 'half', 'vacation'].includes(item.type)
+                ? '-'
+                : formatTime(item.end_time),
+            status: formatStatus(item),
+            workDuration: formatWorkDuration(item),
+            type: formatType(item.type),
+            remarks: formatRemarks(item),
+        };
+    });
 
     const dateHandleChange = event => {
         setRecodeListDate(event.target.value);
@@ -222,16 +298,9 @@ function RecordTable({
                     {formattedList.map((item, index) => (
                         <tr key={index}>
                             <td>{item.user_name}</td>
+                            <td>{item.status}</td>
                             <td>
-                                <span>{item.status}</span>
-                            </td>
-                            <td>
-                                <span>연차</span>
-                                <span>반차(오전)</span>
-                                <span>반차(오후)</span>
-                                <span>월차</span>
-                                <span>휴가</span>
-                                <span>재택</span>
+                                <span>{item.type}</span>
                             </td>
                             <td>{item.formattedStartTime}</td>
 

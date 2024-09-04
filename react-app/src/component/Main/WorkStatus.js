@@ -37,6 +37,7 @@ function WorkStatus() {
         axios
             .post(`${SERVER_URL}/api/gtw/gtwStatusAll`, dataTosubmit)
             .then(response => {
+                console.log('Response Data:', response.data);
                 setDayGtw(response.data.gtw || []);
             });
     };
@@ -59,7 +60,7 @@ function WorkStatus() {
         let overtimeCount = 0;
         let underworkCount = 0;
 
-        const lateThreshold = moment(today + ' 10:00:00'); // 지각 기준 시간: 9시
+        const lateThreshold = moment(today + ' 10:01:00'); // 지각 기준 시간: 9시
         const workHoursStandard = 9; // 근무 시간 기준: 9시간
 
         dayGtw.forEach(member => {
@@ -87,10 +88,7 @@ function WorkStatus() {
 
                 // 근무 시간 계산: 근무 시간이 기준보다 긴지 짧은지 확인
 
-                const overtimeThreshold = startTime
-                    .clone()
-                    .add(9, 'hours')
-                    .add(10, 'minutes');
+                const overtimeThreshold = startTime.clone().add(9, 'hours');
 
                 if (endTime.isAfter(overtimeThreshold)) {
                     overtimeCount++;
@@ -149,7 +147,7 @@ function WorkStatus() {
             statusText = '근무중';
             listItemClass = UserMainStyle.go_work;
 
-            if (moment(member.start_time).isAfter(moment('10:00', 'HH:mm'))) {
+            if (moment(member.start_time).isAfter(moment('10:01', 'HH:mm'))) {
                 statusIcon = (
                     <FontAwesomeIcon
                         icon={faStopwatch}
