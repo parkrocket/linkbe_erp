@@ -46,6 +46,16 @@ function RecordTable({
         return `${hours}시간 ${minutes}분`;
     };
 
+    // 근무 시간 계산 함수 (시간 차이를 숫자로 반환)
+    const calculateWorkDurationTime = (startTime, endTime) => {
+        if (!startTime || !endTime) return 0;
+        const start = moment(startTime);
+        const end = moment(endTime);
+
+        const duration = moment.duration(end.diff(start));
+        return duration.asHours(); // 총 근무 시간을 시간 단위로 반환
+    };
+
     //근무 시간 계산 : 분 단위 비교
     const workingTimeCalculate = (startTime, endTime) => {
         const end = moment(endTime);
@@ -81,30 +91,49 @@ function RecordTable({
         return '';
     };
 
-    let str = '';
-
     const formatRemarks = item => {
+        let remarksList = []; // 누적된 비고들을 배열로 저장
+
+        // 근태 타입이 연차, 반차, 휴가인 경우 비고가 필요 없으므로 빈 배열 반환
         if (['day', 'half', 'vacation'].includes(item.type)) {
             return '';
         }
 
-        if (moment(item.start_time).isAfter(moment('10:00', 'HH:mm'))) {
-            str = str + '지각';
+        // item.start_time을 로컬 시간으로 변환한 뒤 비교
+        const startTimeLocal = moment(item.start_time).local(); // 로컬 시간으로 변환
+
+        // item.start_time 날짜의 10:00 시간을 설정
+        const referenceTime = moment(startTimeLocal).set({
+            hour: 10,
+            minute: 0,
+            second: 0,
+        });
+
+        // 출근 시간이 10시 이후라면 '지각'을 배열에 추가
+        if (startTimeLocal.isAfter(referenceTime)) {
+            remarksList.push('지각');
         }
 
+        // 시작 시간과 종료 시간이 모두 존재할 때만 근무 시간 체크
         if (item.start_time && item.end_time) {
-            const workDuration = calculateWorkDuration(
+            const workDuration = calculateWorkDurationTime(
                 item.start_time,
                 item.end_time,
             );
-            if (workDuration > '9시간') {
-                str = str + '초과근무';
+
+            // 근무 시간이 9시간 초과이면 '초과근무' 배열에 추가
+            if (workDuration > 9) {
+                remarksList.push('초과근무');
             }
-            if (workDuration < '9시간') {
-                //str = str + '근무미달';
+
+            // 근무 시간이 9시간 미만이면 '근무미달' 배열에 추가
+            if (workDuration < 9) {
+                remarksList.push('근무미달');
             }
         }
-        return str;
+
+        // remarksList에 있는 항목들을 쉼표로 구분하여 반환
+        return remarksList.join(', ');
     };
 
     const formatType = type => {
@@ -123,7 +152,6 @@ function RecordTable({
     };
 
     const formattedList = list.map(item => {
-        str = '';
         return {
             ...item,
             formattedStartTime: ['day', 'half', 'vacation'].includes(item.type)
