@@ -37,8 +37,7 @@ function Work() {
         axios
             .post(`${SERVER_URL}/api/list/listsMember`, dataTosubmit)
             .then(response => {
-                console.log(response.data.list);
-
+                // console.log(response.data.list);
                 setRecodeList(response.data.list);
             });
     };
@@ -73,6 +72,7 @@ function Work() {
                 <MemberRecord
                     list={recodeList}
                     date={recodeListDate}
+                    today={today}
                     setRecodeListDate={setRecodeListDate}
                     recodeAxiosLIst={recodeAxiosLIst}
                     setRecodeList={setRecodeList}

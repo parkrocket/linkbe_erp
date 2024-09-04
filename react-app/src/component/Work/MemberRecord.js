@@ -15,6 +15,7 @@ import { gtw } from '../../_actions/gtw_action';
 function RecordTable({
     list,
     date,
+    today,
     setRecodeListDate,
     recodeAxiosLIst,
     setRecodeList,
@@ -24,6 +25,17 @@ function RecordTable({
     const user = useSelector(state => state.user);
 
     const dispatch = useDispatch();
+
+    //멤버 전원 데이터 없을 때 체크
+    const dataCheck = item => {
+        if (
+            !item.start_time &&
+            !item.end_time &&
+            !['day', 'half', 'vacation'].includes(item.type)
+        ) {
+            return 'empty';
+        }
+    };
 
     // 시간 포맷 변경 함수
     const formatTime = time => {
@@ -41,8 +53,9 @@ function RecordTable({
 
         const hours = Math.floor(duration.asHours());
         const minutes = duration.minutes();
-        const seconds = duration.seconds();
+        // const seconds = duration.seconds();
         // return `${hours}시간 ${minutes}분 ${seconds}초`;
+
         return `${hours}시간 ${minutes}분`;
     };
 
@@ -56,29 +69,44 @@ function RecordTable({
         return duration.asHours(); // 총 근무 시간을 시간 단위로 반환
     };
 
-    //근무 시간 계산 : 분 단위 비교
-    const workingTimeCalculate = (startTime, endTime) => {
-        const end = moment(endTime);
-        const workingTime = endTime.diff(startTime, 'minutes'); //근무시간 분단위 변환
-        const standardWorkingTime = 9 * 60; //기준 근무시간
-
-        if (workingTime < standardWorkingTime) {
-            return '근무미달';
+    // 데이터를 미리 변환
+    const formatStartTime = item => {
+        if (['day', 'half', 'vacation'].includes(item.type)) {
+            return '-';
+        } else {
+            if (today !== date && !item.start_time) {
+                return '누락';
+            } else {
+                return formatTime(item.start_time);
+            }
+        }
+    };
+    const formatEndTime = item => {
+        if (['day', 'half', 'vacation'].includes(item.type)) {
+            return '-';
+        } else {
+            if (today !== date && !item.end_time) {
+                return '누락';
+            } else {
+                return formatTime(item.end_time);
+            }
         }
     };
 
-    // 데이터를 미리 변환
     const formatStatus = item => {
         if (['day', 'half', 'vacation'].includes(item.type)) {
             return '-';
         }
-        if (item.start_time && !item.end_time) {
-            return '근무중';
+        if (today === date) {
+            if (item.start_time && !item.end_time) {
+                return '근무중';
+            }
+            if (item.start_time && item.end_time) {
+                return '업무완료';
+            }
+            return '근무전';
         }
-        if (item.start_time && item.end_time) {
-            return '업무완료';
-        }
-        return '근무전';
+        return '업무종료';
     };
 
     const formatWorkDuration = item => {
@@ -87,7 +115,12 @@ function RecordTable({
         }
         if (item.start_time && item.end_time) {
             return calculateWorkDuration(item.start_time, item.end_time);
+        } else {
+            if (today !== date) {
+                return '누락';
+            }
         }
+
         return '';
     };
 
@@ -96,7 +129,7 @@ function RecordTable({
 
         // 근태 타입이 연차, 반차, 휴가인 경우 비고가 필요 없으므로 빈 배열 반환
         if (['day', 'half', 'vacation'].includes(item.type)) {
-            return '';
+            return '-';
         }
 
         // item.start_time을 로컬 시간으로 변환한 뒤 비교
@@ -105,7 +138,7 @@ function RecordTable({
         // item.start_time 날짜의 10:00 시간을 설정
         const referenceTime = moment(startTimeLocal).set({
             hour: 10,
-            minute: 0,
+            minute: 1,
             second: 0,
         });
 
@@ -132,6 +165,15 @@ function RecordTable({
             }
         }
 
+        //오늘이 아니고, 쉬는 날이 아닌데, start_time 또는 end_time이 없으면 '기록 누락' 배열에 추가
+        if (
+            today !== date &&
+            !['day', 'half', 'vacation'].includes(item.type) &&
+            (!item.start_time || !item.end_time)
+        ) {
+            remarksList.push('기록누락');
+        }
+
         // remarksList에 있는 항목들을 쉼표로 구분하여 반환
         return remarksList.join(', ');
     };
@@ -154,18 +196,18 @@ function RecordTable({
     const formattedList = list.map(item => {
         return {
             ...item,
-            formattedStartTime: ['day', 'half', 'vacation'].includes(item.type)
-                ? '-'
-                : formatTime(item.start_time),
-            formattedEndTime: ['day', 'half', 'vacation'].includes(item.type)
-                ? '-'
-                : formatTime(item.end_time),
+            dataCheck: dataCheck(item),
+            formattedStartTime: formatStartTime(item),
+            formattedEndTime: formatEndTime(item),
             status: formatStatus(item),
             workDuration: formatWorkDuration(item),
             type: formatType(item.type),
             remarks: formatRemarks(item),
         };
     });
+
+    //멤버 전원 데이터가 없는지 체크
+    const allEmpty = formattedList.every(item => item.dataCheck === 'empty');
 
     const dateHandleChange = event => {
         setRecodeListDate(event.target.value);
@@ -323,17 +365,24 @@ function RecordTable({
                     </tr>
                 </thead>
                 <tbody className={TableStyle.work_data}>
-                    {formattedList.map((item, index) => (
-                        <tr key={index}>
-                            <td>{item.user_name}</td>
-                            <td>{item.status}</td>
-                            <td>
-                                <span>{item.type}</span>
+                    {allEmpty ? (
+                        <tr>
+                            <td colSpan="7">
+                                구성원의 근태 데이터가 존재하지 않습니다.
                             </td>
-                            <td>{item.formattedStartTime}</td>
+                        </tr>
+                    ) : (
+                        formattedList.map((item, index) => (
+                            <tr key={index}>
+                                <td>{item.user_name}</td>
+                                <td>{item.status}</td>
+                                <td>
+                                    <span>{item.type}</span>
+                                </td>
+                                <td>{item.formattedStartTime}</td>
 
-                            <td>{item.formattedEndTime}</td>
-                            {/*<td>
+                                <td>{item.formattedEndTime}</td>
+                                {/*<td>
                                 {item.formattedStartTime &&
                                     (item.location === 'office'
                                         ? '회사출근'
@@ -349,10 +398,11 @@ function RecordTable({
                                         ? '재택퇴근'
                                         : '')}
                             </td>*/}
-                            <td>{item.workDuration}</td>
-                            <td>{item.remarks}</td>
-                        </tr>
-                    ))}
+                                <td>{item.workDuration}</td>
+                                <td>{item.remarks}</td>
+                            </tr>
+                        ))
+                    )}
                 </tbody>
             </table>
         </div>
