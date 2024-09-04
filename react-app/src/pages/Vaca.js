@@ -4,10 +4,12 @@ import SERVER_URL from '../Config';
 import { useSelector } from 'react-redux';
 
 import LeftGnbStyle from '../css/LeftGnb.module.scss';
+import RightContStyle from '../css/RightCont.module.scss';
 
 import VacaTable from '../component/Vacation/VacaTable';
 import LeftGnb from '../component/LeftGnb';
 import Apply from '../component/Apply';
+import VacaSummary from '../component/Vacation/VacaSummary';
 
 function Vaca() {
     const [recordList, setRecordList] = useState([]);
@@ -34,10 +36,13 @@ function Vaca() {
             <LeftGnb />
             <section className={` margin-c`}>
                 <Apply />
-                <VacaTable
-                    list={recordList}
-                    setRecordList={setRecordList}
-                ></VacaTable>
+                <div className={RightContStyle.box01}>
+                    <VacaSummary />
+                    <VacaTable
+                        list={recordList}
+                        setRecordList={setRecordList}
+                    />
+                </div>
             </section>
         </div>
     );

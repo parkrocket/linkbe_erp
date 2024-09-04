@@ -79,7 +79,7 @@ function RecordTable({ list, setRecodeList }) {
     };
 
     return (
-        <div className={RightContStyle.box01}>
+        <div>
             <h3 className={`${RightContStyle.tit01} text-align-c`}>
                 연차 / 휴가 목록
             </h3>
