@@ -4,4 +4,6 @@ const listController = require('../controllers/listController');
 
 router.post('/lists', listController.lists);
 
+router.post('/listsMember', listController.listsMember);
+
 module.exports = router;

@@ -35,7 +35,7 @@ function Work() {
         const dataTosubmit = { date: recodeListDate };
 
         axios
-            .post(`${SERVER_URL}/api/list/lists`, dataTosubmit)
+            .post(`${SERVER_URL}/api/list/listsMember`, dataTosubmit)
             .then(response => {
                 setRecodeList(response.data.list);
             });
