@@ -20,7 +20,6 @@ const sendSlackMessage = async (channel, text) => {
 const publishHomeView = async (
     userId,
     user,
-    gtw,
     myGtw,
     myVa,
     date,
