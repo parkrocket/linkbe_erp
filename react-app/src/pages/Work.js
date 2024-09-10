@@ -64,7 +64,7 @@ function Work() {
                     today={today}
                     setRecodeListDate={setRecodeListDate}
                 ></MemberRecord>
-                <MonthlyRecord></MonthlyRecord>
+                <MonthlyRecord today={today}></MonthlyRecord>
             </section>
         </div>
     );

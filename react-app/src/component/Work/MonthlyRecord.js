@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 
-import leftArrowImg from '../../img/chevron_left_24dp_FILL0_wght400_GRAD0_opsz24.svg';
-import rightArrowImg from '../../img/chevron_right_24dp_FILL0_wght400_GRAD0_opsz24.svg';
 //import downloadImg from '../img/download.svg';
 
-import { faChevronRight } from '@fortawesome/free-solid-svg-icons';
-import { faChevronLeft } from '@fortawesome/free-solid-svg-icons';
+import {
+    faChevronRight,
+    faChevronLeft,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 import RightContStyle from '../../css/RightCont.module.scss';
@@ -14,11 +14,41 @@ import TableStyle from '../../css/RecordTable.module.scss';
 import MonthlyRecordStyle from '../../css/MonthlyRecord.module.scss';
 
 import moment from 'moment';
-import Button from '../Button';
 import { refresh } from '../../_actions/user_action';
 import { gtw } from '../../_actions/gtw_action';
+import axios from 'axios';
+import SERVER_URL from '../../Config';
 
-function MonthlyRecord() {
+function MonthlyRecord({ date, today }) {
+    const [recodeListDate, setRecodeListDate] = useState(
+        moment().format('YYYY-MM-DD'),
+    );
+    const [currentDate, setCurrentDate] = useState(date);
+    const [recodeList, setRecodeList] = useState([]);
+    const user = useSelector(state => state.user);
+
+    useEffect(() => {
+        recodeAxiosLIst(setRecodeList, recodeListDate);
+    }, [recodeListDate, user.userData.user.user_id, today]);
+
+    const recodeAxiosLIst = (setRecodeList, recodeListDate) => {
+        const dataTosubmit = { date: recodeListDate };
+
+        axios
+            .post(`${SERVER_URL}/api/list/listsMember`, dataTosubmit)
+            .then(response => {
+                // console.log(response.data.list);
+                setRecodeList(response.data.list);
+            });
+    };
+
+    const handleLeftArrowClick = () => {
+        const newDate = moment(currentDate)
+            .subtract(1, 'months')
+            .format('YYYY-MM');
+        setCurrentDate(newDate);
+        setRecodeListDate(newDate);
+    };
     return (
         <div className={RightContStyle.box01}>
             <h3 className={`${RightContStyle.tit01} text-align-c`}>
@@ -32,6 +62,7 @@ function MonthlyRecord() {
                     type="button"
                     className={`${RightContStyle.left_arrow} display-b`}
                     id="weekly_prev"
+                    onClick={handleLeftArrowClick}
                 >
                     <span className="blind">이전</span>
                     <FontAwesomeIcon
@@ -42,7 +73,9 @@ function MonthlyRecord() {
                     />
                 </button>
                 <dl>
-                    <dt className={`${RightContStyle.tit02}`}>2024년 9월</dt>
+                    <dt className={`${RightContStyle.tit02}`}>
+                        {recodeListDate}
+                    </dt>
                 </dl>
                 <button
                     type="button"
