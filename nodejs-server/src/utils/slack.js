@@ -38,6 +38,7 @@ const publishHomeView = async (
 
     const actionBlocks = [];
 
+    /*
     if (gtw.length > 0) {
         const gtwText = gtw.reduce((text, entry) => {
             const locationIcon = entry.location === 'office' ? '🏢' : '🏠';
@@ -52,6 +53,7 @@ const publishHomeView = async (
             { type: 'divider' },
         );
     }
+    */
 
     if (myGtw.length > 0) {
         const formattedStartTime = moment(myGtw[0].start_time).format(
