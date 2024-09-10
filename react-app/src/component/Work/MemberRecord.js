@@ -43,6 +43,7 @@ function RecordTable({ date, today }) {
     //멤버 전원 데이터 없을 때 체크
     const dataCheck = item => {
         if (
+            recodeListDate < today &&
             !item.start_time &&
             !item.end_time &&
             !['day', 'half', 'vacation'].includes(item.type)
@@ -157,7 +158,7 @@ function RecordTable({ date, today }) {
         });
 
         // 출근 시간이 10시 이후라면 '지각'을 배열에 추가
-        if (startTimeLocal.isAfter(referenceTime)) {
+        if (!item.start_time || startTimeLocal.isAfter(referenceTime)) {
             remarksList.push('지각');
         }
 

@@ -89,7 +89,7 @@ function WeeklyRecord(props) {
         axios
             .post(`${SERVER_URL}/api/vacation/vcaWeeklyStatus`, dataTosubmit)
             .then(response => {
-                console.log(response);
+                // console.log(response);
             });
     };
 
