@@ -29,6 +29,8 @@ const handleSlackEvents = async (req, res) => {
 const handleHomeView = async (req, res) => {
     const { type, challenge, event } = req.body;
 
+    console.log(event);
+
     if (type === 'url_verification') {
         return res.status(200).send({ challenge });
     }
@@ -55,8 +57,6 @@ const handleHomeView = async (req, res) => {
                     .status(404)
                     .json({ refreshSuccess: false, error: 'User not found' });
             }
-
-            console.log(user);
 
             //const gtw = await Gtw.findByGtwAllAsync(date);
             const myGtw = await Gtw.findByGtwAsync(user.user_id, date);
