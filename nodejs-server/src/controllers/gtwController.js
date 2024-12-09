@@ -21,7 +21,7 @@ exports.companyIn = (req, res) => {
     }
 
     const { userId, type, platform } = req.body;
-
+    console.log('test');
     /*
 
     if (process.env.COMPANY_IP !== ip) {
