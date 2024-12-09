@@ -111,12 +111,15 @@ const handleGtwCheck = async (req, res) => {
             });
         }
 
+        /*
+
         if (type === 'gtw' && process.env.COMPANY_IP !== ip) {
             return res.json({
                 message: '지정된 ip가 아닙니다.',
                 windowClose: false,
             });
         }
+            */
 
         console.log('퇴근버튼 누름');
 
