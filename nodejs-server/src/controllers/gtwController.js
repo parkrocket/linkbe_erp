@@ -22,11 +22,14 @@ exports.companyIn = (req, res) => {
 
     const { userId, type, platform } = req.body;
 
+    /*
+
     if (process.env.COMPANY_IP !== ip) {
         return res
             .status(200)
             .json({ gtwSuccess: false, error: 'IP가 일치하지 않습니다.' });
     }
+    */
 
     Gtw.findByGtw(userId, type, date, (err, gtw) => {
         if (err) {
