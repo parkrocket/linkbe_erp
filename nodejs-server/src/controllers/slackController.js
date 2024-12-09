@@ -27,7 +27,7 @@ const handleSlackEvents = async (req, res) => {
 };
 
 const handleHomeView = async (req, res) => {
-    console.log('통신!!');
+    console.log('통신!!!');
 
     const { type, challenge, event } = req.body;
 
