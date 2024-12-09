@@ -56,6 +56,8 @@ const handleHomeView = async (req, res) => {
                     .json({ refreshSuccess: false, error: 'User not found' });
             }
 
+            console.log(user);
+
             //const gtw = await Gtw.findByGtwAllAsync(date);
             const myGtw = await Gtw.findByGtwAsync(user.user_id, date);
             const myVa = await Vca.findByAllAsync();
