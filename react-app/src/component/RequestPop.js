@@ -3,8 +3,11 @@ import { useSelector } from 'react-redux';
 import axios from 'axios';
 import RequestPopStyle from '../css/RequestPop.module.scss';
 import SERVER_URL from '../Config';
+import { useNavigate } from 'react-router-dom';
 
 function RequestPop({ onClose }) {
+    const navigate = useNavigate();
+
     const user = useSelector(state => state.user);
     const [date, setDate] = useState('');
     const [type, setType] = useState('');
@@ -38,6 +41,7 @@ function RequestPop({ onClose }) {
             if (response.status === 200) {
                 alert('신청이 완료되었습니다.');
                 onClose(); // 팝업 닫기
+                navigate('/vaca'); // /vaca 경로로 이동
             } else {
                 alert('신청에 실패했습니다. 다시 시도해주세요.');
             }
