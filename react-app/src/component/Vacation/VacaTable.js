@@ -68,12 +68,16 @@ function RecordTable({ list, setRecodeList }) {
             calendar_id,
             type,
         };
+
+        // console.log(dataTosubmit);
+
         axios
-            .post(`${SERVER_URL}/api/vacation/cancel`, dataTosubmit)
+            .post(`${SERVER_URL}/api/apply/applyCancel`, dataTosubmit)
             .then(response => {
                 if (response.data.vacationCancelSuccess) {
                     alert('취소되었습니다.');
-                    setRecodeList(response.data.vacationList);
+                    window.location.reload();
+                    //setRecodeList(response.data.vacationList);
                 }
             });
     };
