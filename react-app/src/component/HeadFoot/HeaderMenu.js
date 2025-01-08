@@ -40,6 +40,9 @@ function HeaderMenu() {
                 <Link to="/organization" className="display-b">
                     조직
                 </Link>
+                <Link to="/calendar" className="display-b">
+                    캘린더
+                </Link>
             </div>
             <button className="logout_btn" onClick={logOutHandler}>
                 로그아웃

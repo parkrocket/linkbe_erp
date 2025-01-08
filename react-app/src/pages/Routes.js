@@ -11,6 +11,7 @@ import Geo from './Geo';
 import Work from './Work';
 import WorkHistory from './WorkHistory';
 import Sent from './Sent';
+import Calendar from './Calendar';
 
 export const Routes = () => {
     return (
@@ -25,6 +26,7 @@ export const Routes = () => {
                 <Route path="/work" element={Auth(Work, null)} />
                 <Route path="/workHistory" element={Auth(WorkHistory, null)} />
                 <Route path="/sent" element={Auth(Sent, null)} />
+                <Route path="/calendar" element={Auth(Calendar, null)} />
             </ReactRouterRoutes>
         </main>
     );

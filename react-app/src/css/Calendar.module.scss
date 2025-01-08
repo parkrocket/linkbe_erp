@@ -1,0 +1,24 @@
+.calendarContainer {
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    height: auto;
+}
+
+.calendarTitle {
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.calendarHolidays {
+    border-color: #f87171 !important;
+    background-color: #f87171 !important;
+    color: white !important;
+    font-weight: bold;
+    border-radius: 5px;
+}
