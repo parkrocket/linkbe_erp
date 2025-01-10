@@ -42,7 +42,7 @@ function Calendar() {
 
             setEvents(response.data); // 서버에서 전달된 데이터를 그대로 상태로 저장
         } catch (error) {
-            console.error('Error fetching events:', error);
+            console.error('Error fetching eventss:', error);
         }
     };
 
