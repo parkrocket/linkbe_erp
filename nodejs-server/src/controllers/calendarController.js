@@ -98,3 +98,74 @@ exports.insert = async (req, res) => {
         });
     }
 };
+
+// 일정 수정
+exports.update = async (req, res) => {
+    console.log(req.body);
+
+    try {
+        const { id, summary, start, end } = req.body;
+
+        if (!id || !summary || !start?.date || !end?.date) {
+            return res.status(400).json({
+                error: 'Missing id, summary, start.date, or end.date',
+            });
+        }
+
+        const calendar = google.calendar({ version: 'v3', auth: auths });
+
+        const event = {
+            summary,
+            description: summary,
+            start: { date: start.date }, // 수정할 시작 날짜
+            end: { date: end.date }, // 수정할 종료 날짜
+        };
+
+        const updatedEvent = await calendar.events.update({
+            calendarId: process.env.GOOGLE_CALENDAR_ID,
+            eventId: id,
+            resource: event,
+        });
+
+        res.status(200).json({ updatedEvent: updatedEvent.data });
+    } catch (error) {
+        console.error(
+            'Error updating event:',
+            error.response?.data.errors || error.message,
+        );
+        res.status(500).json({
+            error: 'Error updating event',
+            details: error.response?.data || error.message,
+        });
+    }
+};
+
+exports.delete = async (req, res) => {
+    try {
+        const { id } = req.body;
+
+        if (!id) {
+            return res.status(400).json({
+                error: 'Missing event ID',
+            });
+        }
+
+        const calendar = google.calendar({ version: 'v3', auth: auths });
+
+        await calendar.events.delete({
+            calendarId: process.env.GOOGLE_CALENDAR_ID,
+            eventId: id, // 삭제할 이벤트의 ID
+        });
+
+        res.status(200).json({ message: 'Event deleted successfully' });
+    } catch (error) {
+        console.error(
+            'Error deleting event:',
+            error.response?.data || error.message,
+        );
+        res.status(500).json({
+            error: 'Error deleting event',
+            details: error.response?.data || error.message,
+        });
+    }
+};

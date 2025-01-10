@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import FullCalendar from '@fullcalendar/react'; // FullCalendar 컴포넌트
 import dayGridPlugin from '@fullcalendar/daygrid'; // DayGrid 뷰
 import interactionPlugin from '@fullcalendar/interaction'; // 사용자 입력 처리
+import koLocale from '@fullcalendar/core/locales/ko'; // 한국어 로케일
 import axios from 'axios';
 import CalendarStyle from '../css/Calendar.module.scss';
 import SERVER_URL from '../Config';
@@ -37,8 +38,6 @@ function Calendar() {
                     },
                 },
             );
-
-            console.log('Fetched events:', response.data);
 
             setEvents(response.data); // 서버에서 전달된 데이터를 그대로 상태로 저장
         } catch (error) {
@@ -78,11 +77,14 @@ function Calendar() {
 
     // 이벤트 수정
     const handleEventClick = info => {
+        setSelectedEvent(info.event);
         openModal('edit', info.event);
     };
 
     // Google Calendar에 이벤트 추가
     const addEventToGoogleCalendar = async event => {
+        console.log(event);
+
         try {
             const response = await axios.post(`${SERVER_URL}/api/calendar/in`, {
                 summary: event.title,
@@ -98,7 +100,7 @@ function Calendar() {
     // Google Calendar에 이벤트 수정
     const updateEventInGoogleCalendar = async event => {
         try {
-            const response = await axios.put(
+            const response = await axios.post(
                 `${SERVER_URL}/api/calendar/update`,
                 {
                     id: event.id,
@@ -107,9 +109,22 @@ function Calendar() {
                     end: { date: event.end },
                 },
             );
-            console.log('Event updated:', response.data);
         } catch (error) {
             console.error('Error updating event:', error);
+        }
+    };
+
+    const deleteEventFromGoogleCalendar = async eventId => {
+        try {
+            const response = await axios.post(
+                `${SERVER_URL}/api/calendar/delete`,
+                {
+                    id: eventId,
+                },
+            );
+            console.log('Event deleted:', response.data);
+        } catch (error) {
+            console.error('Error deleting event:', error);
         }
     };
 
@@ -126,39 +141,75 @@ function Calendar() {
                 start: selectedEvent.start,
                 end: selectedEvent.end,
                 allDay: true,
+                classNames: 'user-event',
             };
-            setEvents([...events, newEvent]);
-            addEventToGoogleCalendar(newEvent);
+            setEvents([...events, newEvent]); // 로컬 상태 업데이트
+            addEventToGoogleCalendar(newEvent); // Google Calendar에 새 이벤트 추가
         } else if (modalType === 'edit') {
+            if (!selectedEvent?.id) {
+                console.error('선택된 이벤트에 ID가 없습니다.');
+                return;
+            }
+
             const updatedEvent = {
-                ...selectedEvent,
-                title,
+                id: selectedEvent._def.publicId, // FullCalendar의 publicId가 Google Calendar ID
+                title, // 새 제목
+                start: formatDate(selectedEvent._instance.range.start), // 시작 시간
+                end: formatDate(selectedEvent._instance.range.end), // 종료 시간
+                allDay: selectedEvent.allDay, // allDay 여부
+                classNames: 'user-event',
             };
+
+            // 로컬 상태 업데이트
             const updatedEvents = events.map(event =>
                 event.id === updatedEvent.id ? updatedEvent : event,
             );
+
             setEvents(updatedEvents);
+
+            // 단일 이벤트만 업데이트
             updateEventInGoogleCalendar(updatedEvent);
         }
+
         closeModal();
+    };
+
+    const handleDelete = eventId => {
+        if (!window.confirm('정말로 이 이벤트를 삭제하시겠습니까?')) {
+            return;
+        }
+
+        // Google Calendar에서 삭제
+        deleteEventFromGoogleCalendar(eventId);
+
+        // 로컬 상태 업데이트
+        const updatedEvents = events.filter(event => event.id !== eventId);
+        setEvents(updatedEvents);
+
+        closeModal();
+    };
+
+    const formatDate = date => {
+        const d = new Date(date);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0'); // 월은 0부터 시작하므로 +1
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     };
 
     return (
         <div className={CalendarStyle.calendarContainer}>
-            <h1 className={CalendarStyle.calendarTitle}>
-                Google Calendar 연동
-            </h1>
+            <h1 className={CalendarStyle.calendarTitle}>링크비 일정 관리</h1>
             <FullCalendar
                 plugins={[dayGridPlugin, interactionPlugin]}
                 initialView="dayGridMonth"
+                locale={koLocale} // 한국어 로케일 적용
                 events={events} // 서버에서 가져온 이벤트 데이터
+                aspectRatio={2}
+                firstDay={1}
                 eventClassNames={info => {
                     // 서버에서 전달된 className을 SCSS 모듈로 매핑
                     const { classNames } = info.event;
-
-                    if (classNames[0] === 'user-event') {
-                        console.log(classNames[0], CalendarStyle.userEvent);
-                    }
 
                     return classNames[0] === 'user-event'
                         ? CalendarStyle.userEvent // SCSS 클래스 매핑
@@ -202,6 +253,16 @@ function Calendar() {
                             gap: 1,
                         }}
                     >
+                        {title && (
+                            <Button
+                                variant="contained"
+                                color="error"
+                                onClick={() => handleDelete(selectedEvent.id)}
+                            >
+                                삭제
+                            </Button>
+                        )}
+
                         <Button variant="outlined" onClick={closeModal}>
                             취소
                         </Button>
