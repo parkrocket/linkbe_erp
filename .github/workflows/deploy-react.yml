@@ -23,7 +23,7 @@ jobs:
             - name: Install dependencies
               run: |
                   cd react-app
-                  npm ci # sass·babel 플러그인은 package.json에 포함됨 — lock 기준으로 고정 설치
+                  npm install # sass·babel 플러그인은 package.json에 포함됨
 
             - name: Build React app
               env:

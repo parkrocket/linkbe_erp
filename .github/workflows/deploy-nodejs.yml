@@ -21,7 +21,7 @@ jobs:
         node-version: '22'
 
     - name: Install dependencies
-      run: cd nodejs-server && npm ci
+      run: cd nodejs-server && npm install
 
     - name: Create .ssh directory
       run: |
