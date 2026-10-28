@@ -13,19 +13,17 @@ jobs:
 
         steps:
             - name: Checkout code
-              uses: actions/checkout@v2
+              uses: actions/checkout@v4
 
             - name: Set up Node.js
-              uses: actions/setup-node@v3
+              uses: actions/setup-node@v4
               with:
-                  node-version: '18'
+                  node-version: '22'
 
             - name: Install dependencies
               run: |
                   cd react-app
-                  npm install
-                  npm install @babel/plugin-proposal-private-property-in-object
-                  npm install sass sass-loader
+                  npm ci # sass·babel 플러그인은 package.json에 포함됨 — lock 기준으로 고정 설치
 
             - name: Build React app
               env:
