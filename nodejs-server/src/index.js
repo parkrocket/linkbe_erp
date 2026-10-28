@@ -19,8 +19,10 @@ const requestIp = require('request-ip');
 
 app.use(cors()); // CORS 미들웨어 사용
 
-// 매분마다 실행
-require('./controllers/userCron.js');
+// 매일 자정 출근상태 초기화 크론 — 로컬이 운영 DB에 붙으므로 운영에서만 실행
+if (process.env.NODE_ENV === 'production') {
+    require('./controllers/userCron.js');
+}
 
 app.use(requestIp.mw());
 

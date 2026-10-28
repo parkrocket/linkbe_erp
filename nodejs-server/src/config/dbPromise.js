@@ -5,6 +5,7 @@ dotenv.config();
 
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
+    port: process.env.DB_PORT, // 미설정 시 기본 3306 (로컬은 SSH 터널 포트 사용)
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_DATABASE,
