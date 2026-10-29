@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { summarizeTeamLeave, upcomingLeaves } from './leave';
+import { balanceAfter, summarizeTeamLeave, upcomingLeaves } from './leave';
 import type { GtwRecord, VacationRecord } from './types';
 
 const member = (user_id: string, user_name: string, type: string | null): GtwRecord => ({
@@ -55,5 +55,19 @@ describe('upcomingLeaves', () => {
         expect(result).toHaveLength(5);
         expect(result[0].date.startsWith('2026-11-03')).toBe(true);
         expect(result[1].date.startsWith('2026-11-12')).toBe(true);
+    });
+});
+
+describe('balanceAfter', () => {
+    const user = { user_id: 'me', user_name: '홍', cp_id: 1, user_stip: '1.5', user_vaca: 0 };
+
+    it('연차·반차는 연차에서, 휴가는 휴가에서 차감한다', () => {
+        expect(balanceAfter(user, 'day')).toEqual({ label: '연차', before: 1.5, after: 0.5, days: 1, enough: true });
+        expect(balanceAfter(user, 'half')).toEqual({ label: '연차', before: 1.5, after: 1, days: 0.5, enough: true });
+        expect(balanceAfter(user, 'vacation')).toEqual({ label: '휴가', before: 0, after: -1, days: 1, enough: false });
+    });
+
+    it('재택은 차감이 없다', () => {
+        expect(balanceAfter(user, 'home')).toBeNull();
     });
 });

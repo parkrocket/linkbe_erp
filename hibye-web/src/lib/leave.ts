@@ -1,5 +1,5 @@
 // 근태(연차·반차·휴가·재택) 계산
-import type { GtwRecord, LeaveType, VacationRecord } from './types';
+import type { GtwRecord, LeaveType, User, VacationRecord } from './types';
 
 // 표시 순서 = 이 배열 순서
 export const LEAVE_TYPES: { type: LeaveType; label: string }[] = [
@@ -49,4 +49,26 @@ export function upcomingLeaves(list: VacationRecord[], today: string, limit = 5)
         .filter(v => localDay(v.date) >= today)
         .sort((a, b) => a.date.localeCompare(b.date))
         .slice(0, limit);
+}
+
+// 신청 시 차감 미리보기 — 연차·반차는 남은 연차(user_stip), 휴가는 남은 휴가(user_vaca), 재택은 차감 없음
+const COST: Record<LeaveType, { field: 'user_stip' | 'user_vaca'; label: string; days: number } | null> = {
+    day: { field: 'user_stip', label: '연차', days: 1 },
+    half: { field: 'user_stip', label: '연차', days: 0.5 },
+    vacation: { field: 'user_vaca', label: '휴가', days: 1 },
+    home: null,
+};
+
+export function balanceAfter(user: User, type: LeaveType) {
+    const cost = COST[type];
+    if (!cost) return null;
+    const before = toDays(user[cost.field]);
+    const after = before - cost.days;
+    return { label: cost.label, before, after, days: cost.days, enough: after >= 0 };
+}
+
+// DECIMAL 문자열('8.5')·null 대응
+export function toDays(value: unknown) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : 0;
 }

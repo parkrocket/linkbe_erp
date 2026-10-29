@@ -13,7 +13,7 @@ export function Dashboard({ user }: { user: User }) {
             <div className="flex flex-wrap items-end justify-between gap-4">
                 <Greeting name={user.user_name} now={new Date()} />
                 {/* 화면의 핵심 행동 1개 — 근태 페이지(전환 예정)로 이동 */}
-                <Link href="/vaca" className={buttonClass('primary')}>
+                <Link href="/vaca?new=1" className={buttonClass('primary')}>
                     <Plus aria-hidden className="size-4" />
                     근태 신청
                 </Link>

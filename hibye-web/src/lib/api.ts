@@ -1,7 +1,11 @@
 // nodejs-server 호출 공통 함수 — 주소 결정·JSON 처리·에러 변환을 한 곳에서
 
 export class ApiError extends Error {
-    constructor(public status: number) {
+    // reason: 오류 응답 본문의 error 문자열 (예: 'Insufficient balance') — 사유별 안내에 사용
+    constructor(
+        public status: number,
+        public reason?: string,
+    ) {
         super(`API ${status}`);
         this.name = 'ApiError';
     }
@@ -31,7 +35,10 @@ export async function apiFetch<T>(path: string, { method = 'GET', body, cookie }
         cache: 'no-store',
     });
 
-    if (!res.ok) throw new ApiError(res.status);
+    if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { error?: unknown } | null;
+        throw new ApiError(res.status, typeof data?.error === 'string' ? data.error : undefined);
+    }
     return res.json() as Promise<T>;
 }
 

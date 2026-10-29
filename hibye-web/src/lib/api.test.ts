@@ -87,3 +87,14 @@ describe('apiFetch (브라우저 환경)', () => {
         expect(calls[0].url).toBe('/node/api/x');
     });
 });
+
+describe('ApiError 응답 본문', () => {
+    afterEach(() => vi.unstubAllGlobals());
+
+    it('오류 응답의 error 메시지를 담는다 (사유별 안내용)', async () => {
+        stubFetch(409, { gtwSuccess: false, error: 'Insufficient balance' });
+        const err = (await apiFetch('/api/x').catch(e => e)) as ApiError;
+        expect(err.status).toBe(409);
+        expect(err.reason).toBe('Insufficient balance');
+    });
+});

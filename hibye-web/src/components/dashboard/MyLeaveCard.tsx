@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { upcomingLeaves } from '@/lib/leave';
+import { toDays, upcomingLeaves } from '@/lib/leave';
 import type { User, VacationRecord } from '@/lib/types';
 import { LeaveBadge } from './LeaveBadge';
 import { todayString, useApiData } from './useApiData';
@@ -14,12 +14,6 @@ type Response = { vacationList?: VacationRecord[] };
 
 const DAY_LABEL = new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
 
-// DECIMAL 문자열('8.5')·null 대응
-const days = (value: User['user_stip']) => {
-    const n = Number(value);
-    return Number.isFinite(n) ? n : 0;
-};
-
 export function MyLeaveCard({ user }: { user: User }) {
     // 서버가 토큰 주인 기준으로 조회하므로 바디는 비움
     const { state, reload } = useApiData<Response>('/api/vacation/list', {});
@@ -27,8 +21,8 @@ export function MyLeaveCard({ user }: { user: User }) {
     return (
         <Card title="내 근태">
             <dl className="grid grid-cols-2 gap-3">
-                <Balance label="남은 연차" value={days(user.user_stip)} />
-                <Balance label="남은 휴가" value={days(user.user_vaca)} />
+                <Balance label="남은 연차" value={toDays(user.user_stip)} />
+                <Balance label="남은 휴가" value={toDays(user.user_vaca)} />
             </dl>
 
             <div className="mt-5 mb-2 flex items-center justify-between">

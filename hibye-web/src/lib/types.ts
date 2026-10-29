@@ -28,4 +28,5 @@ export type VacationRecord = {
     id?: number;
     date: string;
     type: LeaveType;
+    va_datetime?: string; // 신청 일시
 };
