@@ -1,4 +1,4 @@
-const db = require('../config/db');
+const pool = require('../config/dbPromise');
 const { google } = require('googleapis');
 
 const Apply = {};
@@ -10,137 +10,138 @@ const auths = new google.auth.JWT(
     ['https://www.googleapis.com/auth/calendar'],
 );
 
-const leaveTypes = {
-    day: { tp: 'stip', day: 1, hgName: '연차' },
-    half: { tp: 'stip', day: 0.5, hgName: '반차' },
-    vacation: { tp: 'vaca', day: 1, hgName: '휴가' },
-    home: { tp: 'home', day: 1, hgName: '재택' },
+// 근태 종류 → 차감 컬럼·일수 (재택은 차감 없음 — lk_user에 user_home 컬럼이 없음)
+// column 값은 이 고정 표에서만 오므로 SQL에 넣어도 안전
+const LEAVE_TYPES = {
+    day: { column: 'user_stip', days: 1, label: '연차' },
+    half: { column: 'user_stip', days: 0.5, label: '반차' },
+    vacation: { column: 'user_vaca', days: 1, label: '휴가' },
+    home: { column: null, days: 0, label: '재택' },
 };
 
-const executeQuery = (query, params) =>
-    new Promise((resolve, reject) => {
-        db.query(query, params, (err, results) => {
-            if (err) reject(err);
-            else resolve(results);
-        });
-    });
+// 상태 코드를 가진 오류 — 컨트롤러가 그대로 HTTP 응답 코드로 사용
+class ApplyError extends Error {
+    constructor(status, message) {
+        super(message);
+        this.status = status;
+    }
+}
+Apply.ApplyError = ApplyError;
 
-Apply.InsertApply = async (userId, date, type, userName, callback) => {
+// 'YYYY-MM-DD'이면서 실제 존재하는 날짜인지 (2026-13-40 등 차단)
+const isValidDate = value =>
+    typeof value === 'string' &&
+    /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+    !Number.isNaN(Date.parse(value)) &&
+    new Date(value).toISOString().slice(0, 10) === value;
+
+const calendar = () => google.calendar({ version: 'v3', auth: auths });
+
+// 근태 신청 — 검증 → 잔여·중복 확인 → 캘린더 일정 → 차감·저장을 한 트랜잭션으로
+// (기존: 캘린더 먼저 생성, 잔여 검사 컬럼명 오류로 검사 무력화, 재택은 항상 실패)
+Apply.insert = async ({ userId, date, type }) => {
+    const leave = LEAVE_TYPES[type];
+    if (!leave) throw new ApplyError(400, 'Invalid leave type');
+    if (!isValidDate(date)) throw new ApplyError(400, 'Invalid date');
+
+    const conn = await pool.getConnection();
+    let eventId = null;
     try {
-        const leaveInfo = leaveTypes[type];
-        if (!leaveInfo) {
-            return callback('Invalid leave type', null);
-        }
+        await conn.beginTransaction();
 
-        const { tp, day, hgName } = leaveInfo;
-
-        const calendar = google.calendar({ version: 'v3', auth: auths });
-        const event = {
-            summary: `[${userName}] ${hgName}`,
-            description: type,
-            start: { date: date, timeZone: 'Asia/Seoul' },
-            end: { date: date, timeZone: 'Asia/Seoul' },
-        };
-
-        const createdEvent = await calendar.events.insert({
-            calendarId: process.env.GOOGLE_CALENDAR_ID,
-            resource: event,
-        });
-
-        const eventId = createdEvent.data.id;
-        if (!eventId) {
-            return callback('Event creation failed', null);
-        }
-
-        const user = await executeQuery(
-            'SELECT * FROM lk_user WHERE user_id = ? LIMIT 1',
+        // FOR UPDATE: 동시에 두 번 신청해 잔여가 음수가 되는 것 방지
+        const [users] = await conn.query(
+            'SELECT user_name, user_stip, user_vaca FROM lk_user WHERE user_id = ? FOR UPDATE',
             [userId],
         );
-
-        if (tp !== 'home' && user[0][tp] < day) {
-            return callback(`${tp} insufficient`, null);
+        const user = users[0];
+        if (!user) throw new ApplyError(404, 'User not found');
+        if (leave.column && Number(user[leave.column]) < leave.days) {
+            throw new ApplyError(409, 'Insufficient balance');
         }
 
-        await executeQuery(
-            `UPDATE lk_user SET user_${tp} = user_${tp} - ? WHERE user_id = ?`,
-            [day, userId],
-        );
+        const [duplicates] = await conn.query('SELECT id FROM lk_vacation WHERE user_id = ? AND date = ? LIMIT 1', [
+            userId,
+            date,
+        ]);
+        if (duplicates.length) throw new ApplyError(409, 'Already applied on this date');
 
-        const result = await executeQuery(
+        const created = await calendar().events.insert({
+            calendarId: process.env.GOOGLE_CALENDAR_ID,
+            resource: {
+                summary: `[${user.user_name}] ${leave.label}`,
+                description: type,
+                start: { date, timeZone: 'Asia/Seoul' },
+                end: { date, timeZone: 'Asia/Seoul' },
+            },
+        });
+        eventId = created.data.id;
+        if (!eventId) throw new ApplyError(502, 'Calendar event creation failed');
+
+        if (leave.column) {
+            await conn.query(`UPDATE lk_user SET ${leave.column} = ${leave.column} - ? WHERE user_id = ?`, [
+                leave.days,
+                userId,
+            ]);
+        }
+        const [result] = await conn.query(
             'INSERT INTO lk_vacation (user_id, type, date, va_datetime, calendar_id) VALUES (?, ?, ?, NOW(), ?)',
             [userId, type, date, eventId],
         );
 
-        callback(null, result.insertId);
+        await conn.commit();
+        return result.insertId;
     } catch (error) {
-        console.error(
-            'Error while processing leave application:',
-            error.response?.data || error.message,
-        );
-        callback(error, null);
+        await conn.rollback();
+        // DB 반영이 취소됐으므로 이미 만든 캘린더 일정도 정리 (고아 일정 방지)
+        if (eventId) {
+            await calendar()
+                .events.delete({ calendarId: process.env.GOOGLE_CALENDAR_ID, eventId })
+                .catch(e => console.error('calendar cleanup failed:', eventId, e.message));
+        }
+        throw error;
+    } finally {
+        conn.release();
     }
 };
 
-Apply.CancelApply = async (id, userId, type, calendar_id, callback) => {
+// 근태 취소 — 본인 소유 확인 후 종류·캘린더 ID는 DB 값 사용, 잔여는 본인에게 복원
+// (기존: id만으로 삭제 + 요청 바디의 userId에 복원 → 남의 근태 삭제·내 잔여 부풀리기 가능)
+Apply.cancel = async ({ id, userId }) => {
+    const conn = await pool.getConnection();
+    let row;
     try {
-        // 1. Google Calendar 이벤트 삭제
-        const calendar = google.calendar({ version: 'v3', auth: auths });
+        await conn.beginTransaction();
 
-        if (calendar_id) {
-            try {
-                await calendar.events.delete({
-                    calendarId: process.env.GOOGLE_CALENDAR_ID,
-                    eventId: calendar_id,
-                });
-                console.log(
-                    `Calendar event ${calendar_id} deleted successfully.`,
-                );
-            } catch (error) {
-                console.error(
-                    `Failed to delete calendar event: ${calendar_id}`,
-                    error.response?.data || error.message,
-                );
-                return callback(
-                    `Failed to delete calendar event: ${calendar_id}`,
-                    null,
-                );
-            }
-        }
-
-        // 2. 데이터베이스에서 신청 정보 삭제
-        const deleteQuery = 'DELETE FROM lk_vacation WHERE id = ?';
-        await executeQuery(deleteQuery, [id]);
-
-        // 3. 취소된 유형(type)에 따라 사용자 사용 가능 수량 복원
-        const leaveTypes = {
-            day: { tp: 'stip', day: 1 },
-            half: { tp: 'stip', day: 0.5 },
-            vacation: { tp: 'vaca', day: 1 },
-            home: { tp: 'home', day: 1 },
-        };
-
-        const leaveInfo = leaveTypes[type];
-        if (!leaveInfo) {
-            return callback('Invalid leave type', null);
-        }
-
-        const { tp, day } = leaveInfo;
-
-        // 복원 작업
-        const updateQuery = `UPDATE lk_user SET user_${tp} = user_${tp} + ? WHERE user_id = ?`;
-        await executeQuery(updateQuery, [day, userId]);
-
-        // 4. 성공적으로 완료
-        callback(
-            null,
-            `Leave application with ID ${id} has been successfully canceled.`,
+        const [rows] = await conn.query(
+            'SELECT id, type, calendar_id FROM lk_vacation WHERE id = ? AND user_id = ? FOR UPDATE',
+            [id, userId],
         );
+        row = rows[0];
+        if (!row) throw new ApplyError(404, 'Leave not found');
+
+        await conn.query('DELETE FROM lk_vacation WHERE id = ?', [row.id]);
+        const leave = LEAVE_TYPES[row.type];
+        if (leave && leave.column) {
+            await conn.query(`UPDATE lk_user SET ${leave.column} = ${leave.column} + ? WHERE user_id = ?`, [
+                leave.days,
+                userId,
+            ]);
+        }
+
+        await conn.commit();
     } catch (error) {
-        console.error(
-            'Error while canceling leave application:',
-            error.response?.data || error.message,
-        );
-        callback(error, null);
+        await conn.rollback();
+        throw error;
+    } finally {
+        conn.release();
+    }
+
+    // 캘린더 정리는 커밋 후 — 실패해도 취소 자체는 유지하고 기록만
+    if (row.calendar_id) {
+        await calendar()
+            .events.delete({ calendarId: process.env.GOOGLE_CALENDAR_ID, eventId: row.calendar_id })
+            .catch(e => console.error('calendar delete failed:', row.calendar_id, e.message));
     }
 };
 
