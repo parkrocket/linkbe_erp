@@ -5,7 +5,7 @@ import { useState, type FormEvent } from 'react';
 import { todayString } from '@/components/dashboard/useApiData';
 import { Button } from '@/components/ui/Button';
 import { apiFetch, ApiError } from '@/lib/api';
-import { balanceAfter, LEAVE_TYPES } from '@/lib/leave';
+import { applyErrorMessage, balanceAfter, HOME_LIMIT_PER_MONTH, LEAVE_TYPES } from '@/lib/leave';
 import type { LeaveType, User } from '@/lib/types';
 import { Modal } from './Modal';
 
@@ -13,18 +13,8 @@ const COST_LABEL: Record<LeaveType, string> = {
     day: '연차 −1일',
     half: '연차 −0.5일',
     vacation: '휴가 −1일',
-    home: '차감 없음',
+    home: `월 ${HOME_LIMIT_PER_MONTH}회 · 차감 없음`,
 };
-
-// API 오류 사유 → 안내 문구
-function errorMessage(error: unknown) {
-    if (error instanceof ApiError) {
-        if (error.reason === 'Insufficient balance') return '남은 일수가 부족해요.';
-        if (error.reason === 'Already applied on this date') return '이미 근태를 신청한 날짜예요. 한 날짜에 하나만 신청할 수 있어요.';
-        if (error.status === 400) return '날짜와 종류를 확인해 주세요.';
-    }
-    return '신청하지 못했어요. 잠시 후 다시 시도해 주세요.';
-}
 
 type Props = { open: boolean; user: User; onClose: () => void; onApplied: () => void };
 
@@ -52,7 +42,7 @@ export function ApplyDialog({ open, user, onClose, onApplied }: Props) {
                 router.replace('/login?redirect=/vaca');
                 return;
             }
-            setError(errorMessage(e));
+            setError(applyErrorMessage(e));
         } finally {
             setSubmitting(false);
         }
@@ -101,7 +91,7 @@ export function ApplyDialog({ open, user, onClose, onApplied }: Props) {
                         ? blocked
                             ? `남은 ${preview.label}가 ${preview.before}일이라 신청할 수 없어요.`
                             : `신청 후 남은 ${preview.label}: ${preview.before}일 → ${preview.after}일`
-                        : '재택은 남은 일수가 차감되지 않아요.'}
+                        : `재택은 남은 일수가 차감되지 않고, 한 달에 최대 ${HOME_LIMIT_PER_MONTH}회까지 신청할 수 있어요.`}
                 </p>
 
                 {error && (

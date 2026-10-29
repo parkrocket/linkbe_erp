@@ -76,6 +76,24 @@ function reset(user = { user_name: '홍길동', user_stip: 5, user_vaca: 2 }, ex
     assert.ok(!ran(/UPDATE lk_user/), '재택은 차감하지 않음');
     assert.ok(!queries.some(q => q.sql && /user_home/.test(q.sql)));
 
+    // 신청: 재택은 같은 달 최대 2회 — 이미 2회면 409, 캘린더 일정 만들지 않음
+    reset(undefined, [[/COUNT\(\*\)/i, [{ count: 2 }]]]);
+    const homeLimit = await Apply.insert({ userId: 'me', date: '2026-11-20', type: 'home' }).catch(e => e);
+    assert.strictEqual(homeLimit.status, 409, '재택 월 2회 초과 차단');
+    assert.strictEqual(homeLimit.message, 'Monthly home limit exceeded');
+    assert.deepStrictEqual(calendarCalls, []);
+    const countQuery = queries.find(q => q.sql && /COUNT\(\*\)/i.test(q.sql));
+    assert.ok(/type = 'home'/.test(countQuery.sql) && countQuery.params.includes('me'), '본인의 재택만 셈');
+    assert.ok(countQuery.params.includes('2026-11-20'), '신청 날짜의 달 기준');
+
+    // 신청: 재택 1회 사용 상태면 신청 가능
+    reset(undefined, [[/COUNT\(\*\)/i, [{ count: 1 }]], [/INSERT INTO lk_vacation/, { insertId: 45 }]]);
+    assert.strictEqual(await Apply.insert({ userId: 'me', date: '2026-11-21', type: 'home' }), 45);
+
+    // 신청: 연차는 재택 횟수와 무관
+    reset(undefined, [[/COUNT\(\*\)/i, [{ count: 5 }]], [/INSERT INTO lk_vacation/, { insertId: 46 }]]);
+    assert.strictEqual(await Apply.insert({ userId: 'me', date: '2026-11-22', type: 'day' }), 46);
+
     // 신청: 지난 날짜 허용
     reset(undefined, [[/INSERT INTO lk_vacation/, { insertId: 44 }]]);
     assert.strictEqual(await Apply.insert({ userId: 'me', date: '2020-01-02', type: 'home' }), 44);

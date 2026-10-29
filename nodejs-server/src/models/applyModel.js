@@ -19,6 +19,8 @@ const LEAVE_TYPES = {
     home: { column: null, days: 0, label: '재택' },
 };
 
+const HOME_LIMIT_PER_MONTH = 2; // 재택 월 최대 횟수 (회사 규정, 2026-10-29)
+
 // 상태 코드를 가진 오류 — 컨트롤러가 그대로 HTTP 응답 코드로 사용
 class ApplyError extends Error {
     constructor(status, message) {
@@ -65,6 +67,16 @@ Apply.insert = async ({ userId, date, type }) => {
             date,
         ]);
         if (duplicates.length) throw new ApplyError(409, 'Already applied on this date');
+
+        // 재택은 신청 날짜가 속한 달(달력 기준)에 최대 HOME_LIMIT_PER_MONTH회 — 회사 규정
+        // 위의 lk_user FOR UPDATE로 같은 사용자의 동시 신청이 직렬화되어 초과 신청 경쟁 없음
+        if (type === 'home') {
+            const [rows] = await conn.query(
+                "SELECT COUNT(*) AS count FROM lk_vacation WHERE user_id = ? AND type = 'home' AND YEAR(date) = YEAR(?) AND MONTH(date) = MONTH(?)",
+                [userId, date, date],
+            );
+            if (Number(rows[0]?.count ?? 0) >= HOME_LIMIT_PER_MONTH) throw new ApplyError(409, 'Monthly home limit exceeded');
+        }
 
         const created = await calendar().events.insert({
             calendarId: process.env.GOOGLE_CALENDAR_ID,

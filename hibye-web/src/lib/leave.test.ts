@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { balanceAfter, summarizeTeamLeave, upcomingLeaves } from './leave';
+import { ApiError } from './api';
+import { applyErrorMessage, balanceAfter, summarizeTeamLeave, upcomingLeaves } from './leave';
 import type { GtwRecord, VacationRecord } from './types';
 
 const member = (user_id: string, user_name: string, type: string | null): GtwRecord => ({
@@ -69,5 +70,15 @@ describe('balanceAfter', () => {
 
     it('재택은 차감이 없다', () => {
         expect(balanceAfter(user, 'home')).toBeNull();
+    });
+});
+
+describe('applyErrorMessage', () => {
+    it('사유별 안내 문구', () => {
+        expect(applyErrorMessage(new ApiError(409, 'Monthly home limit exceeded'))).toBe('재택은 한 달에 최대 2회까지 신청할 수 있어요.');
+        expect(applyErrorMessage(new ApiError(409, 'Insufficient balance'))).toBe('남은 일수가 부족해요.');
+        expect(applyErrorMessage(new ApiError(409, 'Already applied on this date'))).toContain('이미 근태를 신청한 날짜');
+        expect(applyErrorMessage(new ApiError(400))).toBe('날짜와 종류를 확인해 주세요.');
+        expect(applyErrorMessage(new Error('x'))).toBe('신청하지 못했어요. 잠시 후 다시 시도해 주세요.');
     });
 });

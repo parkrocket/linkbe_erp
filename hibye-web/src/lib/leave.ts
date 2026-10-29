@@ -1,4 +1,5 @@
 // 근태(연차·반차·휴가·재택) 계산
+import { ApiError } from './api';
 import type { GtwRecord, LeaveType, User, VacationRecord } from './types';
 
 // 표시 순서 = 이 배열 순서
@@ -71,4 +72,18 @@ export function balanceAfter(user: User, type: LeaveType) {
 export function toDays(value: unknown) {
     const n = Number(value);
     return Number.isFinite(n) ? n : 0;
+}
+
+// 재택 월 최대 횟수 — 서버(applyModel HOME_LIMIT_PER_MONTH)가 실제로 검사, 화면은 안내용
+export const HOME_LIMIT_PER_MONTH = 2;
+
+// 근태 신청 API 오류 사유 → 안내 문구
+export function applyErrorMessage(error: unknown) {
+    if (error instanceof ApiError) {
+        if (error.reason === 'Monthly home limit exceeded') return `재택은 한 달에 최대 ${HOME_LIMIT_PER_MONTH}회까지 신청할 수 있어요.`;
+        if (error.reason === 'Insufficient balance') return '남은 일수가 부족해요.';
+        if (error.reason === 'Already applied on this date') return '이미 근태를 신청한 날짜예요. 한 날짜에 하나만 신청할 수 있어요.';
+        if (error.status === 400) return '날짜와 종류를 확인해 주세요.';
+    }
+    return '신청하지 못했어요. 잠시 후 다시 시도해 주세요.';
 }
