@@ -33,6 +33,8 @@ pool.getConnection = async () => ({
 });
 
 const Apply = require('../src/models/applyModel');
+// 테스트가 날짜 경과로 깨지지 않도록 '오늘'을 고정 (테스트 날짜들은 이보다 뒤)
+Apply.today = () => '2026-10-29';
 const ran = sql => queries.some(q => q.sql && sql.test(q.sql));
 const statusOf = p => p.then(() => 200, e => e.status || 500);
 
@@ -148,9 +150,17 @@ function reset(user = { user_name: '홍길동', user_stip: 5, user_vaca: 2 }, ex
     assert.ok(queries.includes('ROLLBACK'));
     assert.strictEqual(calendarCalls.filter(c => c.startsWith('delete:')).length, 2, '만든 일정 2건 모두 정리');
 
-    // 신청: 지난 날짜 허용
+    // 신청: 오늘 이전 날짜 불가(사용자 결정 변경), 오늘은 가능 — 오늘은 한국 시간 기준
+    reset();
+    const past = await Apply.insertMany({ userId: 'me', dates: ['2026-10-28', '2026-10-30'], type: 'home' }).catch(e => e);
+    assert.strictEqual(past.status, 400);
+    assert.strictEqual(past.message, 'Past date not allowed');
+    assert.deepStrictEqual(calendarCalls, []);
     reset(undefined, [[/INSERT INTO lk_vacation/, { insertId: 44 }]]);
-    assert.strictEqual(await Apply.insert({ userId: 'me', date: '2020-01-02', type: 'home' }), 44);
+    assert.strictEqual(await Apply.insert({ userId: 'me', date: '2026-10-29', type: 'home' }), 44, '오늘은 신청 가능');
+    // 한국 시간 오늘 계산: UTC 2026-10-28 15:30 = KST 10-29 00:30
+    assert.strictEqual(Apply.kstToday(new Date('2026-10-28T15:30:00Z')), '2026-10-29');
+    assert.strictEqual(Apply.kstToday(new Date('2026-10-28T14:59:00Z')), '2026-10-28');
 
     // 신청: 저장 실패 → 롤백 + 만든 캘린더 일정 삭제
     reset(undefined, [[/INSERT INTO lk_vacation/, new Error('db down')]]);

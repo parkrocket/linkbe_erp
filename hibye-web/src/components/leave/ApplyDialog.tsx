@@ -20,6 +20,11 @@ const COST_LABEL: Record<LeaveType, string> = {
     home: `월 ${HOME_LIMIT_PER_MONTH}회`,
 };
 const MAX_DATES = 31; // 서버 MAX_DATES_PER_REQUEST와 동일
+// 오늘 0시 (로컬) — 달력의 '오늘 이전' 기준
+const startOfToday = () => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+};
 const DATE_LABEL = new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
 
 type Props = {
@@ -110,8 +115,10 @@ export function ApplyDialog({ open, user, takenDates, onClose, onApplied }: Prop
                             max={MAX_DATES}
                             selected={selected}
                             onSelect={days => setSelected(days ?? [])}
-                            // 주말·이미 신청한 날은 선택 불가 (지난 날짜는 허용 — 사용자 결정)
-                            disabled={[{ dayOfWeek: [0, 6] }, ...takenDates]}
+                            // 주말·오늘 이전·이미 신청한 날은 선택 불가 (서버도 같은 규칙으로 다시 검사)
+                            disabled={[{ dayOfWeek: [0, 6] }, { before: startOfToday() }, ...takenDates]}
+                            // 지난 달로는 이동하지 않음
+                            startMonth={startOfToday()}
                             modifiers={{ taken: takenDates }}
                             modifiersClassNames={{ taken: 'hibye-taken' }}
                         />
@@ -124,7 +131,7 @@ export function ApplyDialog({ open, user, takenDates, onClose, onApplied }: Prop
                                 <span aria-hidden className="mr-1 inline-block size-2 rounded-full bg-pending-fg" />
                                 이미 신청
                             </span>
-                            <span>주말 선택 불가</span>
+                            <span>주말·지난 날짜 선택 불가</span>
                         </p>
                     </div>
 

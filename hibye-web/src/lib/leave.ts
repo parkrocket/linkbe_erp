@@ -86,6 +86,7 @@ export function applyErrorMessage(error: unknown) {
         if (error.reason === 'Insufficient balance') return '남은 일수가 부족해요.';
         if (error.reason === 'Already applied on this date') return '이미 근태를 신청한 날짜예요. 한 날짜에 하나만 신청할 수 있어요.';
         if (error.reason === 'Weekend not allowed') return '주말은 신청할 수 없어요.';
+        if (error.reason === 'Past date not allowed') return '오늘 이전 날짜는 신청할 수 없어요.';
         if (error.status === 400) return '날짜와 종류를 확인해 주세요.';
     }
     return '신청하지 못했어요. 잠시 후 다시 시도해 주세요.';

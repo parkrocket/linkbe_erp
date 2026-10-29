@@ -41,6 +41,11 @@ const isValidDate = value =>
 // 토·일 (날짜 문자열을 UTC 자정으로 해석해 요일만 판단)
 const isWeekend = value => [0, 6].includes(new Date(`${value}T00:00:00Z`).getUTCDay());
 
+// 한국 시간 기준 오늘 'YYYY-MM-DD' — 운영 서버 시계는 UTC라 그대로 쓰면 00~09시에 어제로 계산됨
+Apply.kstToday = (now = new Date()) => new Date(now.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+// 테스트에서 고정할 수 있도록 분리
+Apply.today = () => Apply.kstToday();
+
 const countBy = (items, keyOf) =>
     items.reduce((acc, item) => ({ ...acc, [keyOf(item)]: (acc[keyOf(item)] ?? 0) + 1 }), {});
 
@@ -57,6 +62,9 @@ Apply.insertMany = async ({ userId, dates, type }) => {
     }
     if (!dates.every(isValidDate) || new Set(dates).size !== dates.length) throw new ApplyError(400, 'Invalid date');
     if (dates.some(isWeekend)) throw new ApplyError(400, 'Weekend not allowed');
+    // 오늘 이전 날짜 불가 (오늘은 가능) — 'YYYY-MM-DD' 문자열 비교로 충분
+    const today = Apply.today();
+    if (dates.some(d => d < today)) throw new ApplyError(400, 'Past date not allowed');
     const sorted = [...dates].sort();
 
     const conn = await pool.getConnection();
