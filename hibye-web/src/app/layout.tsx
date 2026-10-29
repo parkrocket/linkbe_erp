@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import { Footer } from '@/components/layout/Footer';
+import { Header } from '@/components/layout/Header';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -16,7 +18,11 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
                     href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css"
                 />
             </head>
-            <body className="flex min-h-screen flex-col">{children}</body>
+            <body className="flex min-h-screen flex-col">
+                <Header />
+                {children}
+                <Footer />
+            </body>
         </html>
     );
 }

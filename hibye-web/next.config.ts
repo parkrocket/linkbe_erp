@@ -8,7 +8,10 @@ const nextConfig: NextConfig = {
     partialPrefetching: true,
     // 운영 서버에는 빌드 결과만 올려 pm2로 실행
     output: 'standalone',
+    // 상위 폴더(hibye/)에도 package-lock.json이 있어 루트를 잘못 추정 → 이 앱 폴더로 고정
+    outputFileTracingRoot: process.cwd(),
     turbopack: {
+        root: process.cwd(),
         rules: {
             '*.css': {
                 loaders: ['@tailwindcss/turbopack'],
