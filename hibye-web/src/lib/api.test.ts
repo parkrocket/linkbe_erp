@@ -31,14 +31,14 @@ describe('apiFetch (서버 환경)', () => {
 
     it('401이면 status 401인 ApiError를 던진다', async () => {
         stubFetch(401, { isAuth: false });
-        const err = await apiFetch('/api/x').catch(e => e);
+        const err = (await apiFetch('/api/x').catch(e => e)) as ApiError;
         expect(err).toBeInstanceOf(ApiError);
         expect(err.status).toBe(401);
     });
 
     it('500이면 status 500인 ApiError를 던진다', async () => {
         stubFetch(500, {});
-        const err = await apiFetch('/api/x').catch(e => e);
+        const err = (await apiFetch('/api/x').catch(e => e)) as ApiError;
         expect(err).toBeInstanceOf(ApiError);
         expect(err.status).toBe(500);
     });
