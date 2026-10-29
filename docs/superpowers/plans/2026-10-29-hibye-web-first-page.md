@@ -104,8 +104,8 @@ console.log('checkSafeUser ✅');
   - `Badge({ tone: 'pending' | 'approved' | 'rejected' | 'info' | 'neutral', children })`
   - `Skeleton({ className?: string })`, `EmptyState({ message: string })`, `ErrorState({ message?: string, onRetry?: () => void })`
 
-- [ ] **Step 1: 생성** — 저장소 루트에서 `npx create-next-app@latest hibye-web --ts --tailwind --eslint --app --src-dir --import-alias "@/*" --use-npm --no-turbopack` (질문 나오면 기본값). `npm i lucide-react && npm i -D vitest`
-- [ ] **Step 2: 설정** — next.config.ts(위 Interfaces), `package.json` scripts에 `"test": "vitest run"`, `"typecheck": "tsc --noEmit"`. Pretendard는 `layout.tsx`에서 CDN `@import` 대신 `next/font/local` 불가 시 jsdelivr CSS 링크(`https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css`).
+- [ ] **Step 1: 생성** — 저장소 루트에서 `npx create-next-app@latest hibye-web --ts --tailwind --eslint --app --src-dir --import-alias "@/*" --use-npm` (나머지 질문은 기본값). `npm i lucide-react && npm i -D vitest`
+- [ ] **Step 2: 설정** — next.config.ts(위 Interfaces), `package.json` scripts에 `"test": "vitest run"`, `"typecheck": "tsc --noEmit"`. Pretendard는 `layout.tsx`의 `<link>`로 jsdelivr CSS 사용(`https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css`).
 - [ ] **Step 3: 토큰·UI 컴포넌트 구현** — Badge는 tone별 배경/글자색 + children 글자 필수(색만으로 표현 금지). Button primary만 대표색. 모든 인터랙티브 요소 `focus-visible` 링.
 - [ ] **Step 4: 미리보기 페이지** — `/ui-preview`에 모든 컴포넌트 상태 나열
 - [ ] **Step 5: 검증** — `npm run typecheck && npm run build` 통과. `npm run dev`(포트 3001) 후 browser-automation으로 `/ui-preview` 스크린샷 확인: 콘솔 에러 0, 대표색 버튼 1종, Badge 글자 표시
@@ -146,9 +146,9 @@ console.log('checkSafeUser ✅');
 **Interfaces:**
 - Consumes: `apiFetch`, `ApiError`, `User` (Task 3)
 - Produces:
-  - `getCurrentUser(): Promise<User | null>` (server only) — `cookies()`의 원문 헤더로 `POST /api/users/auth`(body `{ x_auth }` — 기존 API 계약) 호출, `isAuth`면 `user`, 아니면 `null`. 쿠키 없으면 API 호출 없이 `null`.
+  - `getCurrentUser(): Promise<User | null>` (server only) — 서버에서만 `cookies().get('x_auth')`를 읽어 `POST /api/users/auth`(body `{ x_auth }` — 기존 API 계약, 쿠키 헤더도 전달) 호출, `isAuth`면 `user`, 아니면 `null`. 쿠키 없으면 API 호출 없이 `null`.
   - `safeRedirect(target: string | null): string` — `/`로 시작하고 `//`·`/\`로 시작하지 않는 경로만 그대로, 그 외 `/`
-  - `middleware`: `matcher`는 이후 추가될 member 경로(`/gtw-history`, `/vaca`, `/work`, `/workHistory`, `/sent`, `/calendar`). `x_auth` 쿠키 없으면 `/login?redirect=<pathname>`으로 redirect. `/`·`/login`·`/register`·`/gtw`는 제외.
+  - `middleware`: `matcher`는 이후 추가될 member 경로(기존 경로 `/vaca`, `/geo`, `/work`, `/workHistory`, `/sent`, `/calendar`). `x_auth` 쿠키 없으면 `/login?redirect=<pathname>`으로 redirect. `/`·`/login`·`/register`·`/gtw`는 제외.
 
 - [ ] **Step 1: 실패 테스트** — `redirect.test.ts`
   - `safeRedirect('/work')` → `'/work'`; `safeRedirect(null)` → `'/'`
