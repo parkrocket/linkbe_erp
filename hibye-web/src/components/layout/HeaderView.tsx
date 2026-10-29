@@ -7,12 +7,10 @@ import { useState } from 'react';
 import { buttonClass } from '@/components/ui/Button';
 import { apiFetch } from '@/lib/api';
 
-// 로그인 후 메뉴 — 경로는 기존 react-app과 동일
+// 로그인 후 메뉴 — 회사는 근태(연차·반차·휴가·재택)만 관리 → 홈·근태·일정 (경로는 기존 react-app과 동일)
 const NAV = [
     { href: '/', label: '홈' },
-    { href: '/work', label: '근태' },
-    { href: '/vaca', label: '휴가' },
-    { href: '/sent', label: '결재' },
+    { href: '/vaca', label: '근태' },
     { href: '/calendar', label: '일정' },
 ];
 
