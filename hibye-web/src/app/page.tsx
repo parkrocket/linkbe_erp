@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { Dashboard } from '@/components/dashboard/Dashboard';
 import { Landing } from '@/components/landing/Landing';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { getCurrentUser } from '@/lib/auth';
@@ -15,8 +16,7 @@ export default function HomePage() {
 async function Home() {
     const user = await getCurrentUser();
     if (!user) return <Landing />;
-    // Task 6에서 대시보드로 교체
-    return <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">{user.user_name}님 대시보드 (준비 중)</main>;
+    return <Dashboard user={user} />;
 }
 
 function HomeFallback() {
