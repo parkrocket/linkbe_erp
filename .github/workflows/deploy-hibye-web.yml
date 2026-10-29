@@ -1,0 +1,61 @@
+name: Deploy hibye-web to EC2
+
+# 전환 전 단계: 서버 3001번(내부 전용)에 띄우기만 하고 nginx에는 연결하지 않음 → 사용자에게 비노출
+on:
+    push:
+        branches:
+            - master
+        paths:
+            - 'hibye-web/**'
+            - '.github/workflows/deploy-hibye-web.yml'
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: hibye-web
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '22'
+
+            - name: Install dependencies
+              run: npm install
+
+            # 테스트·타입 검사·빌드가 모두 통과해야 배포
+            - name: Test
+              run: npm test
+
+            - name: Typecheck
+              run: npm run typecheck
+
+            - name: Build
+              run: npm run build
+
+            # standalone 출력에 정적 파일 합치기 (Next.js standalone 규칙)
+            - name: Assemble standalone
+              run: |
+                  cp -r .next/static .next/standalone/.next/static
+                  cp -r public .next/standalone/public
+
+            - name: Deploy to EC2
+              env:
+                  HOST: ${{ secrets.EC2_HOST }}
+                  USERNAME: ${{ secrets.EC2_USER }}
+                  KEY: ${{ secrets.EC2_KEY }}
+              run: |
+                  echo "${KEY}" > key.pem
+                  chmod 400 key.pem
+                  rsync -az --delete -e "ssh -o StrictHostKeyChecking=no -i key.pem" .next/standalone/ $USERNAME@$HOST:/home/ubuntu/hibye-web/
+                  ssh -o StrictHostKeyChecking=no -i key.pem $USERNAME@$HOST "
+                    cd /home/ubuntu/hibye-web &&
+                    export PORT=3001 HOSTNAME=127.0.0.1 API_INTERNAL_URL=http://127.0.0.1:5000 NODE_ENV=production &&
+                    (pm2 restart hibye-web --update-env || pm2 start server.js --name hibye-web) &&
+                    pm2 save"
+                  rm key.pem
