@@ -44,6 +44,23 @@ async function call(path, { method = 'POST', cookie, headers = {}, body = '{}' }
     const signed = await call('/api/slack/home', { body, headers: { 'x-slack-request-timestamp': ts, 'x-slack-signature': sig } });
     assert.strictEqual(signed.json && signed.json.challenge, 'ok', 'Slack 정상 서명이 거부됨');
 
+    // 4-1) 서명 키 여러 개(쉼표 구분) 지원 — 미들웨어 단위 점검 (Slack 앱이 2개라 키가 다름)
+    const { verifySlack } = require('../src/middlewares/verifySlack');
+    const original = process.env.SLACK_SIGNING_SECRET;
+    process.env.SLACK_SIGNING_SECRET = `first-secret, second-secret`;
+    const raw = Buffer.from('payload=%7B%7D');
+    const sign = secret => 'v0=' + crypto.createHmac('sha256', secret).update(`v0:${ts}:${raw}`).digest('hex');
+    const run = sig =>
+        new Promise(resolve => {
+            const req = { headers: { 'x-slack-request-timestamp': String(ts), 'x-slack-signature': sig }, rawBody: raw };
+            const res = { status: code => ({ send: () => resolve(code) }) };
+            verifySlack(req, res, () => resolve(200));
+        });
+    assert.strictEqual(await run(sign('first-secret')), 200, '첫 번째 키 통과');
+    assert.strictEqual(await run(sign('second-secret')), 200, '두 번째 키 통과');
+    assert.strictEqual(await run(sign('wrong-secret')), 401, '목록에 없는 키는 거부');
+    process.env.SLACK_SIGNING_SECRET = original;
+
     console.log('checkAuth: 모든 점검 통과 ✅', BASE);
 })().catch(err => {
     console.error('checkAuth 실패 ❌', err.message);
