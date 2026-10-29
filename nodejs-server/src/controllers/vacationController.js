@@ -1,14 +1,14 @@
 const Vacation = require('../models/vacationModel');
+const { toSafeUser } = require('../utils/safeUser');
 
 exports.list = async (req, res) => {
-    const { user_id } = req.body;
-
-    const vacation = await Vacation.findByIdAsync(user_id);
+    // 요청 바디의 user_id 대신 토큰 주인(req.userId)만 조회 — 다른 직원 근태 조회 차단
+    const vacation = await Vacation.findByIdAsync(req.userId);
 
     return res.json({
         vacationSuccess: true,
         message: 'vacation successful',
-        vacationList: vacation,
+        vacationList: vacation.map(toSafeUser), // lk_user 조인 결과의 비밀번호 해시 제거
     });
 };
 
