@@ -82,3 +82,17 @@ describe('applyErrorMessage', () => {
         expect(applyErrorMessage(new Error('x'))).toBe('신청하지 못했어요. 잠시 후 다시 시도해 주세요.');
     });
 });
+
+describe('여러 날 신청', () => {
+    const user = { user_id: 'me', user_name: '홍', cp_id: 1, user_stip: 5, user_vaca: 1 };
+
+    it('선택한 일수만큼 합산해 차감한다', () => {
+        expect(balanceAfter(user, 'day', 3)).toEqual({ label: '연차', before: 5, after: 2, days: 3, enough: true });
+        expect(balanceAfter(user, 'half', 3)).toEqual({ label: '연차', before: 5, after: 3.5, days: 1.5, enough: true });
+        expect(balanceAfter(user, 'vacation', 2)?.enough).toBe(false);
+    });
+
+    it('주말 신청 거절 안내', () => {
+        expect(applyErrorMessage(new ApiError(400, 'Weekend not allowed'))).toBe('주말은 신청할 수 없어요.');
+    });
+});

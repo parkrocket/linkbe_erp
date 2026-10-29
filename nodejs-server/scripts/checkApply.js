@@ -77,22 +77,76 @@ function reset(user = { user_name: '홍길동', user_stip: 5, user_vaca: 2 }, ex
     assert.ok(!queries.some(q => q.sql && /user_home/.test(q.sql)));
 
     // 신청: 재택은 같은 달 최대 2회 — 이미 2회면 409, 캘린더 일정 만들지 않음
-    reset(undefined, [[/COUNT\(\*\)/i, [{ count: 2 }]]]);
+    reset(undefined, [[/COUNT\(\*\)/i, [{ ym: '2026-11', count: 2 }]]]);
     const homeLimit = await Apply.insert({ userId: 'me', date: '2026-11-20', type: 'home' }).catch(e => e);
     assert.strictEqual(homeLimit.status, 409, '재택 월 2회 초과 차단');
     assert.strictEqual(homeLimit.message, 'Monthly home limit exceeded');
     assert.deepStrictEqual(calendarCalls, []);
     const countQuery = queries.find(q => q.sql && /COUNT\(\*\)/i.test(q.sql));
     assert.ok(/type = 'home'/.test(countQuery.sql) && countQuery.params.includes('me'), '본인의 재택만 셈');
-    assert.ok(countQuery.params.includes('2026-11-20'), '신청 날짜의 달 기준');
+    assert.ok(JSON.stringify(countQuery.params).includes('2026-11'), '신청 날짜의 달 기준');
 
     // 신청: 재택 1회 사용 상태면 신청 가능
-    reset(undefined, [[/COUNT\(\*\)/i, [{ count: 1 }]], [/INSERT INTO lk_vacation/, { insertId: 45 }]]);
-    assert.strictEqual(await Apply.insert({ userId: 'me', date: '2026-11-21', type: 'home' }), 45);
+    reset(undefined, [[/COUNT\(\*\)/i, [{ ym: '2026-11', count: 1 }]], [/INSERT INTO lk_vacation/, { insertId: 45 }]]);
+    assert.strictEqual(await Apply.insert({ userId: 'me', date: '2026-11-23', type: 'home' }), 45);
 
     // 신청: 연차는 재택 횟수와 무관
-    reset(undefined, [[/COUNT\(\*\)/i, [{ count: 5 }]], [/INSERT INTO lk_vacation/, { insertId: 46 }]]);
-    assert.strictEqual(await Apply.insert({ userId: 'me', date: '2026-11-22', type: 'day' }), 46);
+    reset(undefined, [[/COUNT\(\*\)/i, [{ ym: '2026-11', count: 5 }]], [/INSERT INTO lk_vacation/, { insertId: 46 }]]);
+    assert.strictEqual(await Apply.insert({ userId: 'me', date: '2026-11-24', type: 'day' }), 46);
+
+    // ── 여러 날 신청 ──
+    // 주말은 신청 불가 (2026-11-21 토, 11-22 일)
+    reset();
+    const weekend = await Apply.insertMany({ userId: 'me', dates: ['2026-11-20', '2026-11-21'], type: 'day' }).catch(e => e);
+    assert.strictEqual(weekend.status, 400);
+    assert.strictEqual(weekend.message, 'Weekend not allowed');
+    // 빈 목록·같은 날짜 중복 선택 → 400
+    assert.strictEqual(await statusOf(Apply.insertMany({ userId: 'me', dates: [], type: 'day' })), 400);
+    assert.strictEqual(await statusOf(Apply.insertMany({ userId: 'me', dates: ['2026-11-18', '2026-11-18'], type: 'day' })), 400);
+    assert.deepStrictEqual(calendarCalls, []);
+
+    // 잔여는 선택한 날 전체 합으로 검사 — 연차 2일인데 3일 신청 → 409, 아무것도 만들지 않음
+    reset({ user_name: '홍길동', user_stip: 2, user_vaca: 0 });
+    assert.strictEqual(await statusOf(Apply.insertMany({ userId: 'me', dates: ['2026-11-18', '2026-11-19', '2026-11-20'], type: 'day' })), 409);
+    assert.deepStrictEqual(calendarCalls, []);
+
+    // 하나라도 이미 신청한 날이면 전체 거절
+    reset(undefined, [[/FROM lk_vacation WHERE user_id = \? AND date IN/, [{ id: 3 }]]]);
+    assert.strictEqual(await statusOf(Apply.insertMany({ userId: 'me', dates: ['2026-11-18', '2026-11-19'], type: 'day' })), 409);
+    assert.deepStrictEqual(calendarCalls, []);
+
+    // 재택은 달별로 기존 + 이번 선택 합산 — 11월 1회 사용 + 11월 2일 선택 → 409
+    reset(undefined, [[/COUNT\(\*\)/i, [{ ym: '2026-11', count: 1 }]]]);
+    assert.strictEqual(await statusOf(Apply.insertMany({ userId: 'me', dates: ['2026-11-18', '2026-11-19'], type: 'home' })), 409);
+    // 11월 1회 사용 + 11월 1일 + 12월 1일 → 가능
+    reset(undefined, [[/COUNT\(\*\)/i, [{ ym: '2026-11', count: 1 }]], [/INSERT INTO lk_vacation/, { insertId: 60 }]]);
+    assert.strictEqual((await Apply.insertMany({ userId: 'me', dates: ['2026-11-18', '2026-12-02'], type: 'home' })).length, 2);
+
+    // 연차 3일 성공 — 한 번에 3일 차감, 날짜마다 캘린더 일정·행 저장, 한 트랜잭션
+    reset(undefined, [[/INSERT INTO lk_vacation/, { insertId: 70 }]]);
+    const ids = await Apply.insertMany({ userId: 'me', dates: ['2026-11-20', '2026-11-18', '2026-11-19'], type: 'day' });
+    assert.strictEqual(ids.length, 3);
+    const multiUpdate = queries.find(q => q.sql && /UPDATE lk_user SET user_stip = user_stip - \?/.test(q.sql));
+    assert.strictEqual(multiUpdate.params[0], 3, '3일 차감');
+    assert.strictEqual(calendarCalls.filter(c => c === 'insert').length, 3);
+    assert.strictEqual(queries.filter(q => q.sql && /INSERT INTO lk_vacation/.test(q.sql)).length, 3);
+    assert.strictEqual(queries.filter(q => q === 'COMMIT').length, 1);
+
+    // 중간 실패 → 전체 롤백 + 이미 만든 캘린더 일정 모두 삭제
+    let inserts = 0;
+    reset(undefined, [[/INSERT INTO lk_vacation/, { insertId: 80 }]]);
+    pool.getConnection = (orig => async () => {
+        const conn = await orig();
+        const q = conn.query;
+        conn.query = async (sql, params) => {
+            if (/INSERT INTO lk_vacation/.test(sql) && ++inserts === 2) throw new Error('db down');
+            return q(sql, params);
+        };
+        return conn;
+    })(pool.getConnection);
+    assert.strictEqual(await statusOf(Apply.insertMany({ userId: 'me', dates: ['2026-11-18', '2026-11-19'], type: 'day' })), 500);
+    assert.ok(queries.includes('ROLLBACK'));
+    assert.strictEqual(calendarCalls.filter(c => c.startsWith('delete:')).length, 2, '만든 일정 2건 모두 정리');
 
     // 신청: 지난 날짜 허용
     reset(undefined, [[/INSERT INTO lk_vacation/, { insertId: 44 }]]);
@@ -133,14 +187,19 @@ function reset(user = { user_name: '홍길동', user_stip: 5, user_vaca: 2 }, ex
         return r;
     };
     let args;
-    Apply.insert = async a => ((args = a), 50);
+    Apply.insertMany = async a => ((args = a), [50]);
     let res = fakeRes();
+    // 기존 react-app: date 하나
     await controller.applyIn({ body: { userId: 'other', date: '2026-11-03', type: 'day' }, userId: 'me' }, res);
-    assert.deepStrictEqual(args, { userId: 'me', date: '2026-11-03', type: 'day' });
+    assert.deepStrictEqual(args, { userId: 'me', dates: ['2026-11-03'], type: 'day' });
     assert.strictEqual(res.code, 200);
     assert.strictEqual(res.body.gtwSuccess, true);
+    // 새 화면: dates 여러 개
+    res = fakeRes();
+    await controller.applyIn({ body: { dates: ['2026-11-18', '2026-11-19'], type: 'day' }, userId: 'me' }, res);
+    assert.deepStrictEqual(args, { userId: 'me', dates: ['2026-11-18', '2026-11-19'], type: 'day' });
 
-    Apply.insert = async () => {
+    Apply.insertMany = async () => {
         throw new Apply.ApplyError(409, 'Insufficient balance');
     };
     res = fakeRes();

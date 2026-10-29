@@ -10,10 +10,11 @@ const sendError = (res, error, fallbackKey) => {
 };
 
 exports.applyIn = async (req, res) => {
-    const { date, type } = req.body;
+    const { date, dates, type } = req.body;
     try {
-        const id = await Apply.insert({ userId: req.userId, date, type });
-        return res.status(200).json({ gtwSuccess: true, gtw: id });
+        // 새 화면은 dates(여러 날), 기존 react-app은 date(하루)
+        const ids = await Apply.insertMany({ userId: req.userId, dates: Array.isArray(dates) ? dates : [date], type });
+        return res.status(200).json({ gtwSuccess: true, gtw: ids.length === 1 ? ids[0] : ids });
     } catch (error) {
         return sendError(res, error, 'gtwSuccess');
     }

@@ -29,3 +29,35 @@ body {
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
 }
+
+/* 근태 신청 달력(react-day-picker) — 대표색 적용. 라이브러리 CSS가 나중에 로드되므로 .rdp-root로 우선순위 높임 */
+.rdp-root.hibye-calendar {
+    --rdp-accent-color: var(--color-primary);
+    --rdp-accent-background-color: var(--color-primary-soft);
+    --rdp-day-height: 40px;
+    --rdp-day-width: 40px;
+    margin: 0 auto;
+}
+/* 선택한 날: 채운 원 (기본은 테두리만이라 잘 안 보임) */
+.rdp-root.hibye-calendar .rdp-selected .rdp-day_button {
+    background: var(--color-primary);
+    color: #fff;
+    border-color: var(--color-primary);
+}
+/* 이미 신청한 날: 회색 + 주황 점 */
+.rdp-root.hibye-calendar .hibye-taken .rdp-day_button {
+    background: var(--color-neutral-bg);
+    text-decoration: line-through;
+    position: relative;
+}
+.rdp-root.hibye-calendar .hibye-taken .rdp-day_button::after {
+    content: '';
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    width: 4px;
+    height: 4px;
+    margin-left: -2px;
+    border-radius: 9999px;
+    background: var(--color-pending-fg);
+}

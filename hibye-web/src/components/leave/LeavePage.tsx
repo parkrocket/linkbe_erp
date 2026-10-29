@@ -11,12 +11,18 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { apiFetch, ApiError } from '@/lib/api';
-import { balanceAfter, leaveLabel, toDays } from '@/lib/leave';
+import { balanceAfter, leaveLabel, localDay, toDays } from '@/lib/leave';
 import type { User, VacationRecord } from '@/lib/types';
 import { ApplyDialog } from './ApplyDialog';
 import { Modal } from './Modal';
 
 type Response = { vacationList?: VacationRecord[] };
+
+// 'YYYY-MM-DD' → 로컬 자정 Date (달력 비교용)
+const fromLocalDay = (day: string) => {
+    const [y, m, d] = day.split('-').map(Number);
+    return new Date(y, m - 1, d);
+};
 
 const DATE_LABEL = new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
 const APPLIED_LABEL = new Intl.DateTimeFormat('ko-KR', { month: 'numeric', day: 'numeric' });
@@ -77,7 +83,13 @@ export function LeavePage({ user, openApply }: { user: User; openApply: boolean 
                     ))}
             </Card>
 
-            <ApplyDialog open={applyOpen} user={user} onClose={() => setApplyOpen(false)} onApplied={refresh} />
+            <ApplyDialog
+                open={applyOpen}
+                user={user}
+                takenDates={list.map(v => fromLocalDay(localDay(v.date)))}
+                onClose={() => setApplyOpen(false)}
+                onApplied={refresh}
+            />
             <CancelDialog
                 target={cancelTarget}
                 user={user}

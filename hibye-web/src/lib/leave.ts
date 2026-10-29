@@ -60,12 +60,14 @@ const COST: Record<LeaveType, { field: 'user_stip' | 'user_vaca'; label: string;
     home: null,
 };
 
-export function balanceAfter(user: User, type: LeaveType) {
+// count: 선택한 날 수 (여러 날 신청 시 합산 차감)
+export function balanceAfter(user: User, type: LeaveType, count = 1) {
     const cost = COST[type];
     if (!cost) return null;
     const before = toDays(user[cost.field]);
-    const after = before - cost.days;
-    return { label: cost.label, before, after, days: cost.days, enough: after >= 0 };
+    const days = cost.days * count;
+    const after = before - days;
+    return { label: cost.label, before, after, days, enough: after >= 0 };
 }
 
 // DECIMAL 문자열('8.5')·null 대응
@@ -83,6 +85,7 @@ export function applyErrorMessage(error: unknown) {
         if (error.reason === 'Monthly home limit exceeded') return `재택은 한 달에 최대 ${HOME_LIMIT_PER_MONTH}회까지 신청할 수 있어요.`;
         if (error.reason === 'Insufficient balance') return '남은 일수가 부족해요.';
         if (error.reason === 'Already applied on this date') return '이미 근태를 신청한 날짜예요. 한 날짜에 하나만 신청할 수 있어요.';
+        if (error.reason === 'Weekend not allowed') return '주말은 신청할 수 없어요.';
         if (error.status === 400) return '날짜와 종류를 확인해 주세요.';
     }
     return '신청하지 못했어요. 잠시 후 다시 시도해 주세요.';
