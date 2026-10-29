@@ -29,6 +29,13 @@ describe('apiFetch (서버 환경)', () => {
         expect(calls[0].url).toBe('http://internal:5000/api/x');
     });
 
+    it('API_INTERNAL_URL이 없으면 로컬 기본 주소로 호출한다', async () => {
+        vi.stubEnv('API_INTERNAL_URL', undefined);
+        const calls = stubFetch(200, {});
+        await apiFetch('/api/x');
+        expect(calls[0].url).toBe('http://localhost:5000/api/x');
+    });
+
     it('401이면 status 401인 ApiError를 던진다', async () => {
         stubFetch(401, { isAuth: false });
         const err = (await apiFetch('/api/x').catch(e => e)) as ApiError;

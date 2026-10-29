@@ -17,7 +17,8 @@ type Options = {
 // path는 '/api/...' 형식
 export async function apiFetch<T>(path: string, { method = 'GET', body, cookie }: Options = {}): Promise<T> {
     // 브라우저: 같은 출처 /node 경로(쿠키 자동 전송) / 서버: 내부 주소로 직접
-    const base = typeof window === 'undefined' ? process.env.API_INTERNAL_URL : '/node';
+    // 미설정 시 로컬 개발 기본값 (next.config.ts rewrites와 동일)
+    const base = typeof window === 'undefined' ? (process.env.API_INTERNAL_URL ?? 'http://localhost:5000') : '/node';
 
     const headers = new Headers();
     if (body !== undefined) headers.set('content-type', 'application/json');
