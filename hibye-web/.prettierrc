@@ -1,0 +1,13 @@
+{
+    "singleQuote": true,
+
+    "semi": true,
+
+    "tabWidth": 4,
+
+    "trailingComma": "all",
+
+    "arrowParens": "avoid",
+
+    "endOfLine": "auto"
+}

@@ -1,0 +1,31 @@
+@import 'tailwindcss';
+
+/* 디자인 토큰 — 대표색·여백·모서리를 한 곳에서 관리 (bg-primary, text-muted 등으로 사용) */
+@theme {
+    --color-primary: #5e2bb8;
+    --color-primary-hover: #4c2296;
+    --color-primary-soft: #f3eefc;
+    --color-ink: #1f1b2e;
+    --color-muted: #6b6880;
+    --color-line: #eeecf3;
+    --color-surface: #f7f6fb;
+
+    /* 상태 배지 (색 + 글자 병기) */
+    --color-pending-bg: #fff4e0;
+    --color-pending-fg: #b45309;
+    --color-approved-bg: #e7f7ee;
+    --color-approved-fg: #15803d;
+    --color-rejected-bg: #fdecec;
+    --color-rejected-fg: #b91c1c;
+    --color-neutral-bg: #f4f3f8;
+
+    --radius-card: 12px;
+    --font-sans: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
+body {
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+}
