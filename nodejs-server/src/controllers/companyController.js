@@ -23,7 +23,8 @@ exports.list = (req, res) => {
         return res.json({
             companyListSuccess: true,
             message: 'list successful',
-            list,
+            // 공개 API — 번호·이름만 (쿼리와 별개로 응답에서도 한 번 더 제한)
+            list: list.map(({ cp_id, cp_name }) => ({ cp_id, cp_name })),
         });
     });
 };
