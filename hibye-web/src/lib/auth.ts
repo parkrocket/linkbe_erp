@@ -2,7 +2,7 @@
 // 토큰 검증은 API 서버가 하고, 여기서는 쿠키를 전달만 함 (JWT 비밀키는 API 서버에만)
 import { cookies } from 'next/headers';
 import { cache } from 'react';
-import { apiFetch } from './api';
+import { apiFetch, ApiError } from './api';
 import type { User } from './types';
 
 type AuthResponse = { isAuth: boolean; user?: User };
@@ -20,8 +20,10 @@ export const getCurrentUser = cache(async (): Promise<User | null> => {
             cookie: `x_auth=${token}`,
         });
         return res.isAuth && res.user ? res.user : null;
-    } catch {
-        // API 장애 시 비로그인으로 취급 (페이지 전체 실패 방지)
-        return null;
+    } catch (error) {
+        // 4xx는 인증 실패 → 비로그인. 5xx·네트워크 오류는 장애이므로 던져서 error.tsx가 안내
+        // (장애를 로그아웃으로 위장하면 로그인한 사용자에게 소개 랜딩이 보임)
+        if (error instanceof ApiError && error.status < 500) return null;
+        throw error;
     }
 });

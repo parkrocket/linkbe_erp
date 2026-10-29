@@ -9,6 +9,10 @@ on:
             - 'hibye-web/**'
             - '.github/workflows/deploy-hibye-web.yml'
 
+# GITHUB_TOKEN은 읽기만 — 공개 저장소 + 과거 악성 워크플로 이력이 있어 최소 권한
+permissions:
+    contents: read
+
 jobs:
     build:
         runs-on: ubuntu-latest

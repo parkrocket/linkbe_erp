@@ -3,7 +3,14 @@ const { toSafeUser } = require('../utils/safeUser');
 
 exports.list = async (req, res) => {
     // 요청 바디의 user_id 대신 토큰 주인(req.userId)만 조회 — 다른 직원 근태 조회 차단
-    const vacation = await Vacation.findByIdAsync(req.userId);
+    let vacation;
+    try {
+        vacation = await Vacation.findByIdAsync(req.userId);
+    } catch (err) {
+        // async 핸들러의 처리 안 된 rejection은 Node 22에서 API 프로세스 전체를 종료시킴
+        console.error('vacation list error:', err);
+        return res.status(500).json({ vacationSuccess: false, error: 'Database query error' });
+    }
 
     return res.json({
         vacationSuccess: true,

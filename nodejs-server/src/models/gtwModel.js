@@ -76,16 +76,21 @@ Gtw.findByGtwAll = (date, callback) => {
     });
 };
 
-Gtw.findByGtwAllWeb = (date, cpId, callback) => {
+// 팀 근태: 토큰 주인과 같은 회사 직원별 오늘 출퇴근·근태
+// SELECT * 는 세 테이블의 user_id가 충돌해 근태 없는 직원의 user_id가 NULL로 덮였음 → 필요한 컬럼만
+// 회사는 요청 값 대신 로그인 사용자(userId)의 cp_id로 결정 — 다른 회사 직원 목록 조회 차단
+Gtw.findByGtwAllWeb = (date, userId, callback) => {
     const query = `
-        SELECT *, vac.date as vac_date 
-        FROM lk_user as user 
-        LEFT JOIN lk_ctw as ctw ON ctw.user_id = user.user_id AND ctw.date = ? 
-        LEFT JOIN lk_vacation as vac ON vac.user_id = user.user_id AND vac.date = ? 
-        WHERE user.cp_id = ? 
+        SELECT user.user_id, user.user_name, user.gtw_location,
+               ctw.start_time, ctw.end_time,
+               vac.type, vac.date AS vac_date
+        FROM lk_user AS user
+        LEFT JOIN lk_ctw AS ctw ON ctw.user_id = user.user_id AND ctw.date = ?
+        LEFT JOIN lk_vacation AS vac ON vac.user_id = user.user_id AND vac.date = ?
+        WHERE user.cp_id = (SELECT cp_id FROM lk_user WHERE user_id = ?)
         ORDER BY ctw.date DESC
     `;
-    const queryParams = [date, date, cpId];
+    const queryParams = [date, date, userId];
 
     db.query(query, queryParams, (err, results) => {
         if (err) {

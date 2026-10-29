@@ -34,3 +34,10 @@ export async function apiFetch<T>(path: string, { method = 'GET', body, cookie }
     if (!res.ok) throw new ApiError(res.status);
     return res.json() as Promise<T>;
 }
+
+// 기존 API는 DB 오류도 HTTP 200 + { xxxSuccess: false }로 응답 → 화면 데이터 조회에서는 실패로 취급
+// (로그인처럼 실패가 정상 흐름인 호출에는 쓰지 않음)
+export function hasFailedFlag(data: unknown): boolean {
+    if (!data || typeof data !== 'object') return false;
+    return Object.entries(data).some(([key, value]) => key.endsWith('Success') && value === false);
+}

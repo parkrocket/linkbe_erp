@@ -18,4 +18,14 @@ describe('safeRedirect', () => {
         expect(safeRedirect('/\\evil.com')).toBe('/');
         expect(safeRedirect('evil.com')).toBe('/');
     });
+
+    it('탭·줄바꿈을 끼운 우회도 막는다 (URL 파서가 제거해 //evil.com이 됨)', () => {
+        expect(safeRedirect('/\t/evil.com')).toBe('/');
+        expect(safeRedirect('/\n/evil.com')).toBe('/');
+        expect(safeRedirect('/\r/evil.com')).toBe('/');
+    });
+
+    it('쿼리·해시는 유지한다', () => {
+        expect(safeRedirect('/work?d=1#top')).toBe('/work?d=1#top');
+    });
 });

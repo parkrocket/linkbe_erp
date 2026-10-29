@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import { apiFetch, ApiError } from '@/lib/api';
+import { apiFetch, ApiError, hasFailedFlag } from '@/lib/api';
 
 type State<T> = { status: 'loading' } | { status: 'error' } | { status: 'ok'; data: T };
 
@@ -16,6 +16,8 @@ export function useApiData<T>(path: string, body: unknown) {
     const request = useCallback(async (): Promise<State<T> | null> => {
         try {
             const data = await apiFetch<T>(path, { method: 'POST', body: JSON.parse(bodyKey) });
+            // 200이어도 xxxSuccess: false면 에러 화면 (정상 데이터처럼 보이지 않게)
+            if (hasFailedFlag(data)) return { status: 'error' };
             return { status: 'ok', data };
         } catch (error) {
             // 토큰 만료 등 → 로그인으로 (런타임 에러로 남기지 않음)

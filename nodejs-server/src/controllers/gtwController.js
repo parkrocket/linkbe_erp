@@ -121,11 +121,10 @@ exports.gtwStatusAll = (req, res) => {
 exports.gtwStatusAllWeb = (req, res) => {
     //const date = moment().format('YYYY-MM-DD');
 
-    const { date, cpId } = req.body;
+    const { date } = req.body; // cpId는 무시 — 회사는 토큰 주인 기준
 
-    console.log(req.body);
 
-    Gtw.findByGtwAllWeb(date, cpId, (err, gtw) => {
+    Gtw.findByGtwAllWeb(date, req.userId, (err, gtw) => {
         if (err) {
             return res
                 .status(200)

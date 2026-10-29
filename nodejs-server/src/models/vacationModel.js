@@ -27,9 +27,10 @@ Vca.create = (userId, type, date, eventId, callback) => {
     });
 };
 
+// 오늘 근태도 포함되도록 CURDATE() 기준 (DATE >= NOW()는 오늘 00:00 < 현재시각이라 오늘을 제외했음)
 Vca.findById = (userId, callback) => {
     query =
-        'SELECT * FROM lk_vacation LEFT JOIN lk_user ON lk_vacation.user_id = lk_user.user_id WHERE lk_vacation.user_id =? AND lk_vacation.date >= NOW()';
+        'SELECT * FROM lk_vacation LEFT JOIN lk_user ON lk_vacation.user_id = lk_user.user_id WHERE lk_vacation.user_id =? AND lk_vacation.date >= CURDATE()';
     queryParams = [userId];
 
     db.query(query, queryParams, (err, results) => {

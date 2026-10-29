@@ -12,7 +12,9 @@ export function Header() {
 }
 
 async function HeaderWithUser() {
-    const user = await getCurrentUser();
+    // 루트 레이아웃은 error.tsx가 잡지 못함 → API 장애 시 로고만 있는 헤더 (본문은 error.tsx가 안내)
+    const user = await getCurrentUser().catch(() => undefined);
+    if (user === undefined) return <HeaderFallback />;
     return <HeaderView userName={user?.user_name ?? null} />;
 }
 

@@ -1,5 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { apiFetch, ApiError } from './api';
+import { apiFetch, ApiError, hasFailedFlag } from './api';
+
+describe('hasFailedFlag', () => {
+    it('xxxSuccess: false가 있으면 실패로 본다 (기존 API는 DB 오류도 200으로 응답)', () => {
+        expect(hasFailedFlag({ gtwSuccess: false, error: 'Database query error' })).toBe(true);
+        expect(hasFailedFlag({ vacationSuccess: false })).toBe(true);
+    });
+
+    it('성공 플래그가 true이거나 없으면 실패가 아니다', () => {
+        expect(hasFailedFlag({ gtwSuccess: true, gtw: [] })).toBe(false);
+        expect(hasFailedFlag({ list: [] })).toBe(false);
+        expect(hasFailedFlag(null)).toBe(false);
+    });
+});
 
 // fetch 호출을 기록하고 지정한 응답을 돌려주는 가짜
 function stubFetch(status: number, body: unknown) {
