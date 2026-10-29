@@ -1,6 +1,7 @@
 // 보안 회귀 점검: node scripts/checkAuth.js [BASE_URL]
 // 로그인 없는 접근 차단, Slack 서명 검증, 토큰 통과 여부를 확인 (실사용자 데이터 미사용)
-require('dotenv').config();
+// 실행 위치와 무관하게 nodejs-server/.env 로드
+require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 const assert = require('assert');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
