@@ -36,6 +36,21 @@ body {
     --rdp-accent-background-color: var(--color-primary-soft);
     --rdp-day-height: 40px;
     --rdp-day-width: 40px;
+}
+/* 창 너비에 맞춤 — 기본 max-width: fit-content 때문에 왼쪽에 몰려 오른쪽이 비어 보였음 */
+.rdp-root.hibye-calendar .rdp-months,
+.rdp-root.hibye-calendar .rdp-month,
+.rdp-root.hibye-calendar .rdp-month_grid {
+    width: 100%;
+    max-width: none;
+}
+/* 칸은 균등 분배, 날짜 원은 40px로 각 칸 가운데 */
+.rdp-root.hibye-calendar .rdp-day {
+    width: auto;
+}
+.rdp-root.hibye-calendar .rdp-day_button {
+    width: var(--rdp-day-width);
+    height: var(--rdp-day-height);
     margin: 0 auto;
 }
 /* 선택한 날: 채운 원 (기본은 테두리만이라 잘 안 보임) */
