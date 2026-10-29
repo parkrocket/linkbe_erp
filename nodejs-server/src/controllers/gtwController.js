@@ -3,6 +3,7 @@ const Gtw = require('../models/gtwModel');
 const secretKey = process.env.JWT_SECRET_KEY;
 const requestIp = require('request-ip');
 const moment = require('moment');
+const { toSafeUser } = require('../utils/safeUser'); // lk_user 조인 결과에서 비밀번호 해시 제거
 
 const { sendSlackMessage } = require('../utils/slack');
 
@@ -79,7 +80,7 @@ exports.gtwStatus = (req, res) => {
         }
 
         //console.log(gtw);
-        return res.status(200).json({ gtwSuccess: true, gtw });
+        return res.status(200).json({ gtwSuccess: true, gtw: gtw && toSafeUser(gtw) });
     });
 };
 
@@ -113,7 +114,7 @@ exports.gtwStatusAll = (req, res) => {
         }
 
         //console.log(gtw);
-        return res.status(200).json({ gtwSuccess: true, gtw });
+        return res.status(200).json({ gtwSuccess: true, gtw: gtw.map(toSafeUser) });
     });
 };
 
@@ -131,6 +132,6 @@ exports.gtwStatusAllWeb = (req, res) => {
                 .json({ gtwSuccess: false, error: 'Database query error' });
         }
 
-        return res.status(200).json({ gtwSuccess: true, gtw });
+        return res.status(200).json({ gtwSuccess: true, gtw: gtw.map(toSafeUser) });
     });
 };

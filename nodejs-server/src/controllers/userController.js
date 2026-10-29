@@ -2,8 +2,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
 const secretKey = process.env.JWT_SECRET_KEY;
 
-// 응답에서 비밀번호 해시 제거 — SELECT * 결과를 그대로 내려보내던 문제 방지
-const toSafeUser = ({ user_password, ...safeUser }) => safeUser;
+const { toSafeUser } = require('../utils/safeUser');
 
 exports.login = (req, res) => {
     const { email, password } = req.body;
