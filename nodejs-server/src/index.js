@@ -16,6 +16,8 @@ const app = express();
 const port = 5000;
 
 const requestIp = require('request-ip');
+const { requireAuth } = require('./middlewares/requireAuth');
+const { keepRawBody } = require('./middlewares/verifySlack');
 
 app.use(cors()); // CORS 미들웨어 사용
 
@@ -36,7 +38,11 @@ if (process.env.NODE_ENV === 'production') {
 // CORS 설정
 
 // JSON 요청을 파싱하는 미들웨어
-app.use(express.json());
+// verify: Slack 서명 검증용 원문 보관
+app.use(express.json({ verify: keepRawBody }));
+
+// /api 전체에 로그인(JWT 쿠키) 검사 — 예외 경로는 requireAuth.js 참고
+app.use('/api', requireAuth);
 
 // 라우터 설정
 

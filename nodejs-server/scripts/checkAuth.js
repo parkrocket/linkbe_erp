@@ -1,0 +1,50 @@
+// 보안 회귀 점검: node scripts/checkAuth.js [BASE_URL]
+// 로그인 없는 접근 차단, Slack 서명 검증, 토큰 통과 여부를 확인 (실사용자 데이터 미사용)
+require('dotenv').config();
+const assert = require('assert');
+const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
+
+const BASE = process.argv[2] || 'http://localhost:5000';
+
+async function call(path, { method = 'POST', cookie, headers = {}, body = '{}' } = {}) {
+    const res = await fetch(BASE + path, {
+        method,
+        headers: { 'Content-Type': 'application/json', ...(cookie && { cookie }), ...headers },
+        body: method === 'GET' ? undefined : body,
+    });
+    return { status: res.status, json: await res.json().catch(() => null) };
+}
+
+(async () => {
+    // 1) 로그인 없이 보호 API → 401
+    for (const path of ['/api/users/refresh', '/api/gtw/gtwStatus', '/api/vacation/list', '/api/list/listsMember']) {
+        assert.strictEqual((await call(path)).status, 401, `${path} 로그인 없이 열려 있음`);
+    }
+    assert.strictEqual((await call('/api/calendar/events', { method: 'GET' })).status, 401, 'calendar/events 열려 있음');
+
+    // 2) 공개 API는 그대로 열림
+    assert.strictEqual((await call('/api/test', { method: 'GET' })).status, 200);
+    assert.strictEqual((await call('/api/users/auth')).json.isAuth, false);
+
+    // 3) 위조 토큰 → 401, 정상 서명 토큰 → 통과(존재하지 않는 계정이라 User not found)
+    const fake = jwt.sign({ userId: 'nobody@check.invalid' }, 'wrong-secret');
+    assert.strictEqual((await call('/api/users/refresh', { cookie: `x_auth=${fake}` })).status, 401);
+    const valid = jwt.sign({ userId: 'nobody@check.invalid' }, process.env.JWT_SECRET_KEY);
+    const refreshed = await call('/api/users/refresh', { cookie: `x_auth=${valid}`, body: '{"userId":"someone@else"}' });
+    assert.strictEqual(refreshed.status, 200);
+    assert.strictEqual(refreshed.json.error, 'User not found', '바디의 userId가 아닌 토큰 주인으로 조회해야 함');
+
+    // 4) Slack: 서명 없으면 401, 올바른 서명이면 통과
+    assert.strictEqual((await call('/api/slack/home')).status, 401, 'Slack 서명 없이 통과됨');
+    const ts = Math.floor(Date.now() / 1000);
+    const body = '{"type":"url_verification","challenge":"ok"}';
+    const sig = 'v0=' + crypto.createHmac('sha256', process.env.SLACK_SIGNING_SECRET).update(`v0:${ts}:${body}`).digest('hex');
+    const signed = await call('/api/slack/home', { body, headers: { 'x-slack-request-timestamp': ts, 'x-slack-signature': sig } });
+    assert.strictEqual(signed.json && signed.json.challenge, 'ok', 'Slack 정상 서명이 거부됨');
+
+    console.log('checkAuth: 모든 점검 통과 ✅', BASE);
+})().catch(err => {
+    console.error('checkAuth 실패 ❌', err.message);
+    process.exit(1);
+});

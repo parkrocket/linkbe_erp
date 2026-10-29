@@ -2,6 +2,9 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
 const secretKey = process.env.JWT_SECRET_KEY;
 
+// 응답에서 비밀번호 해시 제거 — SELECT * 결과를 그대로 내려보내던 문제 방지
+const toSafeUser = ({ user_password, ...safeUser }) => safeUser;
+
 exports.login = (req, res) => {
     const { email, password } = req.body;
 
@@ -28,7 +31,7 @@ exports.login = (req, res) => {
             const token = jwt.sign({ userId: user.user_id }, secretKey, { expiresIn: '24h' });
             res.cookie('x_auth', token, { httpOnly: false });
 
-            return res.json({ loginSuccess: true, message: 'Login successful', user, token });
+            return res.json({ loginSuccess: true, message: 'Login successful', user: toSafeUser(user), token });
         });
     });
 };
@@ -58,7 +61,7 @@ exports.register = (req, res) => {
                 return res.status(200).json({ registerSuccess: false, error: 'User not found' });
             }
 
-            return res.json({ registerSuccess: true, message: 'Register successful', user });
+            return res.json({ registerSuccess: true, message: 'Register successful', user: toSafeUser(user) });
         }
     );
 };
@@ -91,14 +94,14 @@ exports.auth = (req, res) => {
                 return res.status(200).json({ isAuth: false, error: 'User not found' });
             }
 
-            return res.json({ isAuth: true, user });
+            return res.json({ isAuth: true, user: toSafeUser(user) });
         });
     });
 };
 
 exports.refresh = (req, res) => {
-    const { userId } = req.body;
-    User.findByEmail(userId, (err, user) => {
+    // 요청 바디의 userId 대신 토큰 주인(req.userId)만 조회 — 남의 정보 조회 차단
+    User.findByEmail(req.userId, (err, user) => {
         //return res.status(500).json({ message: 'Login successful', user: user });
 
         if (err) {
@@ -108,7 +111,7 @@ exports.refresh = (req, res) => {
             return res.status(200).json({ refreshSuccess: false, error: 'User not found' });
         }
 
-        return res.json({ refreshSuccess: true, message: 'refresh successful', user });
+        return res.json({ refreshSuccess: true, message: 'refresh successful', user: toSafeUser(user) });
     });
 };
 
