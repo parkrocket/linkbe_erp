@@ -8,6 +8,7 @@ const { encrypt, decrypt } = require('../utils/crypto');
 const User = require('../models/userModel');
 const Gtw = require('../models/gtwModel');
 const Vca = require('../models/vacationModel');
+const Apply = require('../models/applyModel');
 const moment = require('moment');
 const { WebClient } = require('@slack/web-api');
 
@@ -21,6 +22,22 @@ const auths = new google.auth.JWT(
 );
 
 const client = new WebClient(process.env.SLACK_BOT_TOKEN);
+
+// 근태 신청 오류 → Slack 모달 블록별 안내 (input_c: 종류 선택, input_date: 날짜) — 문구는 웹과 동일
+const SLACK_LEAVE_ERRORS = {
+    'Monthly home limit exceeded': ['input_date', '재택은 한 달에 최대 2회까지 신청할 수 있어요.'],
+    'Insufficient balance': ['input_c', '남은 일수가 부족해요.'],
+    'Already applied on this date': ['input_date', '이미 근태를 신청한 날짜예요. 한 날짜에 하나만 신청할 수 있어요.'],
+    'Weekend not allowed': ['input_date', '주말은 신청할 수 없어요.'],
+    'Past date not allowed': ['input_date', '오늘 이전 날짜는 신청할 수 없어요.'],
+    'Invalid leave type': ['input_c', '근태 종류를 다시 선택해 주세요.'],
+    'Invalid date': ['input_date', '날짜를 다시 선택해 주세요.'],
+    'User not found': ['input_c', 'Slack 이메일과 같은 hibye 계정이 없어요. 관리자에게 문의해 주세요.'],
+};
+const slackLeaveError = error => {
+    const [block, text] = SLACK_LEAVE_ERRORS[error.message] || ['input_date', '신청하지 못했어요. 잠시 후 다시 시도해 주세요.'];
+    return { [block]: text };
+};
 
 const handleSlackEvents = async (req, res) => {
     await slackApp.requestListener()(req, res);
@@ -218,12 +235,17 @@ const handleInteractions = async (req, res) => {
         const userInfo = await client.users.info({ user: userId });
         if (userInfo.ok) {
             const userEmail = userInfo.user.profile.email;
+
+            // 웹과 같은 규칙(잔여·중복·재택 월 2회·주말·지난 날짜)으로 신청 — 실패하면 모달에 이유 표시
+            // (기존: 검사 없이 차감 → 알림 → 캘린더 순서라 실패해도 차감·알림이 남았음)
+            try {
+                await Apply.insertMany({ userId: userEmail, dates: [selectedDate], type: selectedOption });
+            } catch (error) {
+                if (!error.status || error.status >= 500) console.error('slack leave apply error:', error.message);
+                return res.status(200).json({ response_action: 'errors', errors: slackLeaveError(error) });
+            }
+
             const user = await User.findByEmailAsync(userEmail);
-
-            console.log('Selected Option:', selectedOption);
-            console.log('Selected Date:', selectedDate);
-            console.log('UserId:', userId);
-
             const message =
                 {
                     half: `${user.user_name}님이 ${selectedDate}에 반차를 사용하셨습니다.`,
@@ -233,53 +255,14 @@ const handleInteractions = async (req, res) => {
                 }[selectedOption] ||
                 `${user.user_name}님이 ${selectedDate}에 알 수 없는 활동을 하셨습니다.`;
 
-            const vacaType =
-                {
-                    half: '반차',
-                    day: '연차',
-                    home: '재택',
-                    vacation: '휴가',
-                }[selectedOption] || '알수없음';
-
-            const stip =
-                {
-                    half: 0.5,
-                    day: 1,
-                    home: 0,
-                    vacation: 1,
-                }[selectedOption] || 0;
-
-            await User.stipUpdateAsync(userEmail, stip, selectedOption);
-            await sendSlackMessage('#출퇴근', message);
-
-            const calendar = google.calendar({ version: 'v3', auth: auths });
-            const event = {
-                summary: `[${user.user_name}] ${vacaType}`,
-                description: message,
-                start: { date: selectedDate, timeZone: 'Asia/Seoul' },
-                end: { date: selectedDate, timeZone: 'Asia/Seoul' },
-            };
-
-            try {
-                const createdEvent = await calendar.events.insert({
-                    calendarId: process.env.GOOGLE_CALENDAR_ID,
-                    resource: event,
-                });
-                const eventId = createdEvent.data.id;
-
-                await Vca.createAsync(
-                    userEmail,
-                    selectedOption,
-                    selectedDate,
-                    eventId,
-                );
-
-                return res.status(200).json({ response_action: 'clear' });
-            } catch (error) {
-                console.error('Error creating event:', error);
-                res.status(500).send('Error creating event');
-            }
+            // 알림은 신청이 성공한 뒤에만 (알림 실패가 신청 결과를 바꾸지 않도록 기록만)
+            await sendSlackMessage('#출퇴근', message).catch(e => console.error('slack notify failed:', e.message));
+            return res.status(200).json({ response_action: 'clear' });
         }
+        return res.status(200).json({
+            response_action: 'errors',
+            errors: { input_c: 'Slack 사용자 정보를 확인하지 못했어요. 잠시 후 다시 시도해 주세요.' },
+        });
     }
 
     res.status(200).send();

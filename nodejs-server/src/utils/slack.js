@@ -273,6 +273,16 @@ const openModal = async (trigger_id, user) => {
                             },
                         ],
                     },
+                    // 신청 규칙 안내 — 서버(applyModel)가 같은 규칙으로 검사
+                    {
+                        type: 'context',
+                        elements: [
+                            {
+                                type: 'mrkdwn',
+                                text: '재택은 한 달에 최대 2회 · 주말·지난 날짜·이미 신청한 날은 신청할 수 없어요.',
+                            },
+                        ],
+                    },
                     {
                         type: 'input',
                         block_id: 'input_c',

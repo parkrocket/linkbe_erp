@@ -19,24 +19,9 @@ exports.list = async (req, res) => {
     });
 };
 
-exports.cancel = async (req, res) => {
-    const { id, stipNumber, vacaNumber, userId, calendar_id, type } = req.body;
-
-    const vacation = await Vacation.cancel(
-        id,
-        stipNumber,
-        vacaNumber,
-        userId,
-        calendar_id,
-        type,
-    );
-
-    return res.json({
-        vacationCancelSuccess: true,
-        message: 'vacation Cancel successful',
-        vacationList: vacation,
-    });
-};
+// 사용하는 화면은 없지만 열려 있던 API — 요청 바디의 stipNumber·vacaNumber·userId를 그대로 써서
+// 남의 근태 삭제·내 잔여 임의 증가가 가능했음 → 본인 확인하는 근태 취소(apply/applyCancel)로 위임
+exports.cancel = (req, res) => require('./applyController').applyCancel(req, res);
 
 exports.vcaWeeklyStatus = (req, res) => {
     //const date = moment().format('YYYY-MM-DD');

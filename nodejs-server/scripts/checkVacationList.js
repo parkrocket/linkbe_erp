@@ -37,6 +37,18 @@ Vacation.findByIdAsync = async id => {
     await new Promise(r => FreshVacation.findById('me@linkbe', r));
     assert.ok(/date\s*>=\s*CURDATE\(\)/i.test(sql), '오늘 근태 포함: CURDATE() 기준이어야 함');
 
+    // vacation/cancel: 요청 바디의 stipNumber·vacaNumber·userId로 잔여를 임의로 늘리던 경로 → 안전한 취소로 위임
+    const Apply = require('../src/models/applyModel');
+    let cancelArgs;
+    Apply.cancel = async a => (cancelArgs = a);
+    const cancelRes = { status: () => cancelRes, json: b => (body = b) };
+    await controller.cancel(
+        { body: { id: 7, stipNumber: 100, vacaNumber: 100, userId: 'other', type: 'day', calendar_id: 'x' }, userId: 'me@linkbe' },
+        cancelRes,
+    );
+    assert.deepStrictEqual(cancelArgs, { id: 7, userId: 'me@linkbe' }, '본인 근태 취소만, 바디의 일수·사용자 무시');
+    assert.strictEqual(body.vacationCancelSuccess, true);
+
     console.log('checkVacationList ✅');
     process.exit(0);
 })().catch(err => {
