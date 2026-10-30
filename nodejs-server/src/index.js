@@ -17,6 +17,7 @@ const port = 5000;
 
 const requestIp = require('request-ip');
 const { requireAuth } = require('./middlewares/requireAuth');
+const { requireAdmin } = require('./middlewares/requireAdmin');
 const { keepRawBody } = require('./middlewares/verifySlack');
 
 app.use(cors()); // CORS 미들웨어 사용
@@ -70,6 +71,9 @@ app.use('/api/vacation', vacationRoutes);
 app.use('/api/apply', applyRoutes);
 
 app.use('/api/calendar', calendarRoutes);
+
+// 관리자 API — requireAuth(위 /api 전체) + 관리자 권한
+app.use('/api/admin', requireAdmin, require('./routes/admin'));
 
 // /api/test 경로 추가
 app.get('/api/test', (req, res) => {
