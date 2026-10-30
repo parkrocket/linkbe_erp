@@ -33,6 +33,7 @@ const SLACK_LEAVE_ERRORS = {
     'Invalid leave type': ['input_c', '근태 종류를 다시 선택해 주세요.'],
     'Invalid date': ['input_date', '날짜를 다시 선택해 주세요.'],
     'User not found': ['input_c', 'Slack 이메일과 같은 hibye 계정이 없어요. 관리자에게 문의해 주세요.'],
+    'Account not approved': ['input_c', '승인된 계정만 근태를 신청할 수 있어요. 관리자에게 문의해 주세요.'],
 };
 const slackLeaveError = error => {
     const [block, text] = SLACK_LEAVE_ERRORS[error.message] || ['input_date', '신청하지 못했어요. 잠시 후 다시 시도해 주세요.'];

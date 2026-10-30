@@ -74,11 +74,13 @@ Apply.insertMany = async ({ userId, dates, type }) => {
 
         // FOR UPDATE: 같은 사용자의 동시 신청을 직렬화 — 잔여 음수·재택 횟수 초과 경쟁 방지
         const [users] = await conn.query(
-            'SELECT user_name, user_stip, user_vaca FROM lk_user WHERE user_id = ? FOR UPDATE',
+            'SELECT user_name, user_stip, user_vaca, user_status FROM lk_user WHERE user_id = ? FOR UPDATE',
             [userId],
         );
         const user = users[0];
         if (!user) throw new ApplyError(404, 'User not found');
+        // 승인된 계정만 신청 (웹은 requireAuth가 먼저 막지만 Slack 경로는 여기서 막아야 함)
+        if (user.user_status !== 'approved') throw new ApplyError(403, 'Account not approved');
         const totalDays = leave.days * sorted.length;
         if (leave.column && Number(user[leave.column]) < totalDays) {
             throw new ApplyError(409, 'Insufficient balance');

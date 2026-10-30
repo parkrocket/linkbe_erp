@@ -90,9 +90,10 @@ function fakeRes() {
         ['Weekend not allowed', 'input_date', '주말'],
         ['Past date not allowed', 'input_date', '오늘 이전'],
         ['User not found', 'input_c', 'hibye 계정'],
+        ['Account not approved', 'input_c', '승인된 계정만'],
     ];
     for (const [reason, block, text] of cases) {
-        applyResult = new Apply.ApplyError(reason === 'User not found' ? 404 : reason.includes('date') || reason.includes('Weekend') ? 400 : 409, reason);
+        applyResult = new Apply.ApplyError(reason === 'User not found' ? 404 : reason === 'Account not approved' ? 403 : reason.includes('date') || reason.includes('Weekend') ? 400 : 409, reason);
         sentMessages = [];
         res = fakeRes();
         await handleInteractions(submission('home', '2026-11-18'), res);

@@ -41,10 +41,20 @@ const statusOf = p => p.then(() => 200, e => e.status || 500);
 function reset(user = { user_name: '홍길동', user_stip: 5, user_vaca: 2 }, extra = []) {
     calendarCalls = [];
     queries = [];
-    fixtures = [[/FROM lk_user/, [user]], ...extra];
+    // 실제 DB 행처럼 상태 기본값 approved (각 테스트는 필요한 값만 덮어씀)
+    fixtures = [[/FROM lk_user/, [{ user_status: 'approved', ...user }]], ...extra];
 }
 
 (async () => {
+    // 신청: 승인되지 않은 계정(대기·거절·비활성) → 403, 캘린더 일정 만들지 않음
+    for (const status of ['pending', 'rejected', 'inactive']) {
+        reset({ user_name: '홍길동', user_stip: 5, user_vaca: 2, user_status: status });
+        const blocked = await Apply.insertMany({ userId: 'me', dates: ['2026-11-18'], type: 'day' }).catch(e => e);
+        assert.strictEqual(blocked.status, 403, status);
+        assert.strictEqual(blocked.message, 'Account not approved');
+        assert.deepStrictEqual(calendarCalls, []);
+    }
+
     // 신청: 입력 검증
     reset();
     assert.strictEqual(await statusOf(Apply.insert({ userId: 'me', date: '2026-11-03', type: 'gtw' })), 400);
