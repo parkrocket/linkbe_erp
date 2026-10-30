@@ -180,3 +180,63 @@ exports.updateProfile = handle(async (req, res) => {
     }
     res.json({ ok: true });
 });
+
+// ── 조직(부서·직급) 목록 ──
+const ORG_NAME_MAX = 50;
+const orgName = value => (typeof value === 'string' && value.trim().length >= 1 && value.trim().length <= ORG_NAME_MAX ? value.trim() : null);
+// kind는 고정 표에 있는 것만 (hasOwn — 'constructor' 같은 상속 속성 차단)
+const orgKind = req => (Object.hasOwn(Org.KINDS, req.params.kind) ? req.params.kind : null);
+const isDuplicate = error => error && error.code === 'ER_DUP_ENTRY';
+
+exports.orgList = handle(async (req, res) => {
+    const [departments, positions] = await Promise.all([Org.list(req.userCpId, 'departments'), Org.list(req.userCpId, 'positions')]);
+    res.json({ departments, positions });
+});
+
+exports.orgCreate = handle(async (req, res) => {
+    const kind = orgKind(req);
+    if (!kind) return fail(res, 404, 'Not found');
+    const name = orgName(req.body.name);
+    if (!name) return fail(res, 400, 'Invalid name');
+    try {
+        res.json({ ok: true, id: await Org.create(req.userCpId, kind, name) });
+    } catch (error) {
+        if (isDuplicate(error)) return fail(res, 409, 'Duplicate name');
+        throw error;
+    }
+});
+
+exports.orgRename = handle(async (req, res) => {
+    const kind = orgKind(req);
+    const id = parseMbNo(req.params.id);
+    if (!kind || !id) return fail(res, 404, 'Not found');
+    const name = orgName(req.body.name);
+    if (!name) return fail(res, 400, 'Invalid name');
+    try {
+        if (!(await Org.rename(req.userCpId, kind, id, name))) return fail(res, 404, 'Not found');
+    } catch (error) {
+        if (isDuplicate(error)) return fail(res, 409, 'Duplicate name');
+        throw error;
+    }
+    res.json({ ok: true });
+});
+
+exports.orgMove = handle(async (req, res) => {
+    const kind = orgKind(req);
+    const id = parseMbNo(req.params.id);
+    if (!kind || !id) return fail(res, 404, 'Not found');
+    const { direction } = req.body;
+    if (direction !== 'up' && direction !== 'down') return fail(res, 400, 'Invalid direction');
+    if (!(await Org.move(req.userCpId, kind, id, direction))) return fail(res, 404, 'Not found');
+    res.json({ ok: true });
+});
+
+exports.orgDelete = handle(async (req, res) => {
+    const kind = orgKind(req);
+    const id = parseMbNo(req.params.id);
+    if (!kind || !id) return fail(res, 404, 'Not found');
+    const result = await Org.remove(req.userCpId, kind, id);
+    if (result === 'in use') return fail(res, 409, 'In use');
+    if (result === 'not found') return fail(res, 404, 'Not found');
+    res.json({ ok: true });
+});

@@ -12,5 +12,10 @@ router.post('/users/:mbNo/role', admin.changeRole);
 router.get('/balances', admin.listBalances);
 router.post('/balances', admin.adjustBalances);
 router.get('/balances/:mbNo/logs', admin.balanceLogs);
+router.get('/org', admin.orgList);
+router.post('/org/:kind', admin.orgCreate);
+router.post('/org/:kind/:id', admin.orgRename);
+router.post('/org/:kind/:id/move', admin.orgMove);
+router.delete('/org/:kind/:id', admin.orgDelete);
 
 module.exports = router;
