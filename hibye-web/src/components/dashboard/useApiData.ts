@@ -7,7 +7,8 @@ import { apiFetch, ApiError, hasFailedFlag } from '@/lib/api';
 type State<T> = { status: 'loading' } | { status: 'error' } | { status: 'ok'; data: T };
 
 // 대시보드 카드 공용 — 카드마다 로딩·에러를 따로 가져 한 카드 실패가 다른 카드에 번지지 않음
-export function useApiData<T>(path: string, body: unknown) {
+// method: 관리자 API 등 GET 조회는 'GET' (body 무시)
+export function useApiData<T>(path: string, body: unknown, method: 'GET' | 'POST' = 'POST') {
     const router = useRouter();
     const [state, setState] = useState<State<T>>({ status: 'loading' });
     const bodyKey = JSON.stringify(body);
@@ -15,7 +16,7 @@ export function useApiData<T>(path: string, body: unknown) {
     // 요청 결과를 다음 상태로 변환만 함 (setState는 응답 콜백에서)
     const request = useCallback(async (): Promise<State<T> | null> => {
         try {
-            const data = await apiFetch<T>(path, { method: 'POST', body: JSON.parse(bodyKey) });
+            const data = await apiFetch<T>(path, method === 'GET' ? { method } : { method, body: JSON.parse(bodyKey) });
             // 200이어도 xxxSuccess: false면 에러 화면 (정상 데이터처럼 보이지 않게)
             if (hasFailedFlag(data)) return { status: 'error' };
             return { status: 'ok', data };
@@ -27,7 +28,7 @@ export function useApiData<T>(path: string, body: unknown) {
             }
             return { status: 'error' };
         }
-    }, [path, bodyKey, router]);
+    }, [path, bodyKey, method, router]);
 
     useEffect(() => {
         // 화면을 떠난 뒤 도착한 응답은 무시

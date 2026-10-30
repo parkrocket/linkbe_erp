@@ -12,5 +12,5 @@ export function proxy(request: NextRequest) {
 
 // 기존 react-app의 로그인 후 화면 경로 (/, /login, /register, /gtw 는 공개)
 export const config = {
-    matcher: ['/vaca/:path*', '/geo/:path*', '/work/:path*', '/workHistory/:path*', '/sent/:path*', '/calendar/:path*'],
+    matcher: ['/vaca/:path*', '/geo/:path*', '/work/:path*', '/workHistory/:path*', '/sent/:path*', '/calendar/:path*', '/admin/:path*'],
 };

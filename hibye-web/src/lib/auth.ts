@@ -27,3 +27,15 @@ export const getCurrentUser = cache(async (): Promise<User | null> => {
         throw error;
     }
 });
+
+// 헤더 '관리' 메뉴 배지 — 관리자일 때만 호출, 실패해도 헤더는 그려지도록 0
+export async function getAdminPendingCount(): Promise<number> {
+    const token = (await cookies()).get('x_auth')?.value;
+    if (!token) return 0;
+    try {
+        const res = await apiFetch<{ pendingCount: number }>('/api/admin/summary', { cookie: `x_auth=${token}` });
+        return Number(res.pendingCount) || 0;
+    } catch {
+        return 0;
+    }
+}

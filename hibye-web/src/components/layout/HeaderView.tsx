@@ -17,8 +17,12 @@ const NAV = [
 const isActive = (pathname: string, href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href);
 
-export function HeaderView({ userName }: { userName: string | null }) {
+type Props = { userName: string | null; isAdmin?: boolean; pendingCount?: number };
+
+export function HeaderView({ userName, isAdmin = false, pendingCount = 0 }: Props) {
     const pathname = usePathname();
+    // 관리자에게만 '관리' 메뉴 (승인 대기 인원 배지)
+    const nav = isAdmin ? [...NAV, { href: '/admin', label: '관리', badge: pendingCount }] : NAV;
     const router = useRouter();
     const [menuOpen, setMenuOpen] = useState(false);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -39,7 +43,7 @@ export function HeaderView({ userName }: { userName: string | null }) {
                 {userName ? (
                     <>
                         <nav aria-label="주요 메뉴" className="hidden h-full items-stretch gap-6 md:flex">
-                            {NAV.map(item => (
+                            {nav.map(item => (
                                 <NavLink key={item.href} {...item} active={isActive(pathname, item.href)} />
                             ))}
                         </nav>
@@ -96,7 +100,7 @@ export function HeaderView({ userName }: { userName: string | null }) {
 
             {userName && menuOpen && (
                 <nav id="mobile-menu" aria-label="주요 메뉴" className="border-t border-line bg-white px-4 py-2 md:hidden">
-                    {NAV.map(item => (
+                    {nav.map(item => (
                         <Link
                             key={item.href}
                             href={item.href}
@@ -107,6 +111,7 @@ export function HeaderView({ userName }: { userName: string | null }) {
                             }`}
                         >
                             {item.label}
+                            <CountBadge count={'badge' in item ? item.badge : 0} />
                         </Link>
                     ))}
                     <button
@@ -132,7 +137,7 @@ export function Logo() {
     );
 }
 
-function NavLink({ href, label, active }: { href: string; label: string; active: boolean }) {
+function NavLink({ href, label, active, badge = 0 }: { href: string; label: string; active: boolean; badge?: number }) {
     // 현재 위치는 대표색 + 밑줄 (색만으로 구분하지 않도록 굵기·밑줄 병행)
     return (
         <Link
@@ -143,7 +148,19 @@ function NavLink({ href, label, active }: { href: string; label: string; active:
             }`}
         >
             {label}
+            <CountBadge count={badge} />
         </Link>
+    );
+}
+
+// 승인 대기 등 숫자 배지 — 0이면 숨김, 화면 낭독기에는 '대기 N명'으로
+function CountBadge({ count }: { count: number }) {
+    if (!count) return null;
+    return (
+        <span className="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-bold text-white">
+            {count}
+            <span className="sr-only">명 승인 대기</span>
+        </span>
     );
 }
 

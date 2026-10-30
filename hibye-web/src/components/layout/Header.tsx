@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { getCurrentUser } from '@/lib/auth';
+import { getAdminPendingCount, getCurrentUser } from '@/lib/auth';
 import { HeaderView, Logo } from './HeaderView';
 
 // 쿠키를 읽는 부분만 Suspense로 감싸 정적 셸을 먼저 보냄 (cacheComponents)
@@ -15,7 +15,9 @@ async function HeaderWithUser() {
     // 루트 레이아웃은 error.tsx가 잡지 못함 → API 장애 시 로고만 있는 헤더 (본문은 error.tsx가 안내)
     const user = await getCurrentUser().catch(() => undefined);
     if (user === undefined) return <HeaderFallback />;
-    return <HeaderView userName={user?.user_name ?? null} />;
+    const isAdmin = user?.user_role === 'admin';
+    const pendingCount = isAdmin ? await getAdminPendingCount() : 0;
+    return <HeaderView userName={user?.user_name ?? null} isAdmin={isAdmin} pendingCount={pendingCount} />;
 }
 
 function HeaderFallback() {

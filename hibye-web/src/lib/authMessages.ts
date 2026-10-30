@@ -21,3 +21,15 @@ export function registerErrorMessage(error: unknown) {
     }
     return '가입 신청 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.';
 }
+
+// 관리자 API 오류 → 안내
+export function adminErrorMessage(error: unknown) {
+    if (error instanceof ApiError) {
+        if (error.reason === 'Cannot change yourself') return '자기 자신은 변경할 수 없어요.';
+        if (error.reason === 'Last admin') return '관리자는 최소 1명 있어야 해요.';
+        if (error.reason === 'Invalid transition') return '지금 상태에서는 할 수 없는 작업이에요.';
+        if (error.status === 403) return '관리자만 할 수 있어요.';
+        if (error.status === 404) return '대상 직원을 찾을 수 없어요. 새로고침 후 다시 시도해 주세요.';
+    }
+    return '처리하지 못했어요. 잠시 후 다시 시도해 주세요.';
+}
