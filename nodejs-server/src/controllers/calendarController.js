@@ -1,4 +1,13 @@
 const { google } = require('googleapis');
+const pool = require('../config/dbPromise');
+const Admin = require('../models/adminModel');
+const { validateEvent } = require('../utils/eventValidation');
+const { addDays } = require('../utils/profileValidation');
+
+// 회사 Google 캘린더 일정 — 기존 react-app과 새 화면이 함께 사용 (응답은 필드 추가만)
+// 권한(2026-10-30): 추가는 누구나, 수정·삭제는 만든 사람 + 관리자. 만든 사람 정보 없는 기존 일정은 관리자만,
+// 근태 신청으로 생긴 일정은 아무도 수정·삭제 불가 (취소는 근태 화면 — 캘린더와 근태 기록·잔여가 어긋나지 않게)
+// (기존: 로그인한 누구나 모든 일정 수정·삭제 가능)
 
 const auths = new google.auth.JWT(
     process.env.GOOGLE_CLIENT_EMAIL,
@@ -6,166 +15,139 @@ const auths = new google.auth.JWT(
     process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
     ['https://www.googleapis.com/auth/calendar'],
 );
+const calendar = () => google.calendar({ version: 'v3', auth: auths }); // 호출 시점 생성 (점검 스크립트에서 가짜 교체)
 
-// 이벤트 조회
-exports.events = async (req, res) => {
+const HOLIDAY_CALENDAR_ID = 'ko.south_korea#holiday@group.v.calendar.google.com';
+const MAX_RANGE_DAYS = 62; // 조회 최대 기간 (월 달력 6주 + 여유)
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const fail = (res, code, error) => res.status(code).json({ error });
+
+// 만든 사람(직원 번호) — 새로 만든 일정에만 있음
+const creatorOf = event => Number(event.extendedProperties?.private?.hibyeCreator) || null;
+
+// 근태 신청으로 생긴 일정 id (lk_vacation.calendar_id)
+async function leaveEventIds(ids) {
+    if (!ids.length) return new Set();
+    const [rows] = await pool.query('SELECT calendar_id FROM lk_vacation WHERE calendar_id IN (?)', [ids]);
+    return new Set(rows.map(r => r.calendar_id));
+}
+
+const handle = fn => async (req, res) => {
     try {
-        const calendar = google.calendar({ version: 'v3', auth: auths });
+        await fn(req, res);
+    } catch (error) {
+        console.error('calendar api error:', error.response?.data || error.message);
+        if (!res.headersSent) fail(res, 500, 'Calendar error');
+    }
+};
 
-        const timeMin = req.query.timeMin;
-        const timeMax = req.query.timeMax;
+// 조회 — 회사 일정 + 한국 공휴일
+exports.events = handle(async (req, res) => {
+    const { timeMin, timeMax } = req.query;
+    const min = Date.parse(timeMin);
+    const max = Date.parse(timeMax);
+    if (Number.isNaN(min) || Number.isNaN(max) || max < min || (max - min) / DAY_MS > MAX_RANGE_DAYS) {
+        return fail(res, 400, 'Invalid range');
+    }
 
-        const userCalendarResponse = await calendar.events.list({
-            calendarId: process.env.GOOGLE_CALENDAR_ID,
-            timeMin,
-            timeMax,
-            singleEvents: true,
-            orderBy: 'startTime',
-        });
+    const list = calendarId => calendar().events.list({ calendarId, timeMin, timeMax, singleEvents: true, orderBy: 'startTime' });
+    const [user, holiday, me] = await Promise.all([
+        list(process.env.GOOGLE_CALENDAR_ID),
+        list(HOLIDAY_CALENDAR_ID),
+        Admin.findByUserId(req.userCpId, req.userId),
+    ]);
+    const events = user.data.items ?? [];
+    const leaves = await leaveEventIds(events.map(e => e.id));
 
-        const holidayCalendarResponse = await calendar.events.list({
-            calendarId: 'ko.south_korea#holiday@group.v.calendar.google.com',
-            timeMin,
-            timeMax,
-            singleEvents: true,
-            orderBy: 'startTime',
-        });
+    // 만든 사람 이름 (같은 회사 직원만)
+    const creators = [...new Set(events.map(creatorOf).filter(Boolean))];
+    const [nameRows] = creators.length
+        ? await pool.query('SELECT mb_no, user_name FROM lk_user WHERE cp_id = ? AND mb_no IN (?)', [req.userCpId, creators])
+        : [[]];
+    const names = new Map(nameRows.map(r => [r.mb_no, r.user_name]));
+    const isAdmin = req.userRole === 'admin';
 
-        const userEvents = userCalendarResponse.data.items.map(event => ({
-            ...event,
-            className: 'user-event', // 사용자 이벤트 클래스
-        }));
-
-        const holidayEvents = holidayCalendarResponse.data.items.map(event => ({
-            ...event,
-            className: 'holiday-event', // 공휴일 이벤트 클래스
-        }));
-
-        // 병합된 데이터 반환
-        const combinedEvents = [...userEvents, ...holidayEvents].map(event => ({
+    const toItem = (event, kind) => {
+        const allDay = !!event.start.date;
+        const creator = creatorOf(event);
+        // 기존 화면은 설명에 제목을, 근태 일정은 종류 코드(day 등)를 넣어 둠 → 보여주지 않음
+        const description = kind === 'event' && event.description && event.description !== event.summary ? event.description : '';
+        return {
             id: event.id,
             title: event.summary,
             start: event.start.date || event.start.dateTime,
             end: event.end.date || event.end.dateTime,
-            allDay: !!event.start.date,
-            className: event.className,
-        }));
-
-        res.status(200).json(combinedEvents);
-    } catch (error) {
-        console.error('Error fetching events:', error);
-        res.status(500).json({
-            error: 'Error fetching events',
-            details: error.message,
-        });
-    }
-};
-
-// 새 이벤트 추가
-exports.insert = async (req, res) => {
-    try {
-        const { summary, start, end } = req.body;
-
-        if (!summary || !start?.date || !end?.date) {
-            return res
-                .status(400)
-                .json({ error: 'Missing summary, start.date, or end.date' });
-        }
-
-        const calendar = google.calendar({ version: 'v3', auth: auths });
-
-        const event = {
-            summary,
-            description: summary,
-            start: { date: start.date }, // 명확하게 'date' 사용
-            end: { date: end.date }, // 명확하게 'date' 사용
+            allDay,
+            className: kind === 'holiday' ? 'holiday-event' : 'user-event',
+            kind,
+            canEdit: kind === 'event' && (isAdmin || (creator !== null && creator === me?.mb_no)),
+            creatorName: (creator && names.get(creator)) || null,
+            description,
+            // 하루 종일: Google 끝 날짜는 미포함 → 화면용 끝 날짜(포함). 시작=끝으로 저장된 옛 일정은 그대로
+            ...(allDay && {
+                startDate: event.start.date,
+                endDate: event.end.date > event.start.date ? addDays(event.end.date, -1) : event.start.date,
+            }),
         };
+    };
 
-        const createdEvent = await calendar.events.insert({
-            calendarId: process.env.GOOGLE_CALENDAR_ID,
-            resource: event,
-        });
+    res.status(200).json([
+        ...events.map(e => toItem(e, leaves.has(e.id) ? 'leave' : 'event')),
+        ...(holiday.data.items ?? []).map(e => toItem(e, 'holiday')),
+    ]);
+});
 
-        res.status(201).json({ eventId: createdEvent.data.id });
-    } catch (error) {
-        console.error(
-            'Error adding event:',
-            error.response?.data || error.message,
-        );
-        res.status(500).json({
-            error: 'Error adding event',
-            details: error.response?.data || error.message,
-        });
-    }
-};
+exports.insert = handle(async (req, res) => {
+    const input = validateEvent(req.body);
+    if (input.error) return fail(res, 400, input.error);
+    const me = await Admin.findByUserId(req.userCpId, req.userId);
 
-// 일정 수정
-exports.update = async (req, res) => {
-    console.log(req.body);
+    const created = await calendar().events.insert({
+        calendarId: process.env.GOOGLE_CALENDAR_ID,
+        resource: { ...input.value, extendedProperties: { private: { hibyeCreator: String(me.mb_no) } } },
+    });
+    res.status(201).json({ eventId: created.data.id });
+});
 
+// 수정·삭제 전 권한 확인 — Google에서 다시 읽어 판단 (요청 바디의 정보는 신뢰하지 않음)
+async function loadEditable(req, res) {
+    const { id } = req.body;
+    if (!id || typeof id !== 'string') return fail(res, 404, 'Event not found') && null;
+
+    let event;
     try {
-        const { id, summary, start, end } = req.body;
-
-        if (!id || !summary || !start?.date || !end?.date) {
-            return res.status(400).json({
-                error: 'Missing id, summary, start.date, or end.date',
-            });
-        }
-
-        const calendar = google.calendar({ version: 'v3', auth: auths });
-
-        const event = {
-            summary,
-            description: summary,
-            start: { date: start.date }, // 수정할 시작 날짜
-            end: { date: end.date }, // 수정할 종료 날짜
-        };
-
-        const updatedEvent = await calendar.events.update({
-            calendarId: process.env.GOOGLE_CALENDAR_ID,
-            eventId: id,
-            resource: event,
-        });
-
-        res.status(200).json({ updatedEvent: updatedEvent.data });
+        ({ data: event } = await calendar().events.get({ calendarId: process.env.GOOGLE_CALENDAR_ID, eventId: id }));
     } catch (error) {
-        console.error(
-            'Error updating event:',
-            error.response?.data.errors || error.message,
-        );
-        res.status(500).json({
-            error: 'Error updating event',
-            details: error.response?.data || error.message,
-        });
+        if (error.code === 404 || error.code === 410) return fail(res, 404, 'Event not found') && null;
+        throw error;
     }
-};
+    if ((await leaveEventIds([id])).size) return fail(res, 403, 'Leave event') && null;
 
-exports.delete = async (req, res) => {
-    try {
-        const { id } = req.body;
+    const me = await Admin.findByUserId(req.userCpId, req.userId);
+    const creator = creatorOf(event);
+    if (req.userRole !== 'admin' && !(creator !== null && creator === me?.mb_no)) return fail(res, 403, 'Not allowed') && null;
+    return event;
+}
 
-        if (!id) {
-            return res.status(400).json({
-                error: 'Missing event ID',
-            });
-        }
+exports.update = handle(async (req, res) => {
+    const input = validateEvent(req.body);
+    if (input.error) return fail(res, 400, input.error);
+    const event = await loadEditable(req, res);
+    if (!event) return;
 
-        const calendar = google.calendar({ version: 'v3', auth: auths });
+    // 만든 사람 정보 유지 (관리자가 고쳐도 원래 만든 사람이 계속 수정 가능)
+    const updated = await calendar().events.update({
+        calendarId: process.env.GOOGLE_CALENDAR_ID,
+        eventId: event.id,
+        resource: { ...input.value, ...(event.extendedProperties && { extendedProperties: event.extendedProperties }) },
+    });
+    res.status(200).json({ updatedEvent: updated.data });
+});
 
-        await calendar.events.delete({
-            calendarId: process.env.GOOGLE_CALENDAR_ID,
-            eventId: id, // 삭제할 이벤트의 ID
-        });
-
-        res.status(200).json({ message: 'Event deleted successfully' });
-    } catch (error) {
-        console.error(
-            'Error deleting event:',
-            error.response?.data || error.message,
-        );
-        res.status(500).json({
-            error: 'Error deleting event',
-            details: error.response?.data || error.message,
-        });
-    }
-};
+exports.delete = handle(async (req, res) => {
+    const event = await loadEditable(req, res);
+    if (!event) return;
+    await calendar().events.delete({ calendarId: process.env.GOOGLE_CALENDAR_ID, eventId: event.id });
+    res.status(200).json({ message: 'Event deleted successfully' });
+});
