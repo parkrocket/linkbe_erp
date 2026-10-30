@@ -5,6 +5,7 @@ import { Badge, type BadgeTone } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import type { RunAction } from './AdminPage';
+import { MemberDialog } from './MemberDialog';
 import { changeRole, changeStatus, joinedAt, STATUS_LABEL, type AdminUser } from './adminApi';
 
 const FILTERS: { value: AdminUser['user_status'] | 'all'; label: string }[] = [
@@ -23,7 +24,8 @@ const STATUS_TONE: Record<AdminUser['user_status'], BadgeTone> = {
 };
 
 // 직원 관리 탭 — 상태 필터, 비활성화·다시 활성화·관리자 지정/해제
-export function MembersTab({ users, myUserId, run }: { users: AdminUser[]; myUserId: string; run: RunAction }) {
+export function MembersTab({ users, myUserId, run, onChanged }: { users: AdminUser[]; myUserId: string; run: RunAction; onChanged: () => void }) {
+    const [opened, setOpened] = useState<number | null>(null);
     const [filter, setFilter] = useState<(typeof FILTERS)[number]['value']>('all');
     const shown = filter === 'all' ? users : users.filter(u => u.user_status === filter);
 
@@ -50,15 +52,16 @@ export function MembersTab({ users, myUserId, run }: { users: AdminUser[]; myUse
             ) : (
                 <ul className="divide-y divide-line">
                     {shown.map(u => (
-                        <MemberRow key={u.mb_no} user={u} isMe={u.user_id === myUserId} run={run} />
+                        <MemberRow key={u.mb_no} user={u} isMe={u.user_id === myUserId} run={run} onOpen={() => setOpened(u.mb_no)} />
                     ))}
                 </ul>
             )}
+            {opened !== null && <MemberDialog mbNo={opened} onClose={() => setOpened(null)} onChanged={onChanged} />}
         </>
     );
 }
 
-function MemberRow({ user: u, isMe, run }: { user: AdminUser; isMe: boolean; run: RunAction }) {
+function MemberRow({ user: u, isMe, run, onOpen }: { user: AdminUser; isMe: boolean; run: RunAction; onOpen: () => void }) {
     // 자기 자신은 변경 불가 (서버도 409) — 버튼 대신 이유 안내
     const actions = isMe ? null : (
         <div className="flex flex-wrap gap-2">
@@ -87,17 +90,23 @@ function MemberRow({ user: u, isMe, run }: { user: AdminUser; isMe: boolean; run
 
     return (
         <li className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
-            <div className="min-w-0 flex-1">
-                <p className="flex flex-wrap items-center gap-1.5 text-sm font-bold">
+            {/* 이름 영역을 누르면 상세 팝업 (버튼이라 키보드로도 열림) */}
+            <button
+                type="button"
+                onClick={onOpen}
+                aria-label={`${u.user_name}님 정보 보기`}
+                className="-m-1 min-w-0 flex-1 rounded-lg p-1 text-left hover:bg-surface focus-visible:outline-2 focus-visible:outline-primary"
+            >
+                <span className="flex flex-wrap items-center gap-1.5 text-sm font-bold">
                     {u.user_name}
                     {isMe && <span className="text-xs font-normal text-muted">(나)</span>}
                     <Badge tone={STATUS_TONE[u.user_status]}>{STATUS_LABEL[u.user_status]}</Badge>
                     {u.user_role === 'admin' && <Badge tone="info">관리자</Badge>}
-                </p>
-                <p className="truncate text-xs text-muted">
+                </span>
+                <span className="block truncate text-xs text-muted">
                     {u.user_id} · {joinedAt(u.user_datetime)} 가입
-                </p>
-            </div>
+                </span>
+            </button>
             {actions ?? <span className="text-xs text-muted">자기 자신은 변경할 수 없어요</span>}
         </li>
     );

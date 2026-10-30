@@ -7,6 +7,8 @@ import { Button, buttonClass } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
 import { apiFetch, hasFailedFlag } from '@/lib/api';
 import { registerErrorMessage } from '@/lib/authMessages';
+import { RadioGroup } from '@/components/ui/RadioGroup';
+import { GENDER_LABEL, type Gender } from '@/lib/profile';
 import { validateRegisterForm, type RegisterErrors, type RegisterForm as Form } from '@/lib/register';
 
 type Company = { cp_id: number; cp_name: string };
@@ -45,6 +47,12 @@ export function RegisterForm() {
         if (errors[key]) setErrors(prev => ({ ...prev, [key]: undefined }));
     };
 
+    // 라디오 등 문자열 값을 바로 넣는 칸용
+    const setValue = (key: keyof Form, value: string) => {
+        setForm(prev => ({ ...prev, [key]: value }));
+        if (errors[key]) setErrors(prev => ({ ...prev, [key]: undefined }));
+    };
+
     async function handleSubmit(event: FormEvent) {
         event.preventDefault();
         setServerError('');
@@ -59,7 +67,7 @@ export function RegisterForm() {
         try {
             await apiFetch('/api/users/register', {
                 method: 'POST',
-                body: { email: form.email, password: form.password, name: form.name, phone: form.phone, cpId },
+                body: { email: form.email, password: form.password, name: form.name, phone: form.phone, cpId, doe: form.doe, gender: form.gender, birth: form.birth },
             });
             setDone(true);
         } catch (error) {
@@ -116,6 +124,16 @@ export function RegisterForm() {
                 onChange={update('phone')}
                 error={errors.phone}
             />
+            <TextField label="생년월일" name="birth" type="date" value={form.birth} onChange={update('birth')} error={errors.birth} />
+            <RadioGroup
+                label="성별"
+                name="gender"
+                value={form.gender}
+                options={(Object.keys(GENDER_LABEL) as Gender[]).map(g => ({ value: g, label: GENDER_LABEL[g] }))}
+                onChange={value => setValue('gender', value)}
+                error={errors.gender}
+            />
+            <TextField label="입사일" name="doe" type="date" value={form.doe} onChange={update('doe')} error={errors.doe} hint="입사 예정이면 예정일" />
 
             {/* 회사가 여러 개일 때만 선택 칸 표시 */}
             {companies && companies.length > 1 && (
@@ -139,7 +157,7 @@ export function RegisterForm() {
             {/* 개인정보 수집·이용 동의 (필수) — 문구는 회사 정책 검토 필요 */}
             <fieldset className="rounded-lg bg-surface p-3 text-xs leading-5 text-muted">
                 <legend className="sr-only">개인정보 수집·이용 동의</legend>
-                <p>수집 항목: 이메일·이름·휴대폰 번호 / 목적: 사내 근태 관리 / 보유 기간: 퇴사 시까지</p>
+                <p>수집 항목: 이메일·이름·휴대폰 번호·생년월일·성별·입사일 / 목적: 사내 근태 관리 / 보유 기간: 퇴사 시까지</p>
                 <label className="mt-2 flex items-center gap-2 text-sm font-medium text-ink">
                     <input
                         type="checkbox"
