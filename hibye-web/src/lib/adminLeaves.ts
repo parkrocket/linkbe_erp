@@ -61,3 +61,7 @@ export function groupByDate(rows: AdminLeave[]) {
     for (const r of rows) map.set(r.date, [...(map.get(r.date) ?? []), r]);
     return map;
 }
+
+// 달력 칸의 근태 — 이웃 달 칸은 null (이번 달만 조회하므로 '근태 없음'과 구분해 표시하지 않음)
+export const cellLeaves = (byDate: Map<string, AdminLeave[]>, date: string, ym: string): AdminLeave[] | null =>
+    date.startsWith(ym) ? (byDate.get(date) ?? []) : null;

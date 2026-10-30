@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { TextField } from '@/components/ui/TextField';
 import {
     calendarWeeks,
+    cellLeaves,
     countByType,
     filterLeaves,
     groupByDate,
@@ -218,15 +219,17 @@ function MonthCalendar({ ym, today, rows, onPick }: { ym: string; today: string;
             {calendarWeeks(ym).map(week => (
                 <div key={week[0]} className="grid grid-cols-7 border-b border-line last:border-b-0">
                     {week.map(date => {
-                        const items = byDate.get(date) ?? [];
-                        const inMonth = date.startsWith(ym);
+                        // 이웃 달 칸은 날짜만 흐리게 (이번 달만 조회 — 근태 없음으로 오해하지 않게)
+                        const cell = cellLeaves(byDate, date, ym);
+                        const items = cell ?? [];
+                        const inMonth = cell !== null;
                         return (
                             <button
                                 key={date}
                                 type="button"
                                 disabled={!items.length}
                                 onClick={() => onPick(date)}
-                                aria-label={`${md(date)} ${items.length}건`}
+                                aria-label={`${md(date)} ${items.map(r => `${r.user_name} ${leaveLabel(r.type)}`).join(', ') || '근태 없음'}`}
                                 className={`flex min-h-20 flex-col gap-1 border-r border-line p-1.5 text-left last:border-r-0 enabled:hover:bg-surface focus-visible:outline-2 focus-visible:outline-primary sm:min-h-24 ${
                                     inMonth ? 'bg-white' : 'bg-surface/60'
                                 }`}

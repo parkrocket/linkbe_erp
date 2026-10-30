@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calendarWeeks, countByType, filterLeaves, groupByDate, monthRange, shiftMonth, yearRange, type AdminLeave } from './adminLeaves';
+import { calendarWeeks, cellLeaves, countByType, filterLeaves, groupByDate, monthRange, shiftMonth, yearRange, type AdminLeave } from './adminLeaves';
 
 const leave = (id: number, date: string, type: AdminLeave['type'], mb_no: number, dept_id: number | null): AdminLeave => ({
     id,
@@ -59,5 +59,13 @@ describe('필터·집계', () => {
         const byDate = groupByDate(rows);
         expect(byDate.get('2026-11-02')?.map(r => r.id)).toEqual([1, 2]);
         expect(byDate.get('2026-11-03')).toBeUndefined();
+    });
+});
+
+describe('cellLeaves', () => {
+    it('이웃 달 칸은 비움 — 조회 범위가 이번 달뿐이라 비어 보이는 것을 "근태 없음"으로 오해하지 않게', () => {
+        const byDate = groupByDate([leave(1, '2026-11-30', 'day', 3, null)]);
+        expect(cellLeaves(byDate, '2026-11-30', '2026-11')?.map(r => r.id)).toEqual([1]);
+        expect(cellLeaves(byDate, '2026-11-30', '2026-12')).toBeNull();
     });
 });
