@@ -28,13 +28,14 @@ async function call(path, { method = 'POST', cookie, headers = {}, body = '{}' }
     assert.strictEqual((await call('/api/test', { method: 'GET' })).status, 200);
     assert.strictEqual((await call('/api/users/auth')).json.isAuth, false);
 
-    // 3) 위조 토큰 → 401, 정상 서명 토큰 → 통과(존재하지 않는 계정이라 User not found)
+    // 3) 위조 토큰 → 401, 정상 서명이어도 승인된 계정이 아니면(없는 계정 포함) 401 — 매 요청 상태 확인
+    //    (refresh가 바디가 아닌 토큰 주인을 조회하는지는 checkLoginStatus.js 단위 점검)
     const fake = jwt.sign({ userId: 'nobody@check.invalid' }, 'wrong-secret');
     assert.strictEqual((await call('/api/users/refresh', { cookie: `x_auth=${fake}` })).status, 401);
     const valid = jwt.sign({ userId: 'nobody@check.invalid' }, process.env.JWT_SECRET_KEY);
     const refreshed = await call('/api/users/refresh', { cookie: `x_auth=${valid}`, body: '{"userId":"someone@else"}' });
-    assert.strictEqual(refreshed.status, 200);
-    assert.strictEqual(refreshed.json.error, 'User not found', '바디의 userId가 아닌 토큰 주인으로 조회해야 함');
+    assert.strictEqual(refreshed.status, 401, '승인된 계정이 아니면 차단');
+    assert.strictEqual(refreshed.json.error, 'Account not active');
 
     // 4) Slack: 서명 없으면 401, 올바른 서명이면 통과
     assert.strictEqual((await call('/api/slack/home')).status, 401, 'Slack 서명 없이 통과됨');

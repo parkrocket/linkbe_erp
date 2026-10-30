@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const User = require('../models/userModel');
 
 // 로그인 없이 호출 가능한 API (경로는 /api 기준)
 // - users: 로그인·가입·인증확인·로그아웃
@@ -37,11 +38,24 @@ function requireAuth(req, res, next) {
         return res.status(401).json({ isAuth: false, error: 'Login required' });
     }
 
-    jwt.verify(token, process.env.JWT_SECRET_KEY, (err, decoded) => {
+    jwt.verify(token, process.env.JWT_SECRET_KEY, async (err, decoded) => {
         if (err) {
             return res.status(401).json({ isAuth: false, error: 'Invalid token' });
         }
+        // 매 요청 계정 상태 확인 — 비활성화·거절되면 토큰 만료(24h)를 기다리지 않고 다음 요청부터 차단
+        let account;
+        try {
+            account = await User.findStatusById(decoded.userId);
+        } catch (e) {
+            console.error('requireAuth status lookup failed:', e.message);
+            return res.status(500).json({ isAuth: false, error: 'Database query error' });
+        }
+        if (!account || account.user_status !== 'approved') {
+            return res.status(401).json({ isAuth: false, error: 'Account not active' });
+        }
         req.userId = decoded.userId;
+        req.userRole = account.user_role;
+        req.userCpId = account.cp_id;
         next();
     });
 }

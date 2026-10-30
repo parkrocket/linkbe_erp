@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const pool = require('../config/dbPromise'); // async 쿼리용 (promise pool)
 const bcrypt = require('bcrypt');
 
 const User = {};
@@ -66,6 +67,12 @@ User.stipUpdate = (userId, stip, type, callback) => {
 };
 
 
+
+// 요청마다 계정 상태 확인용 (requireAuth) — 필요한 컬럼만
+User.findStatusById = async userId => {
+    const [rows] = await pool.query('SELECT user_status, user_role, cp_id FROM lk_user WHERE user_id = ?', [userId]);
+    return rows[0];
+};
 
 User.findByEmailAsync = (email) => {
     return new Promise((resolve, reject) => {

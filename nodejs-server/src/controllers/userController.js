@@ -4,6 +4,13 @@ const secretKey = process.env.JWT_SECRET_KEY;
 
 const { toSafeUser } = require('../utils/safeUser');
 
+// 로그인 차단 상태 → 사유 (approved만 로그인 가능)
+const LOGIN_BLOCKED_REASONS = {
+    pending: 'Pending approval',
+    rejected: 'Registration rejected',
+    inactive: 'Account inactive',
+};
+
 exports.login = (req, res) => {
     const { email, password } = req.body;
 
@@ -23,6 +30,13 @@ exports.login = (req, res) => {
             }
             if (!isMatch) {
                 return res.status(200).json({ loginSuccess: false, error: 'Invalid credentials' });
+            }
+
+            // 승인된 계정만 로그인 — 비밀번호 확인 뒤에 검사해 비밀번호 모르는 사람에게 계정 상태를 알리지 않음
+            // 실패 형식은 기존과 같이 200 + loginSuccess:false (기존 react-app이 이 형식에서만 안내를 띄움)
+            const blockedReason = LOGIN_BLOCKED_REASONS[user.user_status];
+            if (blockedReason) {
+                return res.status(200).json({ loginSuccess: false, error: blockedReason });
             }
 
             // JWT 생성 및 전송
