@@ -7,5 +7,8 @@ router.get('/users', admin.listUsers);
 router.get('/summary', admin.summary);
 router.post('/users/:mbNo/status', admin.changeStatus);
 router.post('/users/:mbNo/role', admin.changeRole);
+router.get('/balances', admin.listBalances);
+router.post('/balances', admin.adjustBalances);
+router.get('/balances/:mbNo/logs', admin.balanceLogs);
 
 module.exports = router;

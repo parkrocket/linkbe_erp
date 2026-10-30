@@ -1,4 +1,7 @@
 const Admin = require('../models/adminModel');
+const Balance = require('../models/balanceModel');
+const BalanceLog = require('../models/balanceLog');
+const { validateAdjust } = require('../utils/balanceValidation');
 const { escapeSlack } = require('../utils/slackEscape');
 const slack = require('../utils/slack'); // 호출 시점 참조 (점검 스크립트에서 가짜 교체)
 
@@ -22,10 +25,16 @@ const ROLE_ACTION = { admin: '관리자로 지정', member: '관리자 해제' }
 
 const fail = (res, code, error) => res.status(code).json({ error });
 
+// URL의 직원 번호 — 양의 정수가 아니면 null
+const parseMbNo = value => {
+    const mbNo = Number(value);
+    return Number.isInteger(mbNo) && mbNo > 0 ? mbNo : null;
+};
+
 // 대상 조회 + 공통 검사(번호 형식, 같은 회사, 자기 자신)
 async function loadTarget(req, res) {
-    const mbNo = Number(req.params.mbNo);
-    if (!Number.isInteger(mbNo) || mbNo <= 0) return fail(res, 404, 'User not found') && null;
+    const mbNo = parseMbNo(req.params.mbNo);
+    if (!mbNo) return fail(res, 404, 'User not found') && null;
     const target = await Admin.findByMbNo(req.userCpId, mbNo);
     if (!target) return fail(res, 404, 'User not found') && null;
     if (target.user_id === req.userId) return fail(res, 409, 'Cannot change yourself') && null;
@@ -48,6 +57,8 @@ const handle = fn => async (req, res) => {
     try {
         await fn(req, res);
     } catch (error) {
+        // 모델의 상태 코드 오류(BalanceError)는 그대로, 나머지는 500
+        if (error.status) return fail(res, error.status, error.message);
         console.error('admin api error:', error.message);
         if (!res.headersSent) fail(res, 500, 'Database query error');
     }
@@ -88,4 +99,34 @@ exports.changeRole = handle(async (req, res) => {
     await Admin.updateRole(target.mb_no, role);
     await record(req, target, ROLE_ACTION[role]);
     res.json({ ok: true });
+});
+
+// ── 연차·휴가 조정 (관리자 2단계) ──
+exports.listBalances = handle(async (req, res) => {
+    res.json({ users: await Balance.listApproved(req.userCpId) });
+});
+
+exports.adjustBalances = handle(async (req, res) => {
+    const input = validateAdjust(req.body);
+    if (input.error) return fail(res, 400, input.error);
+
+    const actor = await Admin.findByUserId(req.userCpId, req.userId);
+    const { changed } = await Balance.adjust({ cpId: req.userCpId, actorMbNo: actor.mb_no, ...input });
+
+    // 기록은 커밋 후 — Slack 실패가 이미 저장된 조정을 실패처럼 보이게 하지 않도록
+    try {
+        await slack.sendSlackMessage(
+            '#hibye-관리',
+            `${escapeSlack(actor.user_name)}님이 연차·휴가를 조정했어요 (${changed}명) — 사유: ${escapeSlack(input.reason)}`,
+        );
+    } catch (error) {
+        console.error('balance slack notice failed:', error.message);
+    }
+    res.json({ ok: true, changed });
+});
+
+exports.balanceLogs = handle(async (req, res) => {
+    const mbNo = parseMbNo(req.params.mbNo);
+    if (!mbNo || !(await Balance.exists(req.userCpId, mbNo))) return fail(res, 404, 'User not found');
+    res.json({ logs: await BalanceLog.listByMember(req.userCpId, mbNo) });
 });
