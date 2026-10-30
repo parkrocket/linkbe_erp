@@ -140,7 +140,7 @@ function OrgMembersDialog({
                 (!list.length ? (
                     <EmptyState message="소속 직원이 없어요" />
                 ) : (
-                    <ul className="max-h-[60vh] divide-y divide-line overflow-y-auto">
+                    <ul className="divide-y divide-line">
                         {list.map(u => (
                             <li key={u.mb_no}>
                                 <button

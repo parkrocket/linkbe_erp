@@ -40,7 +40,7 @@ export function BalanceHistory({ member, onClose }: { member: BalanceRow; onClos
                 (!logs.length ? (
                     <EmptyState message="아직 변경 이력이 없어요" />
                 ) : (
-                    <ul className="max-h-[60vh] divide-y divide-line overflow-y-auto">
+                    <ul className="divide-y divide-line">
                         {logs.map(log => (
                             <li key={log.id} className="py-3 text-sm">
                                 <p className="flex flex-wrap items-center gap-1.5">

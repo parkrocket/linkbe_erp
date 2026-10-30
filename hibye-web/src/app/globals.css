@@ -41,6 +41,7 @@ body {
 }
 ::-webkit-scrollbar-track {
     background: transparent;
+    margin-block: 4px; /* 막대가 위아래 끝에 붙지 않게 */
 }
 ::-webkit-scrollbar-thumb {
     background: var(--color-scrollbar);

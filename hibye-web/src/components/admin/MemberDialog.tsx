@@ -37,7 +37,7 @@ export function MemberDialog({ mbNo, onClose, onChanged }: { mbNo: number; onClo
 
     return (
         <Modal open title={user ? `${user.user_name}님 정보` : '직원 정보'} onClose={onClose}>
-            <div className="max-h-[70vh] overflow-y-auto pr-1">
+            <div>
                 {loading && <Skeleton className="h-64 w-full" />}
                 {!loading && failed && (
                     <ErrorState

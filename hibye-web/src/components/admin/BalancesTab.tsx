@@ -137,7 +137,7 @@ export function BalancesTab() {
             )}
 
             <Modal open={confirming} title="이대로 저장할까요?" onClose={() => !saving && setConfirming(false)}>
-                <ul className="max-h-[50vh] space-y-1.5 overflow-y-auto text-sm">
+                <ul className="space-y-1.5 text-sm">
                     {changes.map(c => (
                         <li key={c.mbNo} className="flex flex-wrap gap-x-2">
                             <span className="font-bold">{c.name}</span>
