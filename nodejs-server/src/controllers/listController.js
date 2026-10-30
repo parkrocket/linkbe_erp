@@ -3,6 +3,7 @@ const List = require('../models/listModel');
 const secretKey = process.env.JWT_SECRET_KEY;
 const requestIp = require('request-ip');
 const moment = require('moment');
+const { toSafeUser } = require('../utils/safeUser'); // 모든 직원 행이 나가므로 비밀번호 해시·개인정보 제거
 
 exports.lists = (req, res) => {
     const date = req.body.date;
@@ -22,7 +23,7 @@ exports.lists = (req, res) => {
         return res.json({
             listSuccess: true,
             message: 'list successful',
-            list,
+            list: list.map(toSafeUser),
         });
     });
 };
@@ -45,7 +46,7 @@ exports.listsMember = (req, res) => {
         return res.json({
             listSuccess: true,
             message: 'list successful',
-            list,
+            list: list.map(toSafeUser),
         });
     });
 };
