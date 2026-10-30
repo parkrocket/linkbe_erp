@@ -2,7 +2,8 @@ import type { ReactNode } from 'react';
 
 export type BadgeTone = 'pending' | 'approved' | 'rejected' | 'info' | 'neutral';
 
-const TONE_CLASS: Record<BadgeTone, string> = {
+// 달력 칸 등 작은 표시에서도 같은 색을 쓰도록 공개
+export const TONE_CLASS: Record<BadgeTone, string> = {
     pending: 'bg-pending-bg text-pending-fg',
     approved: 'bg-approved-bg text-approved-fg',
     rejected: 'bg-rejected-bg text-rejected-fg',

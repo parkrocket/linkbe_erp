@@ -9,11 +9,12 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { adminErrorMessage } from '@/lib/authMessages';
 import type { AdminUser } from './adminApi';
 import { BalancesTab } from './BalancesTab';
+import { LeavesTab } from './LeavesTab';
 import { OrgTab } from './OrgTab';
 import { MembersTab } from './MembersTab';
 import { PendingTab } from './PendingTab';
 
-type Tab = 'pending' | 'members' | 'balances' | 'org';
+type Tab = 'pending' | 'members' | 'leaves' | 'balances' | 'org';
 export type RunAction = (action: () => Promise<unknown>, doneText: string) => Promise<void>;
 
 // /admin — 가입 승인·직원 관리는 목록 한 번 불러와 함께 사용, 연차·휴가 탭은 자체 데이터
@@ -42,7 +43,7 @@ export function AdminPage({ myUserId }: { myUserId: string }) {
     return (
         <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 md:py-10">
             <h1 className="text-2xl font-extrabold tracking-tight">관리</h1>
-            <p className="mt-1 text-sm text-muted">가입 승인, 직원 정보, 연차·휴가, 조직을 관리해요. 모든 조치는 #hibye-관리에 기록돼요.</p>
+            <p className="mt-1 text-sm text-muted">가입 승인, 직원 정보, 근태, 연차·휴가, 조직을 관리해요. 모든 조치는 #hibye-관리에 기록돼요.</p>
 
             <div role="tablist" aria-label="관리 메뉴" className="mt-6 flex gap-1 border-b border-line">
                 <TabButton active={tab === 'pending'} onClick={() => setTab('pending')}>
@@ -50,6 +51,9 @@ export function AdminPage({ myUserId }: { myUserId: string }) {
                 </TabButton>
                 <TabButton active={tab === 'members'} onClick={() => setTab('members')}>
                     직원 관리
+                </TabButton>
+                <TabButton active={tab === 'leaves'} onClick={() => setTab('leaves')}>
+                    근태
                 </TabButton>
                 <TabButton active={tab === 'balances'} onClick={() => setTab('balances')}>
                     연차·휴가
@@ -71,7 +75,9 @@ export function AdminPage({ myUserId }: { myUserId: string }) {
             )}
 
             <Card className="mt-4">
-                {tab === 'balances' ? (
+                {tab === 'leaves' ? (
+                    <LeavesTab />
+                ) : tab === 'balances' ? (
                     <BalancesTab />
                 ) : tab === 'org' ? (
                     <OrgTab />

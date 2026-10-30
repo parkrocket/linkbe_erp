@@ -3,7 +3,7 @@ import { leaveLabel } from '@/lib/leave';
 import type { LeaveType } from '@/lib/types';
 
 // 근태 종류별 배지 — 색과 함께 항상 글자 표시
-const TONE: Record<LeaveType, BadgeTone> = {
+export const LEAVE_TONE: Record<LeaveType, BadgeTone> = {
     day: 'info',
     half: 'pending',
     vacation: 'approved',
@@ -11,5 +11,5 @@ const TONE: Record<LeaveType, BadgeTone> = {
 };
 
 export function LeaveBadge({ type }: { type: LeaveType }) {
-    return <Badge tone={TONE[type]}>{leaveLabel(type)}</Badge>;
+    return <Badge tone={LEAVE_TONE[type]}>{leaveLabel(type)}</Badge>;
 }

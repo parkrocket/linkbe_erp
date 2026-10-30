@@ -64,5 +64,9 @@ export const moveOrgItem = (kind: OrgKind, id: number, direction: 'up' | 'down')
     apiFetch(`/api/admin/org/${kind}/${id}/move`, { method: 'POST', body: { direction } });
 export const deleteOrgItem = (kind: OrgKind, id: number) => apiFetch(`/api/admin/org/${kind}/${id}`, { method: 'DELETE' });
 
+// 관리자 대신 취소 (오늘 이후, 사유 필수)
+export const cancelLeaveByAdmin = (id: number, reason: string) =>
+    apiFetch(`/api/admin/leaves/${id}/cancel`, { method: 'POST', body: { reason } });
+
 const DATE = new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'short', day: 'numeric' });
 export const joinedAt = (value: string) => (value ? DATE.format(new Date(value)) : '-');
