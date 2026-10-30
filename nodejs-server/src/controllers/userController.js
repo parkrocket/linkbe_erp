@@ -3,6 +3,11 @@ const User = require('../models/userModel');
 const secretKey = process.env.JWT_SECRET_KEY;
 
 const { toSafeUser } = require('../utils/safeUser');
+const { validateRegister } = require('../utils/registerValidation');
+const Company = require('../models/companyModel');
+const slack = require('../utils/slack'); // 호출 시점에 slack.sendSlackMessage 참조 (점검 스크립트에서 가짜 교체 가능)
+
+const ADMIN_URL = 'https://hibye.kr/admin';
 
 // 로그인 차단 상태 → 사유 (approved만 로그인 가능)
 const LOGIN_BLOCKED_REASONS = {
@@ -49,34 +54,36 @@ exports.login = (req, res) => {
     });
 };
 
-exports.register = (req, res) => {
-    const { email, password, name, phone, companyName, companyHomepage, companyAddr, companyStandard, companyNumber, companyCode, cpId } = req.body;
+// 회원가입 — 서버 검증 → 중복 확인 → 승인 대기(pending) 저장 → 관리자 채널 알림
+// (기존: 검증 없이 즉시 직원으로 등록, 중복 이메일은 DB 오류로 노출)
+exports.register = async (req, res) => {
+    const checked = validateRegister(req.body);
+    if (!checked.ok) return res.status(400).json({ registerSuccess: false, error: checked.error });
+    const input = checked.value;
 
-    User.create(
-        email,
-        password,
-        name,
-        phone,
-        companyName,
-        companyHomepage,
-        companyAddr,
-        companyStandard,
-        companyNumber,
-        companyCode,
-        cpId,
-        (err, user) => {
-            //return res.status(500).json({ message: 'Login successful', user: user });
-
-            if (err) {
-                return res.status(500).json({ registerSuccess: false, error: 'Database query error' });
-            }
-            if (!user) {
-                return res.status(200).json({ registerSuccess: false, error: 'User not found' });
-            }
-
-            return res.json({ registerSuccess: true, message: 'Register successful', user: toSafeUser(user) });
+    try {
+        if (!(await Company.existsAsync(input.cpId))) {
+            return res.status(400).json({ registerSuccess: false, error: 'Invalid company' });
         }
-    );
+        const existing = await User.findStatusById(input.email);
+        if (existing) {
+            // 거절된 이메일은 재가입 대신 관리자 문의로 안내 (사용자 결정)
+            const error = existing.user_status === 'rejected' ? 'Registration rejected' : 'Email already registered';
+            return res.status(409).json({ registerSuccess: false, error });
+        }
+        await User.create(input);
+    } catch (error) {
+        // 동시 가입으로 고유키 충돌 시에도 중복으로 안내
+        if (error.code === 'ER_DUP_ENTRY') {
+            return res.status(409).json({ registerSuccess: false, error: 'Email already registered' });
+        }
+        console.error('register error:', error.message);
+        return res.status(500).json({ registerSuccess: false, error: 'Database query error' });
+    }
+
+    // 알림 실패는 가입 결과에 영향 없음 (sendSlackMessage가 오류를 기록만 함)
+    await slack.sendSlackMessage('#hibye-관리', `${input.name}님이 가입 승인을 기다리고 있어요 → ${ADMIN_URL}`);
+    return res.status(200).json({ registerSuccess: true });
 };
 
 exports.auth = (req, res) => {

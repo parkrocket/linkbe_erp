@@ -4,38 +4,14 @@ const bcrypt = require('bcrypt');
 
 const User = {};
 
-User.create = (
-    email,
-    password,
-    name,
-    phone,
-    companyName,
-    companyHomepage,
-    companyAddr,
-    companyStandard,
-    companyNumber,
-    companyCode,
-    cpId,
-    callback
-) => {
-    // 비밀번호 해싱
-    bcrypt.hash(password, 10, (err, hash) => {
-        if (err) {
-            return callback(err, null);
-        }
-
-        db.query(
-            'INSERT INTO lk_user (user_id, user_email, user_password, user_name, user_phone, cp_id, user_datetime) VALUES (?, ?, ?, ?, ?, ?, NOW())',
-            [email, email, hash, name, phone, cpId, companyCode],
-            (err, results) => {
-                if (err) {
-                    return callback(err, null);
-                }
-
-                return callback(null, results.insertId);
-            }
-        );
-    });
+// 회원가입 저장 — 관리자 승인 전까지 pending (입력값은 registerValidation으로 검증·정규화된 값)
+User.create = async ({ email, password, name, phone, cpId }) => {
+    const hash = await bcrypt.hash(password, 10);
+    const [result] = await pool.query(
+        'INSERT INTO lk_user (user_id, user_email, user_password, user_name, user_phone, cp_id, user_role, user_status, user_datetime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())',
+        [email, email, hash, name, phone, cpId, 'member', 'pending'],
+    );
+    return result.insertId;
 };
 
 User.findByEmail = (userId, callback) => {

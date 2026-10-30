@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const pool = require('../config/dbPromise');
 
 const Company = {};
 
@@ -23,6 +24,12 @@ Company.findById = (cpId, callback) => {
             return callback(null, results[0]);
         },
     );
+};
+
+// 회원가입 시 회사 번호 확인용
+Company.existsAsync = async cpId => {
+    const [rows] = await pool.query('SELECT 1 FROM lk_company WHERE cp_id = ? LIMIT 1', [cpId]);
+    return rows.length > 0;
 };
 
 module.exports = Company;
