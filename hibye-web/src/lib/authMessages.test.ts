@@ -36,6 +36,12 @@ describe('adminErrorMessage', () => {
         }
     });
 
+    it('근태 대신 취소 사유별 안내', () => {
+        expect(adminErrorMessage(new ApiError(404, 'Leave not found'))).toBe('이미 취소됐거나 찾을 수 없는 근태예요. 새로고침해 주세요.');
+        expect(adminErrorMessage(new ApiError(400, 'Past date not allowed'))).toBe('지난 근태는 취소할 수 없어요. 연차·휴가 탭에서 일수를 조정해 주세요.');
+        expect(adminErrorMessage(new ApiError(400, 'Invalid range'))).toBe('조회 기간을 확인해 주세요.');
+    });
+
     it('연차·휴가 조정 사유별 안내', () => {
         expect(adminErrorMessage(new ApiError(409, 'Balance changed'))).toBe('그 사이 잔여가 바뀌었어요. 다시 불러온 뒤 입력해 주세요.');
         expect(adminErrorMessage(new ApiError(400, 'Invalid reason'))).toBe('사유를 1~200자로 입력해 주세요.');

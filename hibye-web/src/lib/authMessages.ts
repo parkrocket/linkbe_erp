@@ -25,6 +25,9 @@ export function registerErrorMessage(error: unknown) {
 // 관리자 API 오류 → 안내
 export function adminErrorMessage(error: unknown) {
     if (error instanceof ApiError) {
+        if (error.reason === 'Leave not found') return '이미 취소됐거나 찾을 수 없는 근태예요. 새로고침해 주세요.';
+        if (error.reason === 'Past date not allowed') return '지난 근태는 취소할 수 없어요. 연차·휴가 탭에서 일수를 조정해 주세요.';
+        if (error.reason === 'Invalid range') return '조회 기간을 확인해 주세요.';
         if (error.reason === 'Cannot change yourself') return '자기 자신은 변경할 수 없어요.';
         if (error.reason === 'Last admin') return '관리자는 최소 1명 있어야 해요.';
         if (error.reason === 'Invalid transition') return '지금 상태에서는 할 수 없는 작업이에요.';
