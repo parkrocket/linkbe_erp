@@ -11,7 +11,7 @@ import { validateRegisterForm, type RegisterErrors, type RegisterForm as Form } 
 
 type Company = { cp_id: number; cp_name: string };
 
-const EMPTY: Form = { email: '', password: '', passwordConfirm: '', name: '', phone: '', agree: false };
+const EMPTY: Form = { email: '', password: '', passwordConfirm: '', name: '', phone: '', doe: '', gender: '', birth: '', agree: false };
 
 export function RegisterForm() {
     const [form, setForm] = useState<Form>(EMPTY);

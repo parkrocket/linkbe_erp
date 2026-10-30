@@ -26,6 +26,16 @@ describe('adminErrorMessage', () => {
         expect(adminErrorMessage(new Error('x'))).toBe('처리하지 못했어요. 잠시 후 다시 시도해 주세요.');
     });
 
+    it('인사 정보·조직 사유별 안내', () => {
+        expect(adminErrorMessage(new ApiError(409, 'Duplicate name'))).toBe('이미 있는 이름이에요.');
+        expect(adminErrorMessage(new ApiError(409, 'In use'))).toBe('소속 직원이 있어 삭제할 수 없어요. 이름 변경만 가능해요.');
+        expect(adminErrorMessage(new ApiError(400, 'Invalid department'))).toBe('부서·직급 목록이 바뀌었어요. 새로고침 후 다시 선택해 주세요.');
+        expect(adminErrorMessage(new ApiError(400, 'Invalid position'))).toBe('부서·직급 목록이 바뀌었어요. 새로고침 후 다시 선택해 주세요.');
+        for (const reason of ['Invalid name', 'Invalid phone', 'Invalid doe', 'Invalid birth', 'Invalid gender', 'Invalid employment type']) {
+            expect(adminErrorMessage(new ApiError(400, reason))).toBe('입력값을 확인해 주세요.');
+        }
+    });
+
     it('연차·휴가 조정 사유별 안내', () => {
         expect(adminErrorMessage(new ApiError(409, 'Balance changed'))).toBe('그 사이 잔여가 바뀌었어요. 다시 불러온 뒤 입력해 주세요.');
         expect(adminErrorMessage(new ApiError(400, 'Invalid reason'))).toBe('사유를 1~200자로 입력해 주세요.');

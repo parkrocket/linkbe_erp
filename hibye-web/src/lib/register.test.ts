@@ -9,6 +9,9 @@ const valid: RegisterForm = {
     passwordConfirm: 'abcd1234',
     name: '홍길동',
     phone: '010-1234-5678',
+    doe: '2024-03-04',
+    gender: 'male',
+    birth: '1995-07-01',
     agree: true,
 };
 
@@ -28,6 +31,14 @@ describe('validateRegisterForm', () => {
         expect(validateRegisterForm({ ...valid, name: '  ' }).name).toBe('이름을 입력해 주세요.');
         expect(validateRegisterForm({ ...valid, phone: '010-12' }).phone).toBe('휴대폰 번호를 확인해 주세요. (예: 010-1234-5678)');
         expect(validateRegisterForm({ ...valid, agree: false }).agree).toBe('개인정보 수집·이용에 동의해 주세요.');
+    });
+
+    it('입사일·성별·생년월일 필수', () => {
+        expect(validateRegisterForm({ ...valid, doe: '' }, '2026-10-30').doe).toBe('입사일을 확인해 주세요.');
+        expect(validateRegisterForm({ ...valid, doe: '2028-01-01' }, '2026-10-30').doe).toBe('입사일을 확인해 주세요.');
+        expect(validateRegisterForm({ ...valid, gender: '' }, '2026-10-30').gender).toBe('성별을 선택해 주세요.');
+        expect(validateRegisterForm({ ...valid, birth: '' }, '2026-10-30').birth).toBe('생년월일을 확인해 주세요.');
+        expect(validateRegisterForm({ ...valid, birth: '2026-10-31' }, '2026-10-30').birth).toBe('생년월일을 확인해 주세요.');
     });
 });
 

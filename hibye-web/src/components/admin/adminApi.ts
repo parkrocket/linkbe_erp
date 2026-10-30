@@ -1,5 +1,7 @@
 import { apiFetch } from '@/lib/api';
 import type { BalanceChange } from '@/lib/balance';
+import type { ProfileForm } from '@/lib/profile';
+import { toProfilePayload } from '@/lib/profile';
 
 // 관리자 API 형태 (nodejs-server adminController)
 export type AdminUser = {
@@ -34,6 +36,22 @@ export const saveBalances = (reason: string, changes: BalanceChange[]) =>
             changes: changes.map(c => ({ mbNo: c.mbNo, stip: c.stip, vaca: c.vaca, expectedStip: c.expectedStip, expectedVaca: c.expectedVaca })),
         },
     });
+
+// 직원 인사 정보 저장 (전체 덮어쓰기)
+export const saveProfile = (mbNo: number, form: ProfileForm) =>
+    apiFetch(`/api/admin/users/${mbNo}/profile`, { method: 'POST', body: toProfilePayload(form) });
+
+// 부서·직급 목록 (GET /api/admin/org)
+export type OrgKind = 'departments' | 'positions';
+export type OrgItem = { id: number; name: string; sort_order: number; member_count: number };
+export type OrgLists = Record<OrgKind, OrgItem[]>;
+
+export const createOrgItem = (kind: OrgKind, name: string) => apiFetch(`/api/admin/org/${kind}`, { method: 'POST', body: { name } });
+export const renameOrgItem = (kind: OrgKind, id: number, name: string) =>
+    apiFetch(`/api/admin/org/${kind}/${id}`, { method: 'POST', body: { name } });
+export const moveOrgItem = (kind: OrgKind, id: number, direction: 'up' | 'down') =>
+    apiFetch(`/api/admin/org/${kind}/${id}/move`, { method: 'POST', body: { direction } });
+export const deleteOrgItem = (kind: OrgKind, id: number) => apiFetch(`/api/admin/org/${kind}/${id}`, { method: 'DELETE' });
 
 const DATE = new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'short', day: 'numeric' });
 export const joinedAt = (value: string) => (value ? DATE.format(new Date(value)) : '-');

@@ -12,7 +12,7 @@ export class ApiError extends Error {
 }
 
 type Options = {
-    method?: 'GET' | 'POST';
+    method?: 'GET' | 'POST' | 'DELETE';
     body?: unknown;
     // 서버 컴포넌트에서 브라우저 쿠키를 API로 전달할 때 사용
     cookie?: string;
