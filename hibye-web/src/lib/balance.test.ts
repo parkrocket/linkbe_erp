@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { diffBalances, validateBalance, type BalanceRow } from './balance';
+import { balanceErrors, diffBalances, validateBalance, type BalanceRow } from './balance';
 
 describe('validateBalance', () => {
     it('빈 값·범위·단위 오류', () => {
@@ -43,5 +43,18 @@ describe('diffBalances', () => {
         expect(diffBalances(rows, { 5: { vaca: '3' } })).toEqual([
             { mbNo: 5, name: '박직원', stip: 0, vaca: 3, expectedStip: null, expectedVaca: null },
         ]);
+    });
+});
+
+describe('balanceErrors', () => {
+    const legacy: BalanceRow = { mb_no: 7, user_name: '이직원', user_id: 'lee@x', user_stip: -1, user_vaca: 2 };
+
+    it('수정하지 않은 행은 오류 없음', () => {
+        expect(balanceErrors(legacy, undefined)).toEqual({ stip: null, vaca: null });
+    });
+
+    it('한 칸만 고쳐도 다른 칸의 잘못된 현재값을 알려줌 (조용히 저장 목록에서 빠지지 않게)', () => {
+        expect(balanceErrors(legacy, { vaca: '3' })).toEqual({ stip: '0~365 사이로 입력해 주세요', vaca: null });
+        expect(balanceErrors(legacy, { stip: '5', vaca: '3' })).toEqual({ stip: null, vaca: null });
     });
 });

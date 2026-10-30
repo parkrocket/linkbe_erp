@@ -45,9 +45,14 @@ const body = (changes, reason = '2027년 연차 부여') => ({ reason, changes }
     for (const changes of [undefined, 'x', [], Array.from({ length: 201 }, (_, i) => ({ ...ok, mbNo: i + 1 })), [ok, ok], [{ ...ok, mbNo: 0 }], [{ ...ok, mbNo: '3' }], [null]]) {
         assert.deepStrictEqual(validateAdjust(body(changes)), { error: 'Invalid changes' }, JSON.stringify(changes)?.slice(0, 40));
     }
-    for (const bad of [{ stip: 15.3 }, { stip: -1 }, { stip: 366 }, { stip: '15' }, { stip: NaN }, { stip: Infinity }, { vaca: 1.5 }, { vaca: -1 }, { expectedStip: '2' }, { expectedVaca: 0.5 }]) {
+    for (const bad of [{ stip: 15.3 }, { stip: -1 }, { stip: 366 }, { stip: '15' }, { stip: NaN }, { stip: Infinity }, { vaca: 1.5 }, { vaca: -1 }, { expectedStip: '2' }]) {
         assert.deepStrictEqual(validateAdjust(body([{ ...ok, ...bad }])), { error: 'Invalid balance' }, JSON.stringify(bad));
     }
+    // 기대값(화면을 연 때 값)은 옛 경로가 남긴 음수·0.5 단위 아닌 값도 허용 — 그런 행을 바로잡을 수 있어야 함
+    for (const legacy of [{ expectedStip: -1 }, { expectedStip: 12.3 }, { expectedVaca: -2 }, { expectedVaca: 400 }]) {
+        assert.ok(!('error' in validateAdjust(body([{ ...ok, ...legacy }]))), JSON.stringify(legacy));
+    }
+    assert.deepStrictEqual(validateAdjust(body([{ ...ok, expectedStip: NaN }])), { error: 'Invalid balance' });
     // 경계값·null 기대값 허용, 사유는 trim
     const valid = validateAdjust(body([{ ...ok, stip: 365, vaca: 0, expectedStip: null, expectedVaca: null }, { ...ok, mbNo: 4, stip: 0.5 }], '  부여  '));
     assert.strictEqual(valid.reason, '부여');

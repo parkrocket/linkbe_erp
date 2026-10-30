@@ -8,8 +8,8 @@ const MAX_REASON = 200;
 const inRange = v => typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= MAX_BALANCE;
 const isStip = v => inRange(v) && Number.isInteger(v * 2); // 연차는 반차 때문에 0.5 단위
 const isVaca = v => inRange(v) && Number.isInteger(v);
-// 화면을 열 때 값 — 잔여 컬럼이 NULL인 직원도 있어 null 허용
-const orNull = check => v => v === null || check(v);
+// 화면을 열 때 값(비교용) — NULL 잔여, 옛 경로가 남긴 음수·0.5 단위 아닌 값도 허용 (그런 행을 바로잡을 수 있어야 함)
+const isExpected = v => v === null || (typeof v === 'number' && Number.isFinite(v));
 
 exports.validateAdjust = body => {
     const { reason, changes } = body || {};
@@ -21,7 +21,7 @@ exports.validateAdjust = body => {
     if (new Set(changes.map(c => c.mbNo)).size !== changes.length) return { error: 'Invalid changes' };
 
     const valid = changes.every(
-        c => isStip(c.stip) && isVaca(c.vaca) && orNull(isStip)(c.expectedStip) && orNull(isVaca)(c.expectedVaca),
+        c => isStip(c.stip) && isVaca(c.vaca) && isExpected(c.expectedStip) && isExpected(c.expectedVaca),
     );
     if (!valid) return { error: 'Invalid balance' };
 

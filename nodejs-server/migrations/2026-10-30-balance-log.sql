@@ -17,5 +17,5 @@ CREATE TABLE lk_balance_log (
     INDEX idx_member (cp_id, mb_no, id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
--- 되돌리기:
+-- 되돌리기: 반드시 코드를 먼저 이전 버전으로 되돌린 뒤 실행 (코드가 살아 있는 동안 지우면 모든 근태 신청·취소 실패)
 -- DROP TABLE lk_balance_log;

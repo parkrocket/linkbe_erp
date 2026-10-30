@@ -9,7 +9,7 @@ import { ErrorState } from '@/components/ui/ErrorState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ApiError } from '@/lib/api';
 import { adminErrorMessage } from '@/lib/authMessages';
-import { diffBalances, validateBalance, type BalanceDraft, type BalanceRow } from '@/lib/balance';
+import { balanceErrors, diffBalances, type BalanceDraft, type BalanceRow } from '@/lib/balance';
 import { saveBalances } from './adminApi';
 import { BalanceHistory, describeChange } from './BalanceHistory';
 
@@ -38,8 +38,7 @@ export function BalancesTab() {
     const rows = state.data.users ?? [];
     const changes = diffBalances(rows, draft);
     const valueOf = (row: BalanceRow, kind: Kind) => draft[row.mb_no]?.[kind] ?? String(CURRENT[kind](row) ?? 0);
-    const errorOf = (row: BalanceRow, kind: Kind) =>
-        draft[row.mb_no]?.[kind] === undefined ? null : validateBalance(kind, valueOf(row, kind));
+    const errorOf = (row: BalanceRow, kind: Kind) => balanceErrors(row, draft[row.mb_no])[kind];
     const hasError = rows.some(r => errorOf(r, 'stip') || errorOf(r, 'vaca'));
     const canSave = changes.length > 0 && !hasError && reason.trim().length > 0;
 

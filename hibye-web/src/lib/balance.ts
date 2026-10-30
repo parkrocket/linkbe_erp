@@ -46,6 +46,15 @@ export function validateBalance(kind: 'stip' | 'vaca', value: string): string | 
     return null;
 }
 
+// 행 오류 — 한 칸이라도 고친 행은 두 칸 모두 검사 (안 고친 칸의 잘못된 현재값도 함께 저장되므로)
+export function balanceErrors(row: BalanceRow, edit: BalanceDraft[number] | undefined): Record<'stip' | 'vaca', string | null> {
+    if (!edit) return { stip: null, vaca: null };
+    return {
+        stip: validateBalance('stip', edit.stip ?? String(row.user_stip ?? 0)),
+        vaca: validateBalance('vaca', edit.vaca ?? String(row.user_vaca ?? 0)),
+    };
+}
+
 // 저장할 변경 목록 — 올바르고 실제로 달라진 행만. 안 바꾼 쪽은 현재값(없으면 0)으로 덮어씀
 export function diffBalances(rows: BalanceRow[], draft: BalanceDraft): BalanceChange[] {
     return rows.flatMap(row => {
