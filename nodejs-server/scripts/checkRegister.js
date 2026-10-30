@@ -19,7 +19,7 @@ Company.existsAsync = async cpId => cpId === 1;
 
 const { register } = require('../src/controllers/userController');
 
-const valid = { email: 'new@linkbe.kr', password: 'abcd1234', name: '홍길동', phone: '010-1234-5678', cpId: 1 };
+const valid = { email: 'new@linkbe.kr', password: 'abcd1234', name: '홍길동', phone: '010-1234-5678', cpId: 1, doe: '2024-03-04', gender: 'male', birth: '1995-07-01' };
 const call = async body => {
     const res = { code: 200 };
     res.status = c => ((res.code = c), res);
@@ -44,6 +44,13 @@ const reset = () => {
         [{ phone: '010-12' }, 'Invalid phone'],
         [{ cpId: 'x' }, 'Invalid company'],
         [{ cpId: 2 }, 'Invalid company'], // 존재하지 않는 회사
+        // 입사일·성별·생년월일 필수 (2026-10-30 사용자 결정)
+        [{ doe: undefined }, 'Invalid doe'],
+        [{ doe: '2026-02-30' }, 'Invalid doe'],
+        [{ gender: undefined }, 'Invalid gender'],
+        [{ gender: 'x' }, 'Invalid gender'],
+        [{ birth: undefined }, 'Invalid birth'],
+        [{ birth: '3000-01-01' }, 'Invalid birth'],
     ];
     for (const [patch, reason] of bad) {
         reset();
@@ -74,7 +81,7 @@ const reset = () => {
     res = await call({ ...valid, email: ' New@Linkbe.kr', name: ' 홍길동 ' });
     assert.strictEqual(res.code, 200);
     assert.deepStrictEqual(res.body, { registerSuccess: true });
-    assert.deepStrictEqual(created, { email: 'new@linkbe.kr', password: 'abcd1234', name: '홍길동', phone: '010-1234-5678', cpId: 1 });
+    assert.deepStrictEqual(created, { email: 'new@linkbe.kr', password: 'abcd1234', name: '홍길동', phone: '010-1234-5678', cpId: 1, doe: '2024-03-04', gender: 'male', birth: '1995-07-01' });
     assert.strictEqual(notices.length, 1);
     assert.strictEqual(notices[0].channel, '#hibye-관리');
     assert.ok(notices[0].text.includes('홍길동') && notices[0].text.includes('https://hibye.kr/admin'));
@@ -97,6 +104,8 @@ const reset = () => {
     assert.ok(/user_status/.test(insert.sql) && insert.params.includes('pending'), 'pending 저장');
     assert.ok(insert.params.includes('member'), 'member 저장');
     assert.ok(!insert.params.includes('abcd1234'), '비밀번호 평문 저장 금지');
+    assert.ok(/user_doe/.test(insert.sql) && /user_gender/.test(insert.sql) && /user_birth/.test(insert.sql), '인사 정보 저장');
+    assert.ok(insert.params.includes('2024-03-04') && insert.params.includes('male') && insert.params.includes('1995-07-01'));
     console.log('checkRegister ✅');
     process.exit(0);
 })().catch(err => {

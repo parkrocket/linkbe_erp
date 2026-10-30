@@ -5,11 +5,11 @@ const bcrypt = require('bcrypt');
 const User = {};
 
 // 회원가입 저장 — 관리자 승인 전까지 pending (입력값은 registerValidation으로 검증·정규화된 값)
-User.create = async ({ email, password, name, phone, cpId }) => {
+User.create = async ({ email, password, name, phone, cpId, doe, gender, birth }) => {
     const hash = await bcrypt.hash(password, 10);
     const [result] = await pool.query(
-        'INSERT INTO lk_user (user_id, user_email, user_password, user_name, user_phone, cp_id, user_role, user_status, user_datetime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())',
-        [email, email, hash, name, phone, cpId, 'member', 'pending'],
+        'INSERT INTO lk_user (user_id, user_email, user_password, user_name, user_phone, cp_id, user_doe, user_gender, user_birth, user_role, user_status, user_datetime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())',
+        [email, email, hash, name, phone, cpId, doe, gender, birth, 'member', 'pending'],
     );
     return result.insertId;
 };
