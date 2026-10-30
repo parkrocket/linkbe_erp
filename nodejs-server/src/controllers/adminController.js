@@ -2,6 +2,8 @@ const Admin = require('../models/adminModel');
 const Balance = require('../models/balanceModel');
 const BalanceLog = require('../models/balanceLog');
 const { validateAdjust } = require('../utils/balanceValidation');
+const { validateProfile } = require('../utils/profileValidation');
+const Org = require('../models/orgModel');
 const { escapeSlack } = require('../utils/slackEscape');
 const slack = require('../utils/slack'); // 호출 시점 참조 (점검 스크립트에서 가짜 교체)
 
@@ -129,4 +131,52 @@ exports.balanceLogs = handle(async (req, res) => {
     const mbNo = parseMbNo(req.params.mbNo);
     if (!mbNo || !(await Balance.exists(req.userCpId, mbNo))) return fail(res, 404, 'User not found');
     res.json({ logs: await BalanceLog.listByMember(req.userCpId, mbNo) });
+});
+
+// ── 직원 상세·인사 정보 ──
+// 입력 키 → [DB 칸, Slack 기록용 이름]
+const PROFILE_FIELDS = {
+    name: ['user_name', '이름'],
+    phone: ['user_phone', '연락처'],
+    doe: ['user_doe', '입사일'],
+    gender: ['user_gender', '성별'],
+    birth: ['user_birth', '생년월일'],
+    deptId: ['dept_id', '부서'],
+    positionId: ['position_id', '직급'],
+    employmentType: ['employment_type', '고용형태'],
+};
+
+exports.getUser = handle(async (req, res) => {
+    const mbNo = parseMbNo(req.params.mbNo);
+    const user = mbNo && (await Admin.findDetail(req.userCpId, mbNo));
+    if (!user) return fail(res, 404, 'User not found');
+    res.json({ user });
+});
+
+// 관리자 본인 정보도 수정 가능 (상태·권한과 달리 잠김 위험 없음)
+exports.updateProfile = handle(async (req, res) => {
+    const mbNo = parseMbNo(req.params.mbNo);
+    const target = mbNo && (await Admin.findDetail(req.userCpId, mbNo));
+    if (!target) return fail(res, 404, 'User not found');
+
+    const input = validateProfile(req.body);
+    if (input.error) return fail(res, 400, input.error);
+    const v = input.value;
+    // 부서·직급은 같은 회사 목록에 있는 번호만
+    if (v.deptId && !(await Org.exists(req.userCpId, 'departments', v.deptId))) return fail(res, 400, 'Invalid department');
+    if (v.positionId && !(await Org.exists(req.userCpId, 'positions', v.positionId))) return fail(res, 400, 'Invalid position');
+
+    const changed = Object.entries(PROFILE_FIELDS).filter(([key, [column]]) => (target[column] ?? null) !== v[key]);
+    if (!changed.length) return res.json({ ok: true });
+
+    await Admin.updateProfile(req.userCpId, mbNo, v);
+    // 기록에는 바뀐 항목 이름만 (생년월일 등 값은 넣지 않음 — 개인정보)
+    try {
+        const actor = await Admin.findByUserId(req.userCpId, req.userId);
+        const labels = changed.map(([, [, label]]) => label).join('·');
+        await slack.sendSlackMessage('#hibye-관리', `${escapeSlack(actor.user_name)}님이 ${escapeSlack(target.user_name)}님 정보를 수정했어요 (${labels})`);
+    } catch (error) {
+        console.error('profile slack notice failed:', error.message);
+    }
+    res.json({ ok: true });
 });

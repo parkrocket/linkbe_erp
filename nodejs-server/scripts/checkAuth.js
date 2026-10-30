@@ -27,6 +27,8 @@ async function call(path, { method = 'POST', cookie, headers = {}, body = '{}' }
     assert.strictEqual((await call('/api/admin/users', { method: 'GET' })).status, 401, 'admin/users 열려 있음');
     assert.strictEqual((await call('/api/admin/users/1/status', { body: '{"status":"approved"}' })).status, 401, 'admin 변경 열려 있음');
     assert.strictEqual((await call('/api/admin/balances', { method: 'GET' })).status, 401, 'admin/balances 열려 있음');
+    assert.strictEqual((await call('/api/admin/users/1', { method: 'GET' })).status, 401, 'admin 직원 상세 열려 있음');
+    assert.strictEqual((await call('/api/admin/org', { method: 'GET' })).status, 401, 'admin/org 열려 있음');
     assert.strictEqual((await call('/api/admin/balances', { body: '{}' })).status, 401, 'admin/balances 조정 열려 있음');
 
     // 2) 공개 API는 그대로 열림
