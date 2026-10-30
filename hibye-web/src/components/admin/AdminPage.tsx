@@ -19,7 +19,7 @@ export type RunAction = (action: () => Promise<unknown>, doneText: string) => Pr
 // /admin — 가입 승인·직원 관리는 목록 한 번 불러와 함께 사용, 연차·휴가 탭은 자체 데이터
 export function AdminPage({ myUserId }: { myUserId: string }) {
     const router = useRouter();
-    const { state, reload } = useApiData<{ users?: AdminUser[] }>('/api/admin/users', undefined, 'GET');
+    const { state, reload, refresh } = useApiData<{ users?: AdminUser[] }>('/api/admin/users', undefined, 'GET');
     const [tab, setTab] = useState<Tab>('pending');
     const [notice, setNotice] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null);
 
@@ -83,7 +83,7 @@ export function AdminPage({ myUserId }: { myUserId: string }) {
                             (tab === 'pending' ? (
                                 <PendingTab users={pending} run={run} />
                             ) : (
-                                <MembersTab users={users} myUserId={myUserId} run={run} onChanged={reload} />
+                                <MembersTab users={users} myUserId={myUserId} run={run} onChanged={refresh} />
                             ))}
                     </>
                 )}

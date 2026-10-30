@@ -3,8 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { apiFetch, ApiError, hasFailedFlag } from '@/lib/api';
-
-type State<T> = { status: 'loading' } | { status: 'error' } | { status: 'ok'; data: T };
+import { stateBeforeRefetch, type ApiState as State } from '@/lib/apiState';
 
 // 대시보드 카드 공용 — 카드마다 로딩·에러를 따로 가져 한 카드 실패가 다른 카드에 번지지 않음
 // method: 관리자 API 등 GET 조회는 'GET' (body 무시)
@@ -43,11 +42,17 @@ export function useApiData<T>(path: string, body: unknown, method: 'GET' | 'POST
 
     // 다시 시도: 로딩 표시 후 재요청
     const reload = useCallback(() => {
-        setState({ status: 'loading' });
+        setState(prev => stateBeforeRefetch(prev, false));
         request().then(next => next && setState(next));
     }, [request]);
 
-    return { state, reload };
+    // 저장 후 새로고침: 보이던 화면을 유지한 채 재요청 (팝업·안내 유지)
+    const refresh = useCallback(() => {
+        setState(prev => stateBeforeRefetch(prev, true));
+        request().then(next => next && setState(next));
+    }, [request]);
+
+    return { state, reload, refresh };
 }
 
 // 브라우저 기준 오늘 날짜 'YYYY-MM-DD'

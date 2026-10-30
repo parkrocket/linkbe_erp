@@ -49,12 +49,12 @@ export function MemberDialog({ mbNo, onClose, onChanged }: { mbNo: number; onClo
                 )}
                 {!loading && !failed && user && org.state.status === 'ok' && (
                     <MemberEditor
-                        key={JSON.stringify(user)} // 다시 불러오면 폼도 새 값으로
                         user={user}
                         departments={org.state.data.departments ?? []}
                         positions={org.state.data.positions ?? []}
+                        // 저장 후에는 화면을 유지한 채 새로고침 (로딩 화면으로 바뀌며 팝업·안내가 사라지지 않게)
                         onSaved={() => {
-                            detail.reload();
+                            detail.refresh();
                             onChanged();
                         }}
                     />
@@ -219,11 +219,16 @@ function BalanceEditor({ user, onSaved }: { user: MemberDetail; onSaved: () => v
         try {
             await saveBalances(reason.trim(), changes);
             setNotice({ tone: 'ok', text: '연차·휴가를 저장했어요.' });
+            setEdit({});
+            setReason('');
             onSaved();
         } catch (error) {
             setNotice({ tone: 'error', text: adminErrorMessage(error) });
             // 그 사이 잔여가 바뀜 → 최신 값으로 다시 불러옴 (덮어쓰기 방지)
-            if (error instanceof ApiError && error.reason === 'Balance changed') onSaved();
+            if (error instanceof ApiError && error.reason === 'Balance changed') {
+                setEdit({});
+                onSaved();
+            }
         } finally {
             setSaving(false);
         }
