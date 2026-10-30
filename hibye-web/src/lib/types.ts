@@ -7,6 +7,8 @@ export type User = {
     // 남은 연차(user_stip)·휴가(user_vaca) — DB DECIMAL이라 문자열로 올 수 있음
     user_stip?: number | string | null;
     user_vaca?: number | string | null;
+    user_role?: 'member' | 'admin';
+    user_status?: 'pending' | 'approved' | 'rejected' | 'inactive';
     [key: string]: unknown;
 };
 

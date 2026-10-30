@@ -4,9 +4,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/Button';
 import { apiFetch } from '@/lib/api';
+import { loginErrorMessage } from '@/lib/authMessages';
 import { safeRedirect } from '@/lib/redirect';
 
-type LoginResponse = { loginSuccess: boolean };
+type LoginResponse = { loginSuccess: boolean; error?: string };
 
 const INPUT_CLASS =
     'w-full rounded-lg border border-line bg-white px-3 py-2.5 text-sm text-ink placeholder:text-muted focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-primary-soft';
@@ -30,8 +31,8 @@ export function LoginForm() {
                 body: { email: form.get('email'), password: form.get('password') },
             });
             if (!res.loginSuccess) {
-                // 계정 존재 여부를 드러내지 않도록 단일 문구
-                setError('이메일 또는 비밀번호를 확인해 주세요.');
+                // 승인 대기·거절·비활성은 사유 안내, 그 외는 계정 존재 여부를 드러내지 않는 단일 문구
+                setError(loginErrorMessage(res.error));
                 return;
             }
             router.replace(safeRedirect(searchParams.get('redirect')));
