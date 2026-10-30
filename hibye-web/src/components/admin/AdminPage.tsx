@@ -8,13 +8,14 @@ import { ErrorState } from '@/components/ui/ErrorState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { adminErrorMessage } from '@/lib/authMessages';
 import type { AdminUser } from './adminApi';
+import { BalancesTab } from './BalancesTab';
 import { MembersTab } from './MembersTab';
 import { PendingTab } from './PendingTab';
 
-type Tab = 'pending' | 'members';
+type Tab = 'pending' | 'members' | 'balances';
 export type RunAction = (action: () => Promise<unknown>, doneText: string) => Promise<void>;
 
-// /admin — 가입 승인·직원 관리. 목록 한 번 불러와 두 탭이 함께 사용
+// /admin — 가입 승인·직원 관리는 목록 한 번 불러와 함께 사용, 연차·휴가 탭은 자체 데이터
 export function AdminPage({ myUserId }: { myUserId: string }) {
     const router = useRouter();
     const { state, reload } = useApiData<{ users?: AdminUser[] }>('/api/admin/users', undefined, 'GET');
@@ -40,7 +41,7 @@ export function AdminPage({ myUserId }: { myUserId: string }) {
     return (
         <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 md:py-10">
             <h1 className="text-2xl font-extrabold tracking-tight">관리</h1>
-            <p className="mt-1 text-sm text-muted">가입 신청을 승인하고 직원 계정을 관리해요. 모든 조치는 #hibye-관리에 기록돼요.</p>
+            <p className="mt-1 text-sm text-muted">가입 승인, 직원 계정, 연차·휴가를 관리해요. 모든 조치는 #hibye-관리에 기록돼요.</p>
 
             <div role="tablist" aria-label="관리 메뉴" className="mt-6 flex gap-1 border-b border-line">
                 <TabButton active={tab === 'pending'} onClick={() => setTab('pending')}>
@@ -48,6 +49,9 @@ export function AdminPage({ myUserId }: { myUserId: string }) {
                 </TabButton>
                 <TabButton active={tab === 'members'} onClick={() => setTab('members')}>
                     직원 관리
+                </TabButton>
+                <TabButton active={tab === 'balances'} onClick={() => setTab('balances')}>
+                    연차·휴가
                 </TabButton>
             </div>
 
@@ -63,14 +67,20 @@ export function AdminPage({ myUserId }: { myUserId: string }) {
             )}
 
             <Card className="mt-4">
-                {state.status === 'loading' && <Skeleton className="h-48 w-full" />}
-                {state.status === 'error' && <ErrorState onRetry={reload} />}
-                {state.status === 'ok' &&
-                    (tab === 'pending' ? (
-                        <PendingTab users={pending} run={run} />
-                    ) : (
-                        <MembersTab users={users} myUserId={myUserId} run={run} />
-                    ))}
+                {tab === 'balances' ? (
+                    <BalancesTab />
+                ) : (
+                    <>
+                        {state.status === 'loading' && <Skeleton className="h-48 w-full" />}
+                        {state.status === 'error' && <ErrorState onRetry={reload} />}
+                        {state.status === 'ok' &&
+                            (tab === 'pending' ? (
+                                <PendingTab users={pending} run={run} />
+                            ) : (
+                                <MembersTab users={users} myUserId={myUserId} run={run} />
+                            ))}
+                    </>
+                )}
             </Card>
         </main>
     );
