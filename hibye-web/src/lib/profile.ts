@@ -105,3 +105,6 @@ export function validateProfileForm(form: ProfileForm, today = todayLocal()): Pr
     // 값이 없는 키는 지움 (오류 없음 = {})
     return Object.fromEntries(Object.entries(errors).filter(([, v]) => v)) as ProfileErrors;
 }
+
+// 저장 안 된 변경 확인용 — 폼 칸이 모두 같은지
+export const isSameProfile = (a: ProfileForm, b: ProfileForm) => (Object.keys(a) as (keyof ProfileForm)[]).every(key => a[key] === b[key]);

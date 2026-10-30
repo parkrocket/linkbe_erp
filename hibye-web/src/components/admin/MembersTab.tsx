@@ -1,12 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Badge, type BadgeTone } from '@/components/ui/Badge';
+import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import type { RunAction } from './AdminPage';
 import { MemberDialog } from './MemberDialog';
-import { changeRole, changeStatus, joinedAt, STATUS_LABEL, type AdminUser } from './adminApi';
+import { changeRole, changeStatus, joinedAt, STATUS_LABEL, STATUS_TONE, type AdminUser } from './adminApi';
 
 const FILTERS: { value: AdminUser['user_status'] | 'all'; label: string }[] = [
     { value: 'all', label: '전체' },
@@ -16,12 +16,6 @@ const FILTERS: { value: AdminUser['user_status'] | 'all'; label: string }[] = [
     { value: 'pending', label: '승인 대기' },
 ];
 
-const STATUS_TONE: Record<AdminUser['user_status'], BadgeTone> = {
-    pending: 'pending',
-    approved: 'approved',
-    rejected: 'rejected',
-    inactive: 'neutral',
-};
 
 // 직원 관리 탭 — 상태 필터, 비활성화·다시 활성화·관리자 지정/해제
 export function MembersTab({ users, myUserId, run, onChanged }: { users: AdminUser[]; myUserId: string; run: RunAction; onChanged: () => void }) {

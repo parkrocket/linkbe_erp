@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dateError, toProfileForm, toProfilePayload, validateProfileForm, type MemberDetail, type ProfileForm } from './profile';
+import { dateError, isSameProfile, toProfileForm, toProfilePayload, validateProfileForm, type MemberDetail, type ProfileForm } from './profile';
 
 const TODAY = '2026-10-30';
 
@@ -85,5 +85,13 @@ describe('validateProfileForm', () => {
         expect(validateProfileForm({ ...form, phone: '010' }, TODAY).phone).toBe('휴대폰 번호를 확인해 주세요. (예: 010-1234-5678)');
         expect(validateProfileForm({ ...form, birth: '2030-01-01' }, TODAY).birth).toBe('생년월일을 확인해 주세요.');
         expect(validateProfileForm({ ...form, doe: '2030-01-01' }, TODAY).doe).toBe('입사일을 확인해 주세요.');
+    });
+});
+
+describe('isSameProfile', () => {
+    it('모든 칸이 같으면 같음, 하나라도 다르면 다름 (닫기 전 저장 안 된 변경 확인용)', () => {
+        expect(isSameProfile(form, { ...form })).toBe(true);
+        expect(isSameProfile(form, { ...form, deptId: '' })).toBe(false);
+        expect(isSameProfile(form, { ...form, name: '김직원 ' })).toBe(false);
     });
 });

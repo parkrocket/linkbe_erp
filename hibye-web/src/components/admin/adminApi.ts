@@ -1,3 +1,4 @@
+import type { BadgeTone } from '@/components/ui/Badge';
 import { apiFetch } from '@/lib/api';
 import type { BalanceChange } from '@/lib/balance';
 import type { ProfileForm } from '@/lib/profile';
@@ -21,6 +22,14 @@ export const STATUS_LABEL: Record<AdminUser['user_status'], string> = {
     approved: '승인',
     rejected: '거절',
     inactive: '비활성',
+};
+
+// 상태 배지 색 — 직원 목록·상세 팝업 공통
+export const STATUS_TONE: Record<AdminUser['user_status'], BadgeTone> = {
+    pending: 'pending',
+    approved: 'approved',
+    rejected: 'rejected',
+    inactive: 'neutral',
 };
 
 export const changeStatus = (mbNo: number, status: AdminUser['user_status']) =>

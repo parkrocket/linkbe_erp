@@ -11,7 +11,7 @@ export function RadioGroup({ label, name, value, options, onChange, error }: Pro
                 {options.map(o => (
                     <label
                         key={o.value}
-                        className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-primary ${
+                        className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2.5 text-sm has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-primary ${
                             value === o.value ? 'border-primary bg-primary-soft font-bold text-primary' : 'border-line bg-white'
                         }`}
                     >
