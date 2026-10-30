@@ -54,6 +54,17 @@ Admin.updateProfile = (cpId, mbNo, v) =>
         [v.name, v.phone, v.doe, v.gender, v.birth, v.deptId, v.positionId, v.employmentType, mbNo, cpId],
     );
 
+// 근태 현황 — 같은 회사 직원의 기간 내 근태 (개인정보 칸 제외), 날짜·이름순
+Admin.listLeaves = async (cpId, from, to) => {
+    const [rows] = await pool.query(
+        `SELECT v.id, DATE_FORMAT(v.date, '%Y-%m-%d') AS date, v.type, v.va_datetime, u.mb_no, u.user_name, u.dept_id, u.position_id, u.user_status
+         FROM lk_vacation v JOIN lk_user u ON u.user_id = v.user_id
+         WHERE u.cp_id = ? AND v.date BETWEEN ? AND ? ORDER BY v.date, u.user_name`,
+        [cpId, from, to],
+    );
+    return rows;
+};
+
 Admin.updateStatus = (mbNo, status) => pool.query('UPDATE lk_user SET user_status = ? WHERE mb_no = ?', [status, mbNo]);
 Admin.updateRole = (mbNo, role) => pool.query('UPDATE lk_user SET user_role = ? WHERE mb_no = ?', [role, mbNo]);
 

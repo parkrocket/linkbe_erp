@@ -20,6 +20,8 @@ const LEAVE_TYPES = {
     home: { column: null, days: 0, label: '재택' },
 };
 
+Apply.LEAVE_TYPES = LEAVE_TYPES;
+
 const HOME_LIMIT_PER_MONTH = 2; // 재택 월 최대 횟수 (회사 규정, 2026-10-29)
 const MAX_DATES_PER_REQUEST = 31; // 한 번에 신청 가능한 최대 일수 (요청 남용 방지)
 

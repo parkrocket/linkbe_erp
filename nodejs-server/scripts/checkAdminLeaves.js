@@ -69,10 +69,86 @@ const input = { id: 7, cpId: 1, actorMbNo: 1, reason: '날짜 잘못 신청' };
     assert.strictEqual(find(/INSERT INTO lk_balance_log/).length, 0);
     assert.strictEqual(find(/^DELETE/).length, 1);
 
-    if (process.argv[2] !== 'api') {
-        console.log('checkAdminLeaves(모델) ✅');
-        process.exit(0);
+
+    // ── 목록 SQL (pool 가짜) ──
+    let q;
+    pool.query = async (sql, params) => ((q = { sql, params }), [[]]);
+    const Admin = require('../src/models/adminModel');
+    await Admin.listLeaves(7, '2026-11-01', '2026-11-30');
+    assert.ok(/JOIN lk_user/.test(q.sql) && /u\.cp_id = \?/.test(q.sql) && /v\.date BETWEEN \? AND \?/.test(q.sql));
+    assert.ok(!/SELECT\s+\*/i.test(q.sql) && !/user_password|user_birth|user_gender/.test(q.sql));
+    assert.deepStrictEqual(q.params, [7, '2026-11-01', '2026-11-30']);
+
+    // ── API (모델·Slack 가짜) ──
+    const slack = require('../src/utils/slack');
+    let notices = [];
+    let slackFails = false;
+    slack.sendSlackMessage = async (channel, text) => {
+        if (slackFails) throw new Error('slack down');
+        notices.push({ channel, text });
+    };
+    let listArgs;
+    Admin.listLeaves = async (...args) => ((listArgs = args), [{ id: 1 }]);
+    Admin.findByUserId = async (cpId, userId) => (cpId === 1 && userId === 'me@x' ? { mb_no: 1, user_name: '관리자' } : undefined);
+    let cancelArgs;
+    let cancelImpl = async () => ({ userName: '김<b>직원', type: 'half', md: '11/05' });
+    Apply.cancelByAdmin = async args => ((cancelArgs = args), cancelImpl(args));
+
+    const admin = require('../src/controllers/adminController');
+    const call = async (fn, req) => {
+        const res = { code: 200 };
+        res.status = c => ((res.code = c), res);
+        res.json = b => ((res.body = b), res);
+        await fn({ userId: 'me@x', userCpId: 1, userRole: 'admin', params: {}, query: {}, body: {}, ...req }, res);
+        return res;
+    };
+
+    // 목록: 기간 검증 (실존 날짜, from ≤ to, 366일 이하), 요청자 회사
+    let res = await call(admin.listLeaves, { query: { from: '2026-11-01', to: '2026-11-30' } });
+    assert.deepStrictEqual(res.body, { leaves: [{ id: 1 }] });
+    assert.deepStrictEqual(listArgs, [1, '2026-11-01', '2026-11-30']);
+    res = await call(admin.listLeaves, { query: { from: '2026-01-01', to: '2026-12-31' } });
+    assert.strictEqual(res.code, 200, '올해 전체');
+    for (const query of [{}, { from: '2026-11-01' }, { from: '2026-02-30', to: '2026-03-01' }, { from: '2026-11-30', to: '2026-11-01' }, { from: '2025-01-01', to: '2026-12-31' }]) {
+        res = await call(admin.listLeaves, { query });
+        assert.deepStrictEqual([res.code, res.body.error], [400, 'Invalid range'], JSON.stringify(query));
     }
+
+    // 대신 취소: 사유 필수, 번호 형식
+    for (const reason of [undefined, '', '   ', 'a'.repeat(201)]) {
+        cancelArgs = undefined;
+        res = await call(admin.cancelLeave, { params: { id: '7' }, body: { reason } });
+        assert.deepStrictEqual([res.code, res.body.error], [400, 'Invalid reason']);
+        assert.strictEqual(cancelArgs, undefined);
+    }
+    res = await call(admin.cancelLeave, { params: { id: 'x' }, body: { reason: '사유' } });
+    assert.deepStrictEqual([res.code, res.body.error], [404, 'Leave not found']);
+
+    // 성공 → 요청자 회사·관리자 번호·trim 사유, Slack 기록(이스케이프)
+    notices = [];
+    res = await call(admin.cancelLeave, { params: { id: '7' }, body: { reason: ' 날짜 <잘못> 신청 ' } });
+    assert.deepStrictEqual([res.code, res.body], [200, { ok: true }]);
+    assert.deepStrictEqual(cancelArgs, { id: 7, cpId: 1, actorMbNo: 1, reason: '날짜 <잘못> 신청' });
+    assert.deepStrictEqual(notices, [{ channel: '#hibye-관리', text: '관리자님이 김&lt;b&gt;직원님의 11/05 반차을(를) 취소했어요 — 사유: 날짜 &lt;잘못&gt; 신청' }]);
+
+    // 모델 오류 코드는 그대로 (404·지난 날짜 400), Slack 없음
+    for (const [status, message] of [[404, 'Leave not found'], [400, 'Past date not allowed']]) {
+        notices = [];
+        cancelImpl = async () => {
+            throw new Apply.ApplyError(status, message);
+        };
+        res = await call(admin.cancelLeave, { params: { id: '7' }, body: { reason: '사유' } });
+        assert.deepStrictEqual([res.code, res.body.error], [status, message]);
+        assert.deepStrictEqual(notices, []);
+    }
+    // Slack 실패해도 이미 취소된 건은 성공 응답
+    cancelImpl = async () => ({ userName: '김직원', type: 'day', md: '11/05' });
+    slackFails = true;
+    res = await call(admin.cancelLeave, { params: { id: '7' }, body: { reason: '사유' } });
+    assert.deepStrictEqual([res.code, res.body], [200, { ok: true }]);
+
+    console.log('checkAdminLeaves ✅');
+    process.exit(0);
 })().catch(err => {
     console.error('checkAdminLeaves 실패 ❌', err.message);
     process.exit(1);

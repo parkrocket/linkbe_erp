@@ -2,7 +2,8 @@ const Admin = require('../models/adminModel');
 const Balance = require('../models/balanceModel');
 const BalanceLog = require('../models/balanceLog');
 const { validateAdjust } = require('../utils/balanceValidation');
-const { validateProfile } = require('../utils/profileValidation');
+const { validateProfile, isDateIn } = require('../utils/profileValidation');
+const Apply = require('../models/applyModel');
 const Org = require('../models/orgModel');
 const { escapeSlack } = require('../utils/slackEscape');
 const slack = require('../utils/slack'); // 호출 시점 참조 (점검 스크립트에서 가짜 교체)
@@ -238,5 +239,43 @@ exports.orgDelete = handle(async (req, res) => {
     const result = await Org.remove(req.userCpId, kind, id);
     if (result === 'in use') return fail(res, 409, 'In use');
     if (result === 'not found') return fail(res, 404, 'Not found');
+    res.json({ ok: true });
+});
+
+// ── 근태 현황·대신 취소 (관리자 3단계) ──
+const MAX_RANGE_DAYS = 366; // 기간 최대 일수 (올해 전체 조회까지)
+const DAY_MS = 24 * 60 * 60 * 1000;
+const validRange = (from, to) =>
+    isDateIn(from, '1900-01-01', '2999-12-31') &&
+    isDateIn(to, '1900-01-01', '2999-12-31') &&
+    from <= to &&
+    (Date.parse(to) - Date.parse(from)) / DAY_MS < MAX_RANGE_DAYS;
+
+exports.listLeaves = handle(async (req, res) => {
+    const { from, to } = req.query;
+    if (!validRange(from, to)) return fail(res, 400, 'Invalid range');
+    res.json({ leaves: await Admin.listLeaves(req.userCpId, from, to) });
+});
+
+// 오늘 이후 근태만, 사유 필수 — 삭제·잔여 복원·장부·캘린더는 본인 취소와 같은 처리(Apply.cancelByAdmin)
+exports.cancelLeave = handle(async (req, res) => {
+    const id = parseMbNo(req.params.id);
+    if (!id) return fail(res, 404, 'Leave not found');
+    const reason = typeof req.body.reason === 'string' ? req.body.reason.trim() : '';
+    if (!reason || reason.length > 200) return fail(res, 400, 'Invalid reason');
+
+    const actor = await Admin.findByUserId(req.userCpId, req.userId);
+    const leave = await Apply.cancelByAdmin({ id, cpId: req.userCpId, actorMbNo: actor.mb_no, reason });
+
+    // 기록은 취소 후 — Slack 실패가 이미 처리된 취소를 실패처럼 보이게 하지 않도록
+    try {
+        const label = Apply.LEAVE_TYPES[leave.type]?.label ?? leave.type;
+        await slack.sendSlackMessage(
+            '#hibye-관리',
+            `${escapeSlack(actor.user_name)}님이 ${escapeSlack(leave.userName)}님의 ${leave.md} ${label}을(를) 취소했어요 — 사유: ${escapeSlack(reason)}`,
+        );
+    } catch (error) {
+        console.error('leave cancel slack notice failed:', error.message);
+    }
     res.json({ ok: true });
 });

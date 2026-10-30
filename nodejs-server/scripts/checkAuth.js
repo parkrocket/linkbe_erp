@@ -29,6 +29,8 @@ async function call(path, { method = 'POST', cookie, headers = {}, body = '{}' }
     assert.strictEqual((await call('/api/admin/balances', { method: 'GET' })).status, 401, 'admin/balances 열려 있음');
     assert.strictEqual((await call('/api/admin/users/1', { method: 'GET' })).status, 401, 'admin 직원 상세 열려 있음');
     assert.strictEqual((await call('/api/admin/org', { method: 'GET' })).status, 401, 'admin/org 열려 있음');
+    assert.strictEqual((await call('/api/admin/leaves?from=2026-11-01&to=2026-11-30', { method: 'GET' })).status, 401, 'admin/leaves 열려 있음');
+    assert.strictEqual((await call('/api/admin/leaves/1/cancel', { body: '{"reason":"x"}' })).status, 401, 'admin 대신 취소 열려 있음');
     assert.strictEqual((await call('/api/admin/balances', { body: '{}' })).status, 401, 'admin/balances 조정 열려 있음');
 
     // 2) 공개 API는 그대로 열림
