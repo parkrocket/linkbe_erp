@@ -186,7 +186,7 @@ function reset(user = { mb_no: 5, cp_id: 1, user_name: '홍길동', user_stip: 5
     assert.deepStrictEqual(owner.params, [7, 'me'], '본인 소유 확인 (id + 토큰 주인)');
 
     // 취소: 반차 — DB의 종류·캘린더 ID 사용, 본인에게 0.5일 복원
-    reset(undefined, [[/FROM lk_vacation/, [{ id: 7, type: 'half', calendar_id: 'evt-7' }]]]);
+    reset(undefined, [[/FROM lk_vacation/, [{ id: 7, user_id: 'me', type: 'half', calendar_id: 'evt-7' }]]]);
     await Apply.cancel({ id: 7, userId: 'me' });
     const restore = queries.find(q => q.sql && /UPDATE lk_user SET user_stip = user_stip \+ \?/.test(q.sql));
     assert.ok(restore && restore.params[0] === 0.5 && restore.params[1] === 'me');
@@ -194,7 +194,7 @@ function reset(user = { mb_no: 5, cp_id: 1, user_name: '홍길동', user_stip: 5
     assert.ok(calendarCalls.includes('delete:evt-7'));
 
     // 취소: 재택 — 복원 없음
-    reset(undefined, [[/FROM lk_vacation/, [{ id: 8, type: 'home', calendar_id: null }]]]);
+    reset(undefined, [[/FROM lk_vacation/, [{ id: 8, user_id: 'me', type: 'home', calendar_id: null }]]]);
     await Apply.cancel({ id: 8, userId: 'me' });
     assert.ok(!ran(/UPDATE lk_user/));
 
@@ -224,13 +224,13 @@ function reset(user = { mb_no: 5, cp_id: 1, user_name: '홍길동', user_stip: 5
     assert.ok(queries.includes('ROLLBACK') && !queries.includes('COMMIT'));
     assert.ok(calendarCalls.includes('delete:evt-new'));
     // 취소 반차 → 사용자 행 잠금 후 복원, 장부 1행
-    reset(undefined, [[/FROM lk_vacation/, [{ id: 7, type: 'half', calendar_id: 'evt-7', md: '11/05' }]]]);
+    reset(undefined, [[/FROM lk_vacation/, [{ id: 7, user_id: 'me', type: 'half', calendar_id: 'evt-7', md: '11/05' }]]]);
     await Apply.cancel({ id: 7, userId: 'me' });
     assert.ok(ran(/FROM lk_user WHERE user_id = \? FOR UPDATE/), '취소도 사용자 행 잠금');
     assert.strictEqual(logs().length, 1);
     assert.deepStrictEqual(logs()[0].params, [1, 5, 5, 'cancel', 5, 5.5, 2, 2, '반차 취소 11/05']);
     // 취소 재택 → 기록 없음
-    reset(undefined, [[/FROM lk_vacation/, [{ id: 8, type: 'home', calendar_id: null, md: '11/05' }]]]);
+    reset(undefined, [[/FROM lk_vacation/, [{ id: 8, user_id: 'me', type: 'home', calendar_id: null, md: '11/05' }]]]);
     await Apply.cancel({ id: 8, userId: 'me' });
     assert.strictEqual(logs().length, 0);
 

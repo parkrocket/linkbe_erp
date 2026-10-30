@@ -179,20 +179,23 @@ Apply.insert = async ({ userId, date, type }) => {
     return id;
 };
 
-// 근태 취소 — 본인 소유 확인 후 종류·캘린더 ID는 DB 값 사용, 잔여는 본인에게 복원
-// (기존: id만으로 삭제 + 요청 바디의 userId에 복원 → 남의 근태 삭제·내 잔여 부풀리기 가능)
-Apply.cancel = async ({ id, userId }) => {
+// 근태 취소 공통 처리 — 대상 조회 조건만 다르고(본인 / 같은 회사 관리자) 삭제·잔여 복원·장부·캘린더 정리는 같음
+// where·params: 대상 조회 조건, actorMbNo: 장부 변경자(없으면 본인), memoSuffix: 장부 메모 뒤에 붙일 말, notPast: 지난 날짜 거절
+const cancelLeave = async ({ where, params, actorMbNo, memoSuffix = '', notPast = false }) => {
     const conn = await pool.getConnection();
     let row;
     try {
         await conn.beginTransaction();
 
         const [rows] = await conn.query(
-            "SELECT id, type, calendar_id, DATE_FORMAT(date, '%m/%d') AS md FROM lk_vacation WHERE id = ? AND user_id = ? FOR UPDATE",
-            [id, userId],
+            `SELECT v.id, v.type, v.calendar_id, v.user_id, u.user_name, DATE_FORMAT(v.date, '%m/%d') AS md, DATE_FORMAT(v.date, '%Y-%m-%d') AS ymd
+             FROM lk_vacation v JOIN lk_user u ON u.user_id = v.user_id WHERE ${where} FOR UPDATE`,
+            params,
         );
         row = rows[0];
         if (!row) throw new ApplyError(404, 'Leave not found');
+        // 오늘(KST)은 가능, 지난 날짜는 불가 — 'YYYY-MM-DD' 문자열 비교
+        if (notPast && row.ymd < Apply.today()) throw new ApplyError(400, 'Past date not allowed');
 
         await conn.query('DELETE FROM lk_vacation WHERE id = ?', [row.id]);
         const leave = LEAVE_TYPES[row.type];
@@ -200,21 +203,21 @@ Apply.cancel = async ({ id, userId }) => {
             // 장부의 '변경 전' 값을 위해 사용자 행 잠금 (동시 신청·조정과 직렬화)
             const [users] = await conn.query(
                 'SELECT mb_no, cp_id, user_stip, user_vaca FROM lk_user WHERE user_id = ? FOR UPDATE',
-                [userId],
+                [row.user_id],
             );
             const user = users[0];
             await conn.query(`UPDATE lk_user SET ${leave.column} = ${leave.column} + ? WHERE user_id = ?`, [
                 leave.days,
-                userId,
+                row.user_id,
             ]);
             await BalanceLog.insert(conn, {
                 cpId: user.cp_id,
                 mbNo: user.mb_no,
-                actorMbNo: user.mb_no,
+                actorMbNo: actorMbNo ?? user.mb_no,
                 kind: 'cancel',
                 before: balanceOf(user),
                 after: shifted(user, leave.column, leave.days),
-                memo: `${leave.label} 취소 ${row.md}`,
+                memo: `${leave.label} 취소 ${row.md}${memoSuffix}`,
             });
         }
 
@@ -232,6 +235,25 @@ Apply.cancel = async ({ id, userId }) => {
             .events.delete({ calendarId: process.env.GOOGLE_CALENDAR_ID, eventId: row.calendar_id })
             .catch(e => console.error('calendar delete failed:', row.calendar_id, e.message));
     }
+    return row;
+};
+
+// 본인 취소 — 소유 확인(id + 토큰 주인), 종류·캘린더 ID는 DB 값 사용
+// (기존: id만으로 삭제 + 요청 바디의 userId에 복원 → 남의 근태 삭제·내 잔여 부풀리기 가능)
+Apply.cancel = async ({ id, userId }) => {
+    await cancelLeave({ where: 'v.id = ? AND v.user_id = ?', params: [id, userId] });
+};
+
+// 관리자 대신 취소 — 같은 회사 직원의 오늘 이후 근태만, 장부 변경자는 관리자·메모에 사유
+Apply.cancelByAdmin = async ({ id, cpId, actorMbNo, reason }) => {
+    const row = await cancelLeave({
+        where: 'v.id = ? AND u.cp_id = ?',
+        params: [id, cpId],
+        actorMbNo,
+        memoSuffix: ` (관리자: ${reason})`,
+        notPast: true,
+    });
+    return { userName: row.user_name, type: row.type, md: row.md };
 };
 
 module.exports = Apply;
