@@ -70,8 +70,8 @@
   - 다른 회사 id → 404 `Not found`
 
 ### 3.3 회원가입 (`utils/registerValidation.js`, `User.create`)
-- 새 항목 `doe`, `gender`, `birth`: 3.1과 같은 규칙으로 **들어오면 형식 검사**, 저장
-- **필수 여부는 지금은 hibye-web 화면에서만** 강제 — 운영 중인 기존 react-app 가입 화면이 이 항목을 보내지 않아서 서버가 필수로 막으면 hibye.kr 가입이 끊김. **전환일에 서버에서도 필수**(CLAUDE.local.md 전환일 할 일에 추가)
+- 새 항목 `doe`, `gender`, `birth`를 **서버에서도 필수**로 검사(3.1과 같은 형식 규칙, null 불가) → `Invalid doe`/`Invalid gender`/`Invalid birth`, 저장
+- 기존 react-app 가입 화면은 이 항목을 보내지 않아 가입이 실패함 — 사용자 확인(2026-10-30): 당분간 가입 인원 없음, 전환일에 react-app 퇴역
 
 ## 4. 화면 (hibye-web)
 
@@ -92,12 +92,12 @@
 
 - `scripts/checkProfile.js`: validateProfile 각 사유·경계(오늘, 1900-01-01, 존재하지 않는 날짜 2026-02-30), 다른 회사 부서 id → `Invalid department`, 바뀐 항목만 UPDATE·Slack 항목명, 값 미포함, 상세 응답에 비밀번호 없음·회사 범위
 - `scripts/checkOrg.js`: 생성·중복 409·이름 변경·순서 교환·사용 중 삭제 409·다른 회사 404·`kind` 화이트리스트
-- `scripts/checkRegister.js` 보강: 새 항목 형식 오류, 없어도 통과(기존 화면 호환), 저장 값
+- `scripts/checkRegister.js` 보강: 새 항목 누락·형식 오류 각 사유, 저장 값
 - `checkAuth.js`: `/api/admin/org`, `/api/admin/users/1` 무인증 401
 - hibye-web vitest: `validateProfileForm`, 가입 새 항목 검사
 
 ## 7. 위험
 
-- 기존 react-app 가입 호환 → 서버 필수화는 전환일로 미룸(3.3)
+- 기존 react-app 가입 화면은 새 필수 항목 때문에 실패(3.3, 사용자 수용)
 - 부서 삭제와 동시 배정 경쟁 — 드묾, 발생 시 직원의 dept_id가 없는 id를 가리킴 → 화면은 '선택 안 함'으로 표시(목록에 없는 id 처리)
 - 개인정보 항목 추가 → 동의 문구 회사 정책 확인 필요(1단계 확인 항목과 함께)
