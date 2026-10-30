@@ -1,4 +1,5 @@
 // 일정 화면 — 회사 Google 캘린더 일정을 날짜 칸에 배치, 입력 폼 검사·요청 데이터 (서버 utils/eventValidation.js와 같은 규칙)
+import { ApiError } from './api';
 import { addDays, calendarWeeks } from './calendar';
 
 // GET /api/calendar/events 응답 항목
@@ -110,4 +111,26 @@ export function toEventPayload(form: EventForm) {
     return form.allDay
         ? { ...base, allDay: true, startDate: form.startDate, endDate: form.endDate }
         : { ...base, allDay: false, startDateTime: `${form.startDate}T${form.startTime}`, endDateTime: `${form.endDate}T${form.endTime}` };
+}
+
+const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
+const dayLabel = (date: string) => `${Number(date.slice(5, 7))}/${Number(date.slice(8))} (${WEEKDAYS[new Date(`${date}T00:00:00Z`).getUTCDay()]})`;
+
+// 상세 화면 기간 문구 — '11/5 (목)', '11/5 (목) ~ 11/6 (금)', '11/5 (목) 10:00 ~ 11:30'
+export function periodText(item: CalendarItem) {
+    if (item.allDay) return item.startDate === item.endDate ? dayLabel(item.startDate!) : `${dayLabel(item.startDate!)} ~ ${dayLabel(item.endDate!)}`;
+    const [sd, ed] = [kstDate(item.start), kstDate(item.end)];
+    return sd === ed
+        ? `${dayLabel(sd)} ${kstTime(item.start)} ~ ${kstTime(item.end)}`
+        : `${dayLabel(sd)} ${kstTime(item.start)} ~ ${dayLabel(ed)} ${kstTime(item.end)}`;
+}
+
+export function scheduleErrorMessage(error: unknown) {
+    if (error instanceof ApiError) {
+        if (error.reason === 'Not allowed') return '일정을 만든 사람과 관리자만 수정·삭제할 수 있어요.';
+        if (error.reason === 'Leave event') return '근태 일정은 근태 화면에서 취소해 주세요.';
+        if (error.reason === 'Event not found') return '이미 삭제된 일정이에요. 새로고침해 주세요.';
+        if (error.status === 400) return '입력값을 확인해 주세요.';
+    }
+    return '처리하지 못했어요. 잠시 후 다시 시도해 주세요.';
 }

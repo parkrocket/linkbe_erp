@@ -108,3 +108,24 @@ describe('폼', () => {
         });
     });
 });
+
+describe('scheduleErrorMessage·periodText', () => {
+    it('서버 사유별 안내', async () => {
+        const { ApiError } = await import('./api');
+        const { scheduleErrorMessage } = await import('./schedule');
+        expect(scheduleErrorMessage(new ApiError(403, 'Not allowed'))).toBe('일정을 만든 사람과 관리자만 수정·삭제할 수 있어요.');
+        expect(scheduleErrorMessage(new ApiError(403, 'Leave event'))).toBe('근태 일정은 근태 화면에서 취소해 주세요.');
+        expect(scheduleErrorMessage(new ApiError(404, 'Event not found'))).toBe('이미 삭제된 일정이에요. 새로고침해 주세요.');
+        expect(scheduleErrorMessage(new ApiError(400, 'Invalid date'))).toBe('입력값을 확인해 주세요.');
+        expect(scheduleErrorMessage(new Error('x'))).toBe('처리하지 못했어요. 잠시 후 다시 시도해 주세요.');
+    });
+
+    it('기간 문구', async () => {
+        const { periodText } = await import('./schedule');
+        expect(periodText(item({}))).toBe('11/5 (목)');
+        expect(periodText(item({ endDate: '2026-11-06' }))).toBe('11/5 (목) ~ 11/6 (금)');
+        expect(periodText(item({ allDay: false, start: '2026-11-05T10:00:00+09:00', end: '2026-11-05T11:30:00+09:00', startDate: undefined, endDate: undefined }))).toBe(
+            '11/5 (목) 10:00 ~ 11:30',
+        );
+    });
+});
