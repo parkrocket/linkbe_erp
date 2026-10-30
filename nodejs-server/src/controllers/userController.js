@@ -4,6 +4,7 @@ const secretKey = process.env.JWT_SECRET_KEY;
 
 const { toSafeUser } = require('../utils/safeUser');
 const { validateRegister } = require('../utils/registerValidation');
+const { escapeSlack } = require('../utils/slackEscape');
 const Company = require('../models/companyModel');
 const slack = require('../utils/slack'); // 호출 시점에 slack.sendSlackMessage 참조 (점검 스크립트에서 가짜 교체 가능)
 
@@ -82,7 +83,7 @@ exports.register = async (req, res) => {
     }
 
     // 알림 실패는 가입 결과에 영향 없음 (sendSlackMessage가 오류를 기록만 함)
-    await slack.sendSlackMessage('#hibye-관리', `${input.name}님이 가입 승인을 기다리고 있어요 → ${ADMIN_URL}`);
+    await slack.sendSlackMessage('#hibye-관리', `${escapeSlack(input.name)}님이 가입 승인을 기다리고 있어요 → ${ADMIN_URL}`);
     return res.status(200).json({ registerSuccess: true });
 };
 
@@ -114,6 +115,10 @@ exports.auth = (req, res) => {
                 return res.status(200).json({ isAuth: false, error: 'User not found' });
             }
 
+            // 공개 경로라 requireAuth를 거치지 않음 → 여기서도 승인 상태 확인 (비활성화되면 화면도 바로 로그아웃 상태)
+            if (user.user_status !== 'approved') {
+                return res.status(200).json({ isAuth: false, error: 'Account not active' });
+            }
             return res.json({ isAuth: true, user: toSafeUser(user) });
         });
     });

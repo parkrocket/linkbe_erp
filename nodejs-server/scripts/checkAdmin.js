@@ -66,6 +66,12 @@ const call = async (fn, req) => {
     assert.strictEqual(notices[0].channel, '#hibye-관리');
     assert.ok(notices[0].text.includes('관리자') && notices[0].text.includes('신입') && notices[0].text.includes('승인'));
 
+    // 대상 이름의 Slack 문법 이스케이프
+    reset();
+    users[1].user_name = '<!here> & <https://x|y>';
+    await call(admin.changeStatus, { params: { mbNo: '2' }, body: { status: 'approved' } });
+    assert.ok(notices[0].text.includes('&lt;!here&gt; &amp; &lt;https://x|y&gt;') && !notices[0].text.includes('<!here>'));
+
     // 허용되지 않는 전이 → 400, 변경·알림 없음
     reset();
     res = await call(admin.changeStatus, { params: { mbNo: '3' }, body: { status: 'rejected' } });

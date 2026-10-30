@@ -9,6 +9,7 @@ const User = require('../models/userModel');
 const Gtw = require('../models/gtwModel');
 const Vca = require('../models/vacationModel');
 const Apply = require('../models/applyModel');
+const { escapeSlack } = require('../utils/slackEscape');
 const moment = require('moment');
 const { WebClient } = require('@slack/web-api');
 
@@ -249,12 +250,12 @@ const handleInteractions = async (req, res) => {
             const user = await User.findByEmailAsync(userEmail);
             const message =
                 {
-                    half: `${user.user_name}님이 ${selectedDate}에 반차를 사용하셨습니다.`,
-                    day: `${user.user_name}님이 ${selectedDate}에 연차를 사용하셨습니다.`,
-                    home: `${user.user_name}님이 ${selectedDate}에 재택근무를 사용하셨습니다.`,
-                    vacation: `${user.user_name}님이 ${selectedDate}에 휴가를 사용하셨습니다.`,
+                    half: `${escapeSlack(user.user_name)}님이 ${selectedDate}에 반차를 사용하셨습니다.`,
+                    day: `${escapeSlack(user.user_name)}님이 ${selectedDate}에 연차를 사용하셨습니다.`,
+                    home: `${escapeSlack(user.user_name)}님이 ${selectedDate}에 재택근무를 사용하셨습니다.`,
+                    vacation: `${escapeSlack(user.user_name)}님이 ${selectedDate}에 휴가를 사용하셨습니다.`,
                 }[selectedOption] ||
-                `${user.user_name}님이 ${selectedDate}에 알 수 없는 활동을 하셨습니다.`;
+                `${escapeSlack(user.user_name)}님이 ${selectedDate}에 알 수 없는 활동을 하셨습니다.`;
 
             // 알림은 신청이 성공한 뒤에만 (알림 실패가 신청 결과를 바꾸지 않도록 기록만)
             await sendSlackMessage('#출퇴근', message).catch(e => console.error('slack notify failed:', e.message));

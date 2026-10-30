@@ -1,4 +1,5 @@
 const Admin = require('../models/adminModel');
+const { escapeSlack } = require('../utils/slackEscape');
 const slack = require('../utils/slack'); // 호출 시점 참조 (점검 스크립트에서 가짜 교체)
 
 // 관리자 API — requireAuth(승인·상태 확인) + requireAdmin 뒤에서만 호출됨
@@ -40,7 +41,7 @@ async function removesLastAdmin(cpId, target) {
 async function record(req, target, action) {
     const actor = await Admin.findByUserId(req.userCpId, req.userId);
     const actorName = actor ? actor.user_name : req.userId;
-    await slack.sendSlackMessage('#hibye-관리', `${actorName}님이 ${target.user_name}님을 ${action}했어요`);
+    await slack.sendSlackMessage('#hibye-관리', `${escapeSlack(actorName)}님이 ${escapeSlack(target.user_name)}님을 ${action}했어요`);
 }
 
 const handle = fn => async (req, res) => {

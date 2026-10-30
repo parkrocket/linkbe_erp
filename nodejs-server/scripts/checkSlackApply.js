@@ -82,6 +82,13 @@ function fakeRes() {
     assert.strictEqual(sentMessages.length, 1);
     assert.ok(sentMessages[0].text.includes('홍길동') && sentMessages[0].text.includes('연차'));
 
+    // 이름의 Slack 문법 이스케이프
+    User.findByEmailAsync = async () => ({ user_id: 'me@linkbe.kr', user_name: '<!channel>' });
+    sentMessages = [];
+    await handleInteractions(submission('day', '2026-11-19'), fakeRes());
+    assert.ok(sentMessages[0].text.includes('&lt;!channel&gt;') && !sentMessages[0].text.includes('<!channel>'));
+    User.findByEmailAsync = async () => ({ user_id: 'me@linkbe.kr', user_name: '홍길동' });
+
     // 규칙 위반: 모달에 이유 표시(errors), 알림 보내지 않음
     const cases = [
         ['Monthly home limit exceeded', 'input_date', '재택은 한 달에 최대 2회'],

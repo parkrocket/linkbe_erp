@@ -23,6 +23,9 @@ async function call(path, { method = 'POST', cookie, headers = {}, body = '{}' }
         assert.strictEqual((await call(path)).status, 401, `${path} 로그인 없이 열려 있음`);
     }
     assert.strictEqual((await call('/api/calendar/events', { method: 'GET' })).status, 401, 'calendar/events 열려 있음');
+    // 관리자 API: 로그인 없으면 401 (연결 순서가 바뀌어 requireAuth를 건너뛰는 회귀 방지)
+    assert.strictEqual((await call('/api/admin/users', { method: 'GET' })).status, 401, 'admin/users 열려 있음');
+    assert.strictEqual((await call('/api/admin/users/1/status', { body: '{"status":"approved"}' })).status, 401, 'admin 변경 열려 있음');
 
     // 2) 공개 API는 그대로 열림
     assert.strictEqual((await call('/api/test', { method: 'GET' })).status, 200);

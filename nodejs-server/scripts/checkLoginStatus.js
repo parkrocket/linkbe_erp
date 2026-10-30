@@ -76,6 +76,25 @@ const runMiddleware = (mw, req) =>
     r = await runMiddleware(requireAdmin, { userRole: 'admin' });
     assert.strictEqual(r.code, 'next');
 
+    // /users/auth(공개 경로): 비활성·거절·대기 계정은 토큰이 유효해도 isAuth:false — 화면이 로그인 상태로 보이지 않게
+    for (const status of ['inactive', 'rejected', 'pending']) {
+        User.findByEmail = (id, cb) => cb(null, { user_id: id, user_name: '홍', user_password: 'hash', user_status: status });
+        const ar = fakeRes();
+        await new Promise(resolve => {
+            ar.json = b => ((ar.body = b), resolve(), ar);
+            userController.auth({ body: { x_auth: token } }, ar);
+        });
+        assert.strictEqual(ar.body.isAuth, false, status);
+        assert.strictEqual(ar.body.error, 'Account not active');
+    }
+    User.findByEmail = (id, cb) => cb(null, { user_id: id, user_name: '홍', user_password: 'hash', user_status: 'approved' });
+    const okAuth = fakeRes();
+    await new Promise(resolve => {
+        okAuth.json = b => ((okAuth.body = b), resolve(), okAuth);
+        userController.auth({ body: { x_auth: token } }, okAuth);
+    });
+    assert.strictEqual(okAuth.body.isAuth, true);
+
     // refresh: 요청 바디의 userId가 아닌 토큰 주인(req.userId)으로 조회
     let refreshedId;
     User.findByEmail = (id, cb) => ((refreshedId = id), cb(null, { user_id: id, user_password: 'hash' }));

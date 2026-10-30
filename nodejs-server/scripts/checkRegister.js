@@ -12,7 +12,8 @@ const Company = require('../src/models/companyModel');
 let existing;
 let created;
 const originalCreate = User.create;
-User.findStatusById = async () => existing;
+let lookedUp;
+User.findStatusById = async id => ((lookedUp = id), existing);
 User.create = async input => ((created = input), 99);
 Company.existsAsync = async cpId => cpId === 1;
 
@@ -59,6 +60,7 @@ const reset = () => {
     let res = await call({ ...valid, email: '  NEW@Linkbe.KR ' });
     assert.strictEqual(res.code, 409);
     assert.strictEqual(res.body.error, 'Email already registered');
+    assert.strictEqual(lookedUp, 'new@linkbe.kr', '정규화된 이메일로 중복 조회해야 함');
 
     // 거절된 이메일 재가입 → 409 Registration rejected
     reset();
@@ -76,6 +78,12 @@ const reset = () => {
     assert.strictEqual(notices.length, 1);
     assert.strictEqual(notices[0].channel, '#hibye-관리');
     assert.ok(notices[0].text.includes('홍길동') && notices[0].text.includes('https://hibye.kr/admin'));
+
+    // 이름의 Slack 문법(<!channel>, <링크|문구>)은 이스케이프해 멘션·피싱 링크로 해석되지 않게
+    reset();
+    await call({ ...valid, name: '<!channel> <https://evil.example|승인하기>' });
+    assert.ok(!notices[0].text.includes('<!channel>') && !notices[0].text.includes('<https://'), '슬랙 문법 주입');
+    assert.ok(notices[0].text.includes('&lt;!channel&gt;'));
 
     // 특수문자 비밀번호 허용
     reset();
