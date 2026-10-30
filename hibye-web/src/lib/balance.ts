@@ -22,7 +22,7 @@ export type BalanceChange = {
 
 export type BalanceLogRow = {
     id: number;
-    kind: 'admin' | 'apply' | 'cancel';
+    kind: 'admin' | 'apply' | 'cancel' | 'grant';
     stip_before: number | null;
     stip_after: number | null;
     vaca_before: number | null;
@@ -32,7 +32,11 @@ export type BalanceLogRow = {
     created_at: string;
 };
 
-export const LOG_KIND_LABEL: Record<BalanceLogRow['kind'], string> = { admin: '관리자 조정', apply: '신청', cancel: '취소' };
+export const LOG_KIND_LABEL: Record<BalanceLogRow['kind'], string> = { admin: '관리자 조정', apply: '신청', cancel: '취소', grant: '자동 부여' };
+
+// 이력의 변경자 — 자동 부여는 시스템(사람 없음)
+export const actorLabel = (log: Pick<BalanceLogRow, 'kind' | 'actor_name'>) =>
+    log.kind === 'grant' ? '자동' : (log.actor_name ?? '알 수 없음');
 
 const MAX_BALANCE = 365;
 

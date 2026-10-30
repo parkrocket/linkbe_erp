@@ -6,12 +6,13 @@ import { Badge, type BadgeTone } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { LOG_KIND_LABEL, type BalanceLogRow, type BalanceRow } from '@/lib/balance';
+import { actorLabel, LOG_KIND_LABEL, type BalanceLogRow, type BalanceRow } from '@/lib/balance';
 
 const KIND_TONE: Record<BalanceLogRow['kind'], BadgeTone> = {
     admin: 'info',
     apply: 'neutral',
     cancel: 'pending',
+    grant: 'approved',
 };
 
 const WHEN = new Intl.DateTimeFormat('ko-KR', {
@@ -55,7 +56,7 @@ export function BalanceHistory({ member, onClose }: { member: BalanceRow; onClos
                                 </p>
                                 <p className="mt-1 break-words text-muted">{log.memo}</p>
                                 <p className="mt-0.5 text-xs text-muted">
-                                    {WHEN.format(new Date(log.created_at))} · {log.actor_name ?? '알 수 없음'}
+                                    {WHEN.format(new Date(log.created_at))} · {actorLabel(log)}
                                 </p>
                             </li>
                         ))}

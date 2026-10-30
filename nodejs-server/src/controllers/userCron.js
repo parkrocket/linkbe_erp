@@ -15,3 +15,30 @@ cron.schedule('0 0 * * *', async () => {
         console.error('Error updating gtw_status:', error);
     }
 });
+
+// 신입 월차 자동 부여 — 매달 1일 00:05 한국 시간 (서버 시계는 UTC라 timezone 지정)
+// 실패는 로그만 (서버가 죽지 않게), 부여 후 #hibye-관리 요약
+const MonthlyGrant = require('../models/monthlyGrant');
+const { kstToday } = require('../utils/profileValidation');
+
+const grantMonthly = async (today = kstToday()) => {
+    try {
+        const result = await MonthlyGrant.run(today);
+        await MonthlyGrant.notify(result);
+        if (result.granted.length) console.log(`monthly grant ${result.month}: ${result.granted.length}명`);
+    } catch (error) {
+        console.error('monthly grant failed:', error.message);
+    }
+};
+
+// 시작 시 보충: 1~3일에만 이번 달 몫 (1일에 서버가 꺼져 있던 경우). 월 중간 배포·재시작으로 그 달 몫이
+// 갑자기 부여되면 도입 전 수동 부여와 겹칠 수 있어 제한. 지난 달 소급 없음, 중복은 장부로 방지
+const CATCH_UP_DAYS = 3;
+const catchUp = async (today = kstToday()) => {
+    if (Number(today.slice(8, 10)) <= CATCH_UP_DAYS) await grantMonthly(today);
+};
+
+cron.schedule('5 0 1 * *', () => grantMonthly(), { timezone: 'Asia/Seoul' });
+catchUp();
+
+module.exports = { grantMonthly, catchUp };

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { balanceErrors, diffBalances, validateBalance, type BalanceRow } from './balance';
+import { actorLabel, balanceErrors, diffBalances, LOG_KIND_LABEL, validateBalance, type BalanceRow } from './balance';
 
 describe('validateBalance', () => {
     it('빈 값·범위·단위 오류', () => {
@@ -56,5 +56,14 @@ describe('balanceErrors', () => {
     it('한 칸만 고쳐도 다른 칸의 잘못된 현재값을 알려줌 (조용히 저장 목록에서 빠지지 않게)', () => {
         expect(balanceErrors(legacy, { vaca: '3' })).toEqual({ stip: '0~365 사이로 입력해 주세요', vaca: null });
         expect(balanceErrors(legacy, { stip: '5', vaca: '3' })).toEqual({ stip: null, vaca: null });
+    });
+});
+
+describe('이력 표시', () => {
+    it('자동 부여 라벨과 변경자', () => {
+        expect(LOG_KIND_LABEL.grant).toBe('자동 부여');
+        expect(actorLabel({ kind: 'grant', actor_name: null })).toBe('자동');
+        expect(actorLabel({ kind: 'admin', actor_name: '관리자' })).toBe('관리자');
+        expect(actorLabel({ kind: 'apply', actor_name: null })).toBe('알 수 없음');
     });
 });
