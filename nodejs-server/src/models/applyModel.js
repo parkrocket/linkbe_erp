@@ -1,4 +1,5 @@
 const pool = require('../config/dbPromise');
+const BalanceLog = require('./balanceLog');
 const { google } = require('googleapis');
 
 const Apply = {};
@@ -49,6 +50,18 @@ Apply.today = () => Apply.kstToday();
 const countBy = (items, keyOf) =>
     items.reduce((acc, item) => ({ ...acc, [keyOf(item)]: (acc[keyOf(item)] ?? 0) + 1 }), {});
 
+// 'YYYY-MM-DD' → 'MM/DD' (장부 메모용)
+const monthDay = date => date.slice(5).replace('-', '/');
+
+// 잔여 컬럼 → 장부의 전·후 값 형태 (해당 컬럼만 delta만큼 변화)
+const balanceOf = user => ({ stip: user.user_stip, vaca: user.user_vaca });
+const shifted = (user, column, delta) => {
+    const next = { ...balanceOf(user) };
+    const key = column === 'user_stip' ? 'stip' : 'vaca';
+    next[key] = Number(next[key]) + delta;
+    return next;
+};
+
 const calendar = () => google.calendar({ version: 'v3', auth: auths });
 
 // 근태 여러 날 신청 — 하나라도 안 되면 전체 거절(사용자 결정). 검증 → 잔여·중복·재택 횟수 확인 →
@@ -74,7 +87,7 @@ Apply.insertMany = async ({ userId, dates, type }) => {
 
         // FOR UPDATE: 같은 사용자의 동시 신청을 직렬화 — 잔여 음수·재택 횟수 초과 경쟁 방지
         const [users] = await conn.query(
-            'SELECT user_name, user_stip, user_vaca, user_status FROM lk_user WHERE user_id = ? FOR UPDATE',
+            'SELECT mb_no, cp_id, user_name, user_stip, user_vaca, user_status FROM lk_user WHERE user_id = ? FOR UPDATE',
             [userId],
         );
         const user = users[0];
@@ -124,6 +137,16 @@ Apply.insertMany = async ({ userId, dates, type }) => {
                 totalDays,
                 userId,
             ]);
+            // 같은 트랜잭션으로 장부 기록 — 실패 시 신청 전체 롤백
+            await BalanceLog.insert(conn, {
+                cpId: user.cp_id,
+                mbNo: user.mb_no,
+                actorMbNo: user.mb_no,
+                kind: 'apply',
+                before: balanceOf(user),
+                after: shifted(user, leave.column, -totalDays),
+                memo: `${leave.label} 신청 ${sorted.map(monthDay).join(', ')}`,
+            });
         }
         const insertIds = [];
         for (const { date, id } of events) {
@@ -165,7 +188,7 @@ Apply.cancel = async ({ id, userId }) => {
         await conn.beginTransaction();
 
         const [rows] = await conn.query(
-            'SELECT id, type, calendar_id FROM lk_vacation WHERE id = ? AND user_id = ? FOR UPDATE',
+            "SELECT id, type, calendar_id, DATE_FORMAT(date, '%m/%d') AS md FROM lk_vacation WHERE id = ? AND user_id = ? FOR UPDATE",
             [id, userId],
         );
         row = rows[0];
@@ -174,10 +197,25 @@ Apply.cancel = async ({ id, userId }) => {
         await conn.query('DELETE FROM lk_vacation WHERE id = ?', [row.id]);
         const leave = LEAVE_TYPES[row.type];
         if (leave && leave.column) {
+            // 장부의 '변경 전' 값을 위해 사용자 행 잠금 (동시 신청·조정과 직렬화)
+            const [users] = await conn.query(
+                'SELECT mb_no, cp_id, user_stip, user_vaca FROM lk_user WHERE user_id = ? FOR UPDATE',
+                [userId],
+            );
+            const user = users[0];
             await conn.query(`UPDATE lk_user SET ${leave.column} = ${leave.column} + ? WHERE user_id = ?`, [
                 leave.days,
                 userId,
             ]);
+            await BalanceLog.insert(conn, {
+                cpId: user.cp_id,
+                mbNo: user.mb_no,
+                actorMbNo: user.mb_no,
+                kind: 'cancel',
+                before: balanceOf(user),
+                after: shifted(user, leave.column, leave.days),
+                memo: `${leave.label} 취소 ${row.md}`,
+            });
         }
 
         await conn.commit();

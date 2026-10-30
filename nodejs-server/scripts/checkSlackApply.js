@@ -30,9 +30,6 @@ slackUtils.sendSlackMessage = async (channel, text) => sentMessages.push({ chann
 
 const User = require('../src/models/userModel');
 User.findByEmailAsync = async () => ({ user_id: 'me@linkbe.kr', user_name: '홍길동' });
-User.stipUpdateAsync = async () => {
-    throw new Error('기존 차감 경로를 쓰면 안 됨');
-};
 
 const Apply = require('../src/models/applyModel');
 let applyArgs;

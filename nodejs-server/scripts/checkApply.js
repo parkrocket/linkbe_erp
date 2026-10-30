@@ -38,7 +38,7 @@ Apply.today = () => '2026-10-29';
 const ran = sql => queries.some(q => q.sql && sql.test(q.sql));
 const statusOf = p => p.then(() => 200, e => e.status || 500);
 
-function reset(user = { user_name: '홍길동', user_stip: 5, user_vaca: 2 }, extra = []) {
+function reset(user = { mb_no: 5, cp_id: 1, user_name: '홍길동', user_stip: 5, user_vaca: 2 }, extra = []) {
     calendarCalls = [];
     queries = [];
     // 실제 DB 행처럼 상태 기본값 approved (각 테스트는 필요한 값만 덮어씀)
@@ -197,6 +197,42 @@ function reset(user = { user_name: '홍길동', user_stip: 5, user_vaca: 2 }, ex
     reset(undefined, [[/FROM lk_vacation/, [{ id: 8, type: 'home', calendar_id: null }]]]);
     await Apply.cancel({ id: 8, userId: 'me' });
     assert.ok(!ran(/UPDATE lk_user/));
+
+    // ── 잔여 장부 (관리자 2단계) ──
+    const logs = () => queries.filter(q => q.sql && /INSERT INTO lk_balance_log/.test(q.sql));
+    // 연차 3일 신청 → 장부 1행(전·후, 본인이 변경자), 커밋 전에 같은 트랜잭션으로
+    reset(undefined, [[/INSERT INTO lk_vacation/, { insertId: 90 }]]);
+    await Apply.insertMany({ userId: 'me', dates: ['2026-11-20', '2026-11-18', '2026-11-19'], type: 'day' });
+    assert.strictEqual(logs().length, 1);
+    assert.deepStrictEqual(logs()[0].params, [1, 5, 5, 'apply', 5, 2, 2, 2, '연차 신청 11/18, 11/19, 11/20']);
+    assert.ok(queries.indexOf(logs()[0]) < queries.indexOf('COMMIT'), '장부는 커밋 전에 기록');
+    // 반차 0.5일
+    reset(undefined, [[/INSERT INTO lk_vacation/, { insertId: 91 }]]);
+    await Apply.insert({ userId: 'me', date: '2026-11-03', type: 'half' });
+    assert.deepStrictEqual(logs()[0].params, [1, 5, 5, 'apply', 5, 4.5, 2, 2, '반차 신청 11/03']);
+    // 휴가는 user_vaca만 변화
+    reset(undefined, [[/INSERT INTO lk_vacation/, { insertId: 92 }]]);
+    await Apply.insert({ userId: 'me', date: '2026-11-03', type: 'vacation' });
+    assert.deepStrictEqual(logs()[0].params, [1, 5, 5, 'apply', 5, 5, 2, 1, '휴가 신청 11/03']);
+    // 재택은 차감이 없어 기록하지 않음
+    reset(undefined, [[/INSERT INTO lk_vacation/, { insertId: 93 }]]);
+    await Apply.insert({ userId: 'me', date: '2026-11-03', type: 'home' });
+    assert.strictEqual(logs().length, 0);
+    // 장부 기록 실패 → 신청 전체 롤백 + 캘린더 일정 정리
+    reset(undefined, [[/INSERT INTO lk_balance_log/, new Error('log down')], [/INSERT INTO lk_vacation/, { insertId: 94 }]]);
+    assert.strictEqual(await statusOf(Apply.insert({ userId: 'me', date: '2026-11-03', type: 'day' })), 500);
+    assert.ok(queries.includes('ROLLBACK') && !queries.includes('COMMIT'));
+    assert.ok(calendarCalls.includes('delete:evt-new'));
+    // 취소 반차 → 사용자 행 잠금 후 복원, 장부 1행
+    reset(undefined, [[/FROM lk_vacation/, [{ id: 7, type: 'half', calendar_id: 'evt-7', md: '11/05' }]]]);
+    await Apply.cancel({ id: 7, userId: 'me' });
+    assert.ok(ran(/FROM lk_user WHERE user_id = \? FOR UPDATE/), '취소도 사용자 행 잠금');
+    assert.strictEqual(logs().length, 1);
+    assert.deepStrictEqual(logs()[0].params, [1, 5, 5, 'cancel', 5, 5.5, 2, 2, '반차 취소 11/05']);
+    // 취소 재택 → 기록 없음
+    reset(undefined, [[/FROM lk_vacation/, [{ id: 8, type: 'home', calendar_id: null, md: '11/05' }]]]);
+    await Apply.cancel({ id: 8, userId: 'me' });
+    assert.strictEqual(logs().length, 0);
 
     // 컨트롤러: 요청 바디의 userId는 무시하고 토큰 주인 사용, 오류 코드 그대로 응답
     const controller = require('../src/controllers/applyController');

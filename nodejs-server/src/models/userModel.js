@@ -23,25 +23,6 @@ User.findByEmail = (userId, callback) => {
     });
 };
 
-User.stipUpdate = (userId, stip, type, callback) => {
-
-    console.log(type);
-
-    if(type === "vacation"){
-        query = 'UPDATE lk_user SET user_vaca = user_vaca - ? WHERE user_id = ?';
-    }else{
-        query = 'UPDATE lk_user SET user_stip = user_stip - ? WHERE user_id = ?';
-    }
-    queryParams = [stip, userId];
-
-    db.query(query, queryParams, (err, results) => {
-        if (err) {
-            return callback(err, null);
-        }
-        return callback(null, results);
-    });
-};
-
 
 
 // 요청마다 계정 상태 확인용 (requireAuth) — 필요한 컬럼만
@@ -53,17 +34,6 @@ User.findStatusById = async userId => {
 User.findByEmailAsync = (email) => {
     return new Promise((resolve, reject) => {
         User.findByEmail(email, (err, user) => {
-            if (err) {
-                return reject(err);
-            }
-            resolve(user);
-        });
-    });
-};
-
-User.stipUpdateAsync = (userId, stip, type) => {
-    return new Promise((resolve, reject) => {
-        User.stipUpdate(userId, stip, type, (err, user) => {
             if (err) {
                 return reject(err);
             }
