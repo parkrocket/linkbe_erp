@@ -15,6 +15,9 @@ const KST = 'Asia/Seoul';
     assert.deepStrictEqual(validateEvent({ summary: '회의', start: { date: '2026-11-05' }, end: { date: '2026-11-05' } }), {
         value: { summary: '회의', description: '', start: { date: '2026-11-05' }, end: { date: '2026-11-06' } },
     });
+    // 기존 react-app 수정: FullCalendar의 끝 날짜(미포함)를 그대로 보냄 → 그대로 저장 (+1 하면 수정할 때마다 하루씩 늘어남)
+    assert.deepStrictEqual(validateEvent({ summary: '회의', start: { date: '2026-11-05' }, end: { date: '2026-11-06' } }).value.end, { date: '2026-11-06' });
+    assert.deepStrictEqual(validateEvent({ summary: '회의', start: { date: '2026-11-05' }, end: { date: '2026-11-08' } }).value.end, { date: '2026-11-08' });
     // 시간 지정: KST
     assert.deepStrictEqual(validateEvent({ summary: '주간회의', allDay: false, startDateTime: '2026-11-05T10:00', endDateTime: '2026-11-05T11:30' }), {
         value: {
@@ -64,7 +67,8 @@ const KST = 'Asia/Seoul';
                 return { data: e };
             },
             insert: async ({ resource }) => (calls.push(['insert', resource]), { data: { id: 'new-1' } }),
-            update: async ({ eventId, resource }) => (calls.push(['update', eventId, resource]), { data: { id: eventId } }),
+            update: async ({ eventId, resource }) => (calls.push(['replace', eventId, resource]), { data: { id: eventId } }),
+            patch: async ({ eventId, resource }) => (calls.push(['update', eventId, resource]), { data: { id: eventId } }),
             delete: async ({ eventId }) => calls.push(['delete', eventId]),
         },
     });
@@ -169,9 +173,15 @@ const KST = 'Asia/Seoul';
     // 수정은 만든 사람 정보 유지 (관리자가 고쳐도 원래 만든 사람)
     reset();
     await call(cal.update, { userId: 'admin@x', userRole: 'admin', body: { ...body, id: 'e1' } });
+    // 부분 수정(patch) — 보낸 칸만 바뀌고 만든 사람·위치·참석자 등 다른 칸은 Google이 유지 (전체 교체 update 금지)
+    assert.ok(!calls.some(c => c[0] === 'replace'), 'events.update(전체 교체) 사용 금지');
     const updated = calls.find(c => c[0] === 'update');
-    assert.deepStrictEqual(updated[2].extendedProperties, { private: { hibyeCreator: '3' } });
-    assert.deepStrictEqual(updated[2].end, { date: '2026-11-06' });
+    assert.deepStrictEqual(Object.keys(updated[2]).sort(), ['description', 'end', 'start', 'summary']);
+    assert.deepStrictEqual(updated[2].end, { date: '2026-11-06', dateTime: null });
+    // 하루 종일 ↔ 시간 지정 전환 시 반대쪽 칸을 비움 (patch는 하위 칸을 합칠 수 있어 date·dateTime이 함께 남지 않게)
+    reset();
+    await call(cal.update, { body: { id: 'e1', summary: '회의', allDay: false, startDateTime: '2026-11-05T10:00', endDateTime: '2026-11-05T11:00' } });
+    assert.deepStrictEqual(calls.find(c => c[0] === 'update')[2].start, { date: null, dateTime: '2026-11-05T10:00:00', timeZone: 'Asia/Seoul' });
     // 수정 검증 실패는 Google 호출 전
     reset();
     res = await call(cal.update, { body: { id: 'e1', summary: '' } });

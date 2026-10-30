@@ -130,17 +130,21 @@ async function loadEditable(req, res) {
     return event;
 }
 
+// 하루 종일(date) ↔ 시간(dateTime) 전환 시 반대쪽 칸을 null로 비움 — patch가 하위 칸을 합쳐 둘 다 남지 않게
+const clearOther = t => (t.date ? { date: t.date, dateTime: null } : { date: null, ...t });
+
 exports.update = handle(async (req, res) => {
     const input = validateEvent(req.body);
     if (input.error) return fail(res, 400, input.error);
     const event = await loadEditable(req, res);
     if (!event) return;
 
-    // 만든 사람 정보 유지 (관리자가 고쳐도 원래 만든 사람이 계속 수정 가능)
-    const updated = await calendar().events.update({
+    // 부분 수정(patch) — 보낸 칸만 바뀜. 만든 사람 정보와 Google에서 직접 넣은 위치·참석자 등은 그대로 유지
+    // (events.update는 전체 교체라 보내지 않은 칸이 지워짐)
+    const updated = await calendar().events.patch({
         calendarId: process.env.GOOGLE_CALENDAR_ID,
         eventId: event.id,
-        resource: { ...input.value, ...(event.extendedProperties && { extendedProperties: event.extendedProperties }) },
+        resource: { ...input.value, start: clearOther(input.value.start), end: clearOther(input.value.end) },
     });
     res.status(200).json({ updatedEvent: updated.data });
 });

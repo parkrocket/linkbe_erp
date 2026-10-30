@@ -17,7 +17,8 @@
   - 기존 형식 `{ summary, start: { date }, end: { date } }`(YYYY-MM-DD만, 끝 포함으로 해석)
   - 제목 trim 1~100, 메모 ≤ 500, 하루 종일 시작 ≤ 끝·최대 31일, 시간 시작 < 끝·최대 31일
   - 오류: `Invalid summary`/`Invalid description`/`Invalid date`
-  - 기존 react-app 수정 화면은 날짜를 ISO 시각·빈 끝 날짜로 보내 400이 될 수 있음(이미 일부 실패 중) — 전환 시 퇴역
+  - 기존 react-app: 추가는 끝 = 시작(하루), 수정은 FullCalendar 끝 날짜(미포함)를 보냄 → 끝 > 시작이면 그대로 저장(+1 안 함). 수정 시 메모는 비워짐(기존 화면에 메모 없음) — 전환 시 퇴역
+- 수정은 `events.patch`(부분 수정) — Google에서 직접 넣은 위치·참석자 등 보존, 하루 종일↔시간 전환 시 반대쪽 칸 null
 - Google 저장: 하루 종일은 끝 날짜 +1(Google은 끝 미포함), 시간은 `dateTime` + `timeZone: 'Asia/Seoul'`. 만든 사람 `extendedProperties.private.hibyeCreator = mb_no`
 - 수정·삭제: `events.get`으로 다시 읽어 확인 → 없음 404 `Event not found` / 근태 일정(`lk_vacation.calendar_id` 일치) 403 `Leave event` / 본인·관리자 아님(만든 사람 없음 포함) 403 `Not allowed`. 수정 시 만든 사람 정보 유지
 - 조회 `GET /events?timeMin&timeMax`(ISO, 최대 62일, 아니면 400 `Invalid range`) — 기존 필드(id, title, start, end, allDay, className) + `kind`(event/leave/holiday), `canEdit`, `creatorName`, `description`, `startDate`·`endDate`(하루 종일, 끝 포함)

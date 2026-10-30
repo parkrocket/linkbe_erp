@@ -44,6 +44,12 @@ export function SchedulePage() {
     const [detail, setDetail] = useState<CalendarItem | null>(null);
     const [editing, setEditing] = useState<Editing | null>(null);
     const [notice, setNotice] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null);
+    // 상세 팝업 안 오류 — 팝업이 화면 맨 위에 떠 있어 페이지 안내는 가려지므로 팝업 안에 표시
+    const [detailError, setDetailError] = useState('');
+    const openDetail = (item: CalendarItem) => {
+        setDetailError('');
+        setDetail(item);
+    };
 
     // +09:00의 '+'가 공백으로 바뀌지 않게 인코딩
     const query = new URLSearchParams(gridQuery(ym)).toString();
@@ -62,7 +68,7 @@ export function SchedulePage() {
             setDetail(null);
             done('일정을 삭제했어요.');
         } catch (error) {
-            setNotice({ tone: 'error', text: scheduleErrorMessage(error) });
+            setDetailError(scheduleErrorMessage(error));
         }
     };
 
@@ -149,7 +155,7 @@ export function SchedulePage() {
                                                 <button
                                                     key={it.id}
                                                     type="button"
-                                                    onClick={() => setDetail(it)}
+                                                    onClick={() => openDetail(it)}
                                                     title={it.title}
                                                     className={`truncate rounded px-1 py-0.5 text-left text-[11px] font-semibold focus-visible:outline-2 focus-visible:outline-primary ${chipClass(it)}`}
                                                 >
@@ -187,7 +193,7 @@ export function SchedulePage() {
                                         type="button"
                                         onClick={() => {
                                             setDay(null);
-                                            setDetail(it);
+                                            openDetail(it);
                                         }}
                                         className="flex w-full items-center gap-2 rounded-lg px-1 py-2.5 text-left text-sm hover:bg-surface focus-visible:outline-2 focus-visible:outline-primary"
                                     >
@@ -251,6 +257,11 @@ export function SchedulePage() {
                     )}
                     {detail.kind === 'event' && !detail.canEdit && (
                         <p className="mt-4 text-xs text-muted">일정을 만든 사람과 관리자만 수정·삭제할 수 있어요.</p>
+                    )}
+                    {detailError && (
+                        <p role="alert" className="mt-4 text-sm text-rejected-fg">
+                            {detailError}
+                        </p>
                     )}
                     {detail.canEdit && (
                         <div className="mt-5 flex justify-end gap-2">

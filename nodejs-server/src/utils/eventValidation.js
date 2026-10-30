@@ -19,13 +19,16 @@ exports.validateEvent = (body = {}) => {
     const description = body.description ?? '';
     if (typeof description !== 'string' || description.length > DESCRIPTION_MAX) return { error: 'Invalid description' };
 
-    // 기존 react-app 형식 { start: { date }, end: { date } } → 하루 종일(끝 포함)로 해석
+    // 기존 react-app 형식 { start: { date }, end: { date } } → 하루 종일
+    // 추가는 끝 = 시작(하루), 수정은 FullCalendar의 끝 날짜(미포함)를 보냄 → 끝 > 시작이면 Google 형식 그대로 사용
     const legacy = body.start && typeof body.start === 'object';
     const allDay = legacy || body.allDay !== false;
 
     if (allDay) {
         const startDate = legacy ? body.start.date : body.startDate;
-        const endDate = legacy ? body.end?.date : body.endDate;
+        const legacyEnd = legacy ? body.end?.date : undefined;
+        const exclusiveEnd = legacy && isDate(legacyEnd) && legacyEnd > startDate;
+        const endDate = legacy ? (exclusiveEnd ? addDays(legacyEnd, -1) : legacyEnd) : body.endDate;
         if (!isDate(startDate) || !isDate(endDate) || endDate < startDate || daysBetween(startDate, endDate) >= MAX_DAYS) {
             return { error: 'Invalid date' };
         }
