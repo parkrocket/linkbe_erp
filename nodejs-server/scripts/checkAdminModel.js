@@ -29,6 +29,12 @@ const scoped = (call, cpId) => /\bcp_id\s*=\s*\?/.test(call.sql) && call.params[
         assert.ok(!/user_password/.test(last().sql), `${name}: 비밀번호 컬럼 조회 금지`);
     }
 
+    // 목록에 부서·직급 번호 포함 (조직 탭 소속 명단용) — 개인정보 칸은 제외
+    calls = [];
+    await Admin.listUsers(7);
+    assert.ok(/dept_id/.test(last().sql) && /position_id/.test(last().sql), '부서·직급 번호');
+    assert.ok(!/user_birth|user_gender/.test(last().sql), '목록에 개인정보 없음');
+
     // 조회 대상 범위: mb_no·user_id도 파라미터로 (문자열 연결 금지)
     calls = [];
     await Admin.findByMbNo(7, 3);

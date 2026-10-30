@@ -3,19 +3,38 @@
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { useApiData } from '@/components/dashboard/useApiData';
+import { Modal } from '@/components/leave/Modal';
+import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { adminErrorMessage } from '@/lib/authMessages';
-import { createOrgItem, deleteOrgItem, moveOrgItem, renameOrgItem, type OrgItem, type OrgKind, type OrgLists } from './adminApi';
+import { orgMembers } from '@/lib/org';
+import {
+    createOrgItem,
+    deleteOrgItem,
+    moveOrgItem,
+    renameOrgItem,
+    STATUS_LABEL,
+    type AdminUser,
+    type OrgItem,
+    type OrgKind,
+    type OrgLists,
+} from './adminApi';
+import { MemberDialog } from './MemberDialog';
 
 const KIND_LABEL: Record<OrgKind, string> = { departments: '부서', positions: '직급' };
 type Act = (action: () => Promise<unknown>, doneText: string) => Promise<boolean>;
+type View = (kind: OrgKind, item: OrgItem) => void;
 
 // 조직 탭 — 회사별 부서·직급 목록 관리 (추가·이름 변경·순서·삭제)
 export function OrgTab() {
-    const { state, reload } = useApiData<Partial<OrgLists>>('/api/admin/org', undefined, 'GET');
+    const { state, reload, refresh } = useApiData<Partial<OrgLists>>('/api/admin/org', undefined, 'GET');
+    // 소속 명단용 직원 목록 (부서·직급 번호 포함)
+    const members = useApiData<{ users?: AdminUser[] }>('/api/admin/users', undefined, 'GET');
+    const [viewing, setViewing] = useState<{ kind: OrgKind; item: OrgItem } | null>(null);
+    const [opened, setOpened] = useState<number | null>(null);
     const [notice, setNotice] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null);
 
     if (state.status === 'loading') return <Skeleton className="h-48 w-full" />;
@@ -47,14 +66,101 @@ export function OrgTab() {
             )}
             <div className="grid gap-6 md:grid-cols-2">
                 {(['departments', 'positions'] as const).map(kind => (
-                    <OrgList key={kind} kind={kind} items={state.data[kind] ?? []} act={act} />
+                    <OrgList
+                        key={kind}
+                        kind={kind}
+                        items={state.data[kind] ?? []}
+                        act={act}
+                        onView={(k, item) => setViewing({ kind: k, item })}
+                    />
                 ))}
             </div>
+
+            {viewing && (
+                <OrgMembersDialog
+                    kind={viewing.kind}
+                    item={viewing.item}
+                    state={members.state}
+                    names={{ departments: state.data.departments ?? [], positions: state.data.positions ?? [] }}
+                    onRetry={members.reload}
+                    onClose={() => setViewing(null)}
+                    onOpen={mbNo => {
+                        setViewing(null);
+                        setOpened(mbNo);
+                    }}
+                />
+            )}
+            {opened !== null && (
+                <MemberDialog
+                    mbNo={opened}
+                    onClose={() => setOpened(null)}
+                    // 부서·직급을 바꾸면 소속 인원·명단도 갱신 (화면 유지)
+                    onChanged={() => {
+                        refresh();
+                        members.refresh();
+                    }}
+                />
+            )}
         </>
     );
 }
 
-function OrgList({ kind, items, act }: { kind: OrgKind; items: OrgItem[]; act: Act }) {
+const OTHER: Record<OrgKind, { key: 'dept_id' | 'position_id'; kind: OrgKind }> = {
+    departments: { key: 'position_id', kind: 'positions' },
+    positions: { key: 'dept_id', kind: 'departments' },
+};
+
+// 부서·직급 소속 명단 — 부서면 직급을, 직급이면 부서를 함께 표시. 누르면 직원 상세 팝업
+function OrgMembersDialog({
+    kind,
+    item,
+    state,
+    names,
+    onRetry,
+    onClose,
+    onOpen,
+}: {
+    kind: OrgKind;
+    item: OrgItem;
+    state: ReturnType<typeof useApiData<{ users?: AdminUser[] }>>['state'];
+    names: OrgLists;
+    onRetry: () => void;
+    onClose: () => void;
+    onOpen: (mbNo: number) => void;
+}) {
+    const other = OTHER[kind];
+    const nameOf = (id: number | null) => names[other.kind].find(o => o.id === id)?.name;
+    const list = state.status === 'ok' ? orgMembers(state.data.users ?? [], kind, item.id) : [];
+
+    return (
+        <Modal open title={`${item.name} 소속 (${KIND_LABEL[kind]})`} onClose={onClose}>
+            {state.status === 'loading' && <Skeleton className="h-32 w-full" />}
+            {state.status === 'error' && <ErrorState onRetry={onRetry} />}
+            {state.status === 'ok' &&
+                (!list.length ? (
+                    <EmptyState message="소속 직원이 없어요" />
+                ) : (
+                    <ul className="max-h-[60vh] divide-y divide-line overflow-y-auto">
+                        {list.map(u => (
+                            <li key={u.mb_no}>
+                                <button
+                                    type="button"
+                                    onClick={() => onOpen(u.mb_no)}
+                                    className="flex w-full items-center gap-2 rounded-lg px-1 py-2.5 text-left text-sm hover:bg-surface focus-visible:outline-2 focus-visible:outline-primary"
+                                >
+                                    <span className="font-bold">{u.user_name}</span>
+                                    {nameOf(u[other.key]) && <span className="text-muted">· {nameOf(u[other.key])}</span>}
+                                    {u.user_status !== 'approved' && <Badge tone="neutral">{STATUS_LABEL[u.user_status]}</Badge>}
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                ))}
+        </Modal>
+    );
+}
+
+function OrgList({ kind, items, act, onView }: { kind: OrgKind; items: OrgItem[]; act: Act; onView: View }) {
     const label = KIND_LABEL[kind];
     const [name, setName] = useState('');
 
@@ -72,7 +178,15 @@ function OrgList({ kind, items, act }: { kind: OrgKind; items: OrgItem[]; act: A
             ) : (
                 <ul className="divide-y divide-line rounded-lg border border-line">
                     {items.map((item, i) => (
-                        <OrgRow key={item.id} kind={kind} item={item} first={i === 0} last={i === items.length - 1} act={act} />
+                        <OrgRow
+                            key={item.id}
+                            kind={kind}
+                            item={item}
+                            first={i === 0}
+                            last={i === items.length - 1}
+                            act={act}
+                            onView={onView}
+                        />
                     ))}
                 </ul>
             )}
@@ -93,7 +207,21 @@ function OrgList({ kind, items, act }: { kind: OrgKind; items: OrgItem[]; act: A
     );
 }
 
-function OrgRow({ kind, item, first, last, act }: { kind: OrgKind; item: OrgItem; first: boolean; last: boolean; act: Act }) {
+function OrgRow({
+    kind,
+    item,
+    first,
+    last,
+    act,
+    onView,
+}: {
+    kind: OrgKind;
+    item: OrgItem;
+    first: boolean;
+    last: boolean;
+    act: Act;
+    onView: View;
+}) {
     const [editing, setEditing] = useState(false);
     const [name, setName] = useState(item.name);
 
@@ -132,10 +260,16 @@ function OrgRow({ kind, item, first, last, act }: { kind: OrgKind; item: OrgItem
 
     return (
         <li className="flex items-center gap-2 px-3 py-2">
-            <span className="min-w-0 flex-1 truncate text-sm">
+            {/* 이름을 누르면 소속 명단 팝업 */}
+            <button
+                type="button"
+                onClick={() => onView(kind, item)}
+                aria-label={`${item.name} 소속 직원 보기`}
+                className="-m-1 min-w-0 flex-1 truncate rounded-md p-1 text-left text-sm hover:bg-surface focus-visible:outline-2 focus-visible:outline-primary"
+            >
                 {item.name}
                 <span className="ml-1.5 text-xs text-muted">{item.member_count}명</span>
-            </span>
+            </button>
             <IconButton
                 label={`${item.name} 위로`}
                 disabled={first}

@@ -12,6 +12,8 @@ export type AdminUser = {
     user_role: 'member' | 'admin';
     user_status: 'pending' | 'approved' | 'rejected' | 'inactive';
     user_datetime: string;
+    dept_id: number | null;
+    position_id: number | null;
 };
 
 export const STATUS_LABEL: Record<AdminUser['user_status'], string> = {

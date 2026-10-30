@@ -3,7 +3,8 @@ const pool = require('../config/dbPromise');
 // 관리자 화면용 직원 조회·변경 — 항상 같은 회사(cp_id) 범위, 비밀번호 등 민감 컬럼은 조회하지 않음
 const Admin = {};
 
-const SAFE_COLUMNS = 'mb_no, user_id, user_name, user_phone, user_role, user_status, user_datetime';
+// dept_id·position_id: 조직 탭 소속 명단용 (개인정보 아님)
+const SAFE_COLUMNS = 'mb_no, user_id, user_name, user_phone, user_role, user_status, user_datetime, dept_id, position_id';
 
 Admin.listUsers = async (cpId, status) => {
     const [rows] = status
@@ -39,7 +40,7 @@ Admin.countApprovedAdmins = async cpId => {
 Admin.findDetail = async (cpId, mbNo) => {
     const [rows] = await pool.query(
         `SELECT ${SAFE_COLUMNS}, user_email, DATE_FORMAT(user_doe, '%Y-%m-%d') AS user_doe, user_gender,
-            DATE_FORMAT(user_birth, '%Y-%m-%d') AS user_birth, dept_id, position_id, employment_type, user_stip, user_vaca
+            DATE_FORMAT(user_birth, '%Y-%m-%d') AS user_birth, employment_type, user_stip, user_vaca
          FROM lk_user WHERE cp_id = ? AND mb_no = ?`,
         [cpId, mbNo],
     );
