@@ -9,6 +9,8 @@
     --color-muted: #6b6880;
     --color-line: #eeecf3;
     --color-surface: #f7f6fb;
+    --color-scrollbar: #d4d1de;
+    --color-scrollbar-hover: #aaa6b9;
 
     /* 상태 배지 (색 + 글자 병기) */
     --color-pending-bg: #fff4e0;
@@ -28,6 +30,33 @@ body {
     color: var(--color-ink);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+}
+
+/* 스크롤바 — 사이트 전체 공통, 얇은 회색(바탕 투명, 둥근 막대)
+   Chrome·Safari·Edge는 ::-webkit-scrollbar(6px), 지원하지 않는 Firefox만 표준 속성(thin)
+   (Chrome은 표준 속성을 주면 ::-webkit-scrollbar를 무시해 두께를 못 정하므로 분리) */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: var(--color-scrollbar);
+    border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-scrollbar-hover);
+}
+::-webkit-scrollbar-corner {
+    background: transparent;
+}
+@supports not selector(::-webkit-scrollbar) {
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: var(--color-scrollbar) transparent;
+    }
 }
 
 /* 근태 신청 달력(react-day-picker) — 대표색 적용. 라이브러리 CSS가 나중에 로드되므로 .rdp-root로 우선순위 높임 */
