@@ -57,7 +57,7 @@ export function Modal({ open, title, onClose, children, size = 'md', canClose }:
                         <X className="size-5" />
                     </button>
                 </div>
-                <div className="mr-1.5 min-h-0 flex-1 overflow-y-auto pb-6 pl-6 pr-[18px]">{children}</div>
+                <div className="mr-1.5 min-h-0 flex-1 overflow-y-auto overscroll-contain pb-6 pl-6 pr-[18px]">{children}</div>
             </div>
         </dialog>
     );

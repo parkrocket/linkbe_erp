@@ -32,6 +32,15 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
+/* 팝업(<dialog>)이 열려 있으면 뒤 화면 스크롤 고정 — 모든 팝업 공통, JS 없이 CSS로
+   스크롤바 자리를 항상 확보(scrollbar-gutter)해 고정될 때 화면이 옆으로 밀리지 않게 */
+html {
+    scrollbar-gutter: stable;
+}
+html:has(dialog[open]) {
+    overflow: hidden;
+}
+
 /* 스크롤바 — 사이트 전체 공통, 얇은 회색(바탕 투명, 둥근 막대)
    Chrome·Safari·Edge는 ::-webkit-scrollbar(6px), 지원하지 않는 Firefox만 표준 속성(thin)
    (Chrome은 표준 속성을 주면 ::-webkit-scrollbar를 무시해 두께를 못 정하므로 분리) */
