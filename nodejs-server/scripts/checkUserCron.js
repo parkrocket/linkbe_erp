@@ -6,6 +6,11 @@ const schedules = [];
 const cronPath = require.resolve('node-cron');
 require.cache[cronPath] = { id: cronPath, filename: cronPath, loaded: true, exports: { schedule: (expr, fn, opts) => schedules.push({ expr, fn, opts }) } };
 
+process.env.SLACK_BOT_TOKEN = 'xoxb-test-invalid';
+const slack = require('../src/utils/slack');
+const alerts = [];
+slack.sendSlackMessage = async (channel, text) => alerts.push({ channel, text });
+
 const MonthlyGrant = require('../src/models/monthlyGrant');
 const calls = [];
 let fail = false;
@@ -42,7 +47,9 @@ MonthlyGrant.notify = async result => calls.push(['notify', result.month]);
 
     // 실패해도 서버가 죽지 않음 (로그만)
     fail = true;
-    await grantMonthly();
+    await grantMonthly('2026-11-01');
+    // 실패는 조용히 넘어가지 않게 관리 채널에 알림 (재시도는 관리자 판단)
+    assert.deepStrictEqual(alerts, [{ channel: '#hibye-관리', text: '⚠️ 2026-11 월차 자동 부여에 실패했어요. 서버 로그를 확인해 주세요.' }]);
     console.log('checkUserCron ✅');
     process.exit(0);
 })().catch(err => {

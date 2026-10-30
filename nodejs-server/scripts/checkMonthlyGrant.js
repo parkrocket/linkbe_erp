@@ -64,7 +64,8 @@ const lee = { mb_no: 4, cp_id: 1, user_name: '이<b>신입', user_stip: null, us
     result = await MonthlyGrant.run('2026-11-15');
     assert.deepStrictEqual(result.granted, [{ mbNo: 4, name: '이<b>신입' }]);
     const dup = find(/FROM lk_balance_log/)[0];
-    assert.ok(/kind = 'grant'/.test(dup.sql) && /memo = \?/.test(dup.sql));
+    // kind가 아닌 시스템 변경자 + 메모로 판단 — enum에 grant가 없을 때 비엄격 모드에서 kind=''로 저장돼도 중복 방지
+    assert.ok(/actor_mb_no = 0/.test(dup.sql) && /memo = \?/.test(dup.sql) && !/kind =/.test(dup.sql));
     assert.deepStrictEqual(dup.params, ['2026-11 월차 자동 부여', [3, 4]]);
     assert.strictEqual(find(/UPDATE lk_user/).length, 1);
 

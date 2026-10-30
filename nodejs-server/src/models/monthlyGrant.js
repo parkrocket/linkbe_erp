@@ -18,6 +18,7 @@ MonthlyGrant.run = async today => {
     const conn = await pool.getConnection();
     try {
         await conn.beginTransaction();
+        // ponytail: 승인 직원 행 전체를 잠금(user_doe 인덱스 없음) — 00:05 짧은 작업이라 수용, 직원 수가 커지면 인덱스 추가
         // 올해 1/1 ≤ 입사일 < 이번 달 1일 → 12월 입사·입사 예정자는 제외, 1월은 범위가 비어 대상 없음
         const [targets] = await conn.query(
             `SELECT mb_no, cp_id, user_name, user_stip, user_vaca FROM lk_user
@@ -28,7 +29,8 @@ MonthlyGrant.run = async today => {
         );
         const granted = [];
         if (targets.length) {
-            const [done] = await conn.query("SELECT mb_no FROM lk_balance_log WHERE kind = 'grant' AND memo = ? AND mb_no IN (?)", [
+            // 중복 판단은 시스템 변경자 + 메모 (kind는 enum 마이그레이션 누락 시 ''로 저장될 수 있어 쓰지 않음)
+            const [done] = await conn.query('SELECT mb_no FROM lk_balance_log WHERE actor_mb_no = 0 AND memo = ? AND mb_no IN (?)', [
                 memo,
                 targets.map(t => t.mb_no),
             ]);

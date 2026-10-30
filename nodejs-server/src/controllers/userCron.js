@@ -20,6 +20,7 @@ cron.schedule('0 0 * * *', async () => {
 // 실패는 로그만 (서버가 죽지 않게), 부여 후 #hibye-관리 요약
 const MonthlyGrant = require('../models/monthlyGrant');
 const { kstToday } = require('../utils/profileValidation');
+const slack = require('../utils/slack'); // 호출 시점 참조 (점검 스크립트에서 가짜 교체)
 
 const grantMonthly = async (today = kstToday()) => {
     try {
@@ -28,6 +29,10 @@ const grantMonthly = async (today = kstToday()) => {
         if (result.granted.length) console.log(`monthly grant ${result.month}: ${result.granted.length}명`);
     } catch (error) {
         console.error('monthly grant failed:', error.message);
+        // 조용히 실패하면 그 달 부여가 누락돼도 아무도 모름 — 관리 채널에 알림 (알림 실패는 무시)
+        await slack
+            .sendSlackMessage('#hibye-관리', `⚠️ ${today.slice(0, 7)} 월차 자동 부여에 실패했어요. 서버 로그를 확인해 주세요.`)
+            .catch(() => {});
     }
 };
 
