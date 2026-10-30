@@ -25,4 +25,12 @@ describe('adminErrorMessage', () => {
         expect(adminErrorMessage(new ApiError(404, 'User not found'))).toBe('대상 직원을 찾을 수 없어요. 새로고침 후 다시 시도해 주세요.');
         expect(adminErrorMessage(new Error('x'))).toBe('처리하지 못했어요. 잠시 후 다시 시도해 주세요.');
     });
+
+    it('연차·휴가 조정 사유별 안내', () => {
+        expect(adminErrorMessage(new ApiError(409, 'Balance changed'))).toBe('그 사이 잔여가 바뀌었어요. 다시 불러온 뒤 입력해 주세요.');
+        expect(adminErrorMessage(new ApiError(400, 'Invalid reason'))).toBe('사유를 1~200자로 입력해 주세요.');
+        expect(adminErrorMessage(new ApiError(400, 'Invalid balance'))).toBe('입력값을 확인해 주세요.');
+        expect(adminErrorMessage(new ApiError(400, 'Invalid changes'))).toBe('입력값을 확인해 주세요.');
+        expect(adminErrorMessage(new ApiError(400, 'No changes'))).toBe('바뀐 값이 없어요.');
+    });
 });
