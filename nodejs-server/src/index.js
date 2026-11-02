@@ -25,6 +25,7 @@ app.use(cors()); // CORS 미들웨어 사용
 // 매일 자정 출근상태 초기화 크론 — 로컬이 운영 DB에 붙으므로 운영에서만 실행
 if (process.env.NODE_ENV === 'production') {
     require('./controllers/userCron.js');
+    require('./controllers/homepageCron.js'); // 홈페이지 문의 3년 보관 후 삭제
 }
 
 app.use(requestIp.mw());

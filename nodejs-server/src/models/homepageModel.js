@@ -167,6 +167,30 @@ Homepage.createInquiryWithFiles = async (inquiry, files) => {
     }
 };
 
+// 보관 기간이 지난 문의와 첨부 행을 한 트랜잭션에서 삭제 → 지울 파일 이름을 돌려줌(파일은 커밋 뒤 호출한 쪽이 삭제)
+Homepage.purgeInquiriesOlderThan = async years => {
+    const conn = await pool.getConnection();
+    try {
+        await conn.beginTransaction();
+        const [rows] = await conn.query('SELECT id FROM hp_inquiry WHERE created_at < NOW() - INTERVAL ? YEAR FOR UPDATE', [years]);
+        const ids = rows.map(r => r.id);
+        let files = [];
+        if (ids.length) {
+            const [fileRows] = await conn.query("SELECT stored_name FROM hp_file WHERE owner_type = 'inquiry' AND owner_id IN (?)", [ids]);
+            files = fileRows.map(f => f.stored_name);
+            await conn.query("DELETE FROM hp_file WHERE owner_type = 'inquiry' AND owner_id IN (?)", [ids]);
+            await conn.query('DELETE FROM hp_inquiry WHERE id IN (?)', [ids]);
+        }
+        await conn.commit();
+        return { inquiries: ids.length, files };
+    } catch (error) {
+        await conn.rollback();
+        throw error;
+    } finally {
+        conn.release();
+    }
+};
+
 Homepage.listInquiries = async ({ kind = null, status = null, page = 1, size = 30 } = {}) => {
     const conds = [...(kind ? ['kind = ?'] : []), ...(status ? ['status = ?'] : [])];
     const where = conds.length ? ` WHERE ${conds.join(' AND ')}` : '';
