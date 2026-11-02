@@ -55,12 +55,12 @@ const all = () => calls.map(c => c.sql).join('\n');
 
     // 비밀번호 변경: password_changed_at 갱신 + 토큰 비움
     await Member.updatePassword(3, 'h2');
-    assert.ok(/password_changed_at = NOW\(\)/.test(last().sql) && /reset_token_hash = NULL/.test(last().sql));
+    assert.ok(/password_changed_at = NOW\(\)/.test(last().sql) && /reset_token_hash = NULL/.test(last().sql) && /WHERE id = \? AND status = 'active'/.test(last().sql));
     assert.deepStrictEqual(last().params, ['h2', 3]);
 
     // 정보 수정
     await Member.updateProfile(3, { name: 'n', email: 'e', phone: 'p' });
-    assert.ok(/UPDATE hp_member SET name = \?, email = \?, phone = \? WHERE id = \?/.test(last().sql));
+    assert.ok(/UPDATE hp_member SET name = \?, email = \?, phone = \? WHERE id = \? AND status = 'active'/.test(last().sql));
 
     // 재설정 토큰: UPDATE 1건일 때만 대상 반환
     calls = [];

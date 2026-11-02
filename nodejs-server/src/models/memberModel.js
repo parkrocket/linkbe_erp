@@ -52,12 +52,12 @@ Member.markLogin = async (id, newHash) => {
 };
 
 Member.updateProfile = async (id, { name, email, phone }) => {
-    await pool.query('UPDATE hp_member SET name = ?, email = ?, phone = ? WHERE id = ?', [name, email, phone, id]);
+    await pool.query("UPDATE hp_member SET name = ?, email = ?, phone = ? WHERE id = ? AND status = 'active'", [name, email, phone, id]);
 };
 
 Member.updatePassword = async (id, hash) => {
     await pool.query(
-        'UPDATE hp_member SET password_hash = ?, password_changed_at = NOW(), reset_token_hash = NULL, reset_expires_at = NULL WHERE id = ?',
+        "UPDATE hp_member SET password_hash = ?, password_changed_at = NOW(), reset_token_hash = NULL, reset_expires_at = NULL WHERE id = ? AND status = 'active'",
         [hash, id],
     );
 };

@@ -25,7 +25,8 @@ Member.create = async v => {
 Member.findByLoginId = async id => byLoginId[id];
 Member.findForSession = async () => session;
 Member.markLogin = async (id, h) => void calls.markLogin.push([id, h]);
-Member.leave = async id => void calls.leave.push(id);
+let leaveResult = true;
+Member.leave = async id => (calls.leave.push(id), leaveResult);
 Member.updatePassword = async (id, h) => void calls.updatePassword.push([id, h]);
 Member.updateProfile = async (id, v) => {
     if (dupMessage) throw Object.assign(new Error(dupMessage), { code: 'ER_DUP_ENTRY' });
@@ -91,7 +92,10 @@ const tokenFor = (mid, secret = 'test-member') => jwt.sign({ mid }, secret);
     dupMessage = "Duplicate entry 'x' for key 'hp_member.login_id'";
     r = await call(ctrl.register, { body: reg });
     assert.deepStrictEqual([r.code, r.body], [409, { error: 'Login id taken' }]);
-    dupMessage = "Duplicate entry 'x' for key 'hp_member.email'";
+    dupMessage = "Duplicate entry 'x' for key 'hp_member.uq_email'";
+    r = await call(ctrl.register, { body: reg });
+    assert.deepStrictEqual([r.code, r.body], [409, { error: 'Email taken' }]);
+    dupMessage = "Duplicate entry 'login_id@x.co' for key 'uq_email'"; // 값에 login_id가 있어도 키 이름으로 판단
     r = await call(ctrl.register, { body: reg });
     assert.deepStrictEqual([r.code, r.body], [409, { error: 'Email taken' }]);
 
@@ -125,6 +129,26 @@ const tokenFor = (mid, secret = 'test-member') => jwt.sign({ mid }, secret);
     assert.strictEqual(r.code, 429, '대소문자 달라도 같은 키');
     r = await call(ctrl.login, { ip: '9.9.9.9', body: { loginId: 'bcuser', password: 'secret-pw1' } });
     assert.strictEqual(r.body.ok, true, '다른 IP는 영향 없음');
+
+    // 병렬 실패 10건 중 5건 초과분은 429 (확인 전에 먼저 센다)
+    reset();
+    const burst = await Promise.all(Array.from({ length: 10 }, () => call(ctrl.login, { body: { loginId: 'bcuser', password: 'wrong-pw99' } })));
+    assert.strictEqual(burst.filter(x => x.code === 429).length, 5, '병렬 10건 중 5건 429');
+    assert.strictEqual(burst.filter(x => x.code === 401).length, 5);
+    // 너무 긴/빈 아이디는 제한 키를 만들지 않고 401
+    reset();
+    r = await call(ctrl.login, { body: { loginId: 'a'.repeat(1000), password: 'x' } });
+    assert.deepStrictEqual([r.code, r.body], [401, { error: 'Invalid credentials' }]);
+    r = await call(ctrl.login, { body: { loginId: '   ', password: 'x' } });
+    assert.strictEqual(r.code, 401);
+    rateLimit.reset();
+    // 키 생성 여부: hit이 한 번도 호출되지 않아야 함
+    const origHit = rateLimit.hit;
+    let hitCalls = 0;
+    rateLimit.hit = (...a) => (hitCalls++, origHit(...a));
+    await call(ctrl.login, { body: { loginId: 'a'.repeat(1000), password: 'x' } });
+    rateLimit.hit = origHit;
+    assert.strictEqual(hitCalls, 0, '긴 아이디는 rateLimit 미사용');
 
     // ── 로그아웃 ──
     r = await call(ctrl.logout, {});
@@ -162,6 +186,9 @@ const tokenFor = (mid, secret = 'test-member') => jwt.sign({ mid }, secret);
     r = await call(ctrl.register, { body: reg });
     assert.strictEqual(r.code, 500, '비밀키 없으면 쿠키 발급 실패(서버는 유지)');
     process.env.MEMBER_JWT_SECRET = 'test-member';
+
+    m = await runMw('lb_member=%E0%A4%A');
+    assert.strictEqual(m.res.code, 401, '깨진 인코딩 쿠키는 401');
 
     // ── me ──
     const member = { id: 5, login_id: 'a', name: 'n', email: 'e', phone: 'p', created_at: 'c' };
@@ -201,6 +228,26 @@ const tokenFor = (mid, secret = 'test-member') => jwt.sign({ mid }, secret);
     assert.deepStrictEqual(calls.leave, [5]);
     assert.strictEqual(r.cleared[0].n, 'lb_member');
     assert.ok(notices.length === 1 && notices[0].text.includes('[회원탈퇴]') && notices[0].channel === '#결제');
+    // 이미 탈퇴(leave false) -> Slack 없이 401
+    reset();
+    leaveResult = false;
+    r = await call(ctrl.leave, { member, body: { password: 'secret-pw1' } });
+    assert.deepStrictEqual([r.code, r.body], [401, { error: 'Login required' }]);
+    assert.strictEqual(notices.length, 0);
+    leaveResult = true;
+    // 현재 비밀번호 확인 시도 제한: 5번 틀리면 6번째는 맞아도 429, 성공하면 초기화
+    reset();
+    hash = bc;
+    for (let i = 0; i < 5; i++) await call(ctrl.changePassword, { member, body: { currentPassword: 'bad-bad-bad1', newPassword: 'newpassword1' } });
+    r = await call(ctrl.changePassword, { member, body: { currentPassword: 'secret-pw1', newPassword: 'newpassword1' } });
+    assert.deepStrictEqual([r.code, r.body], [429, { error: 'Too many attempts' }]);
+    r = await call(ctrl.leave, { member, body: { password: 'secret-pw1' } });
+    assert.strictEqual(r.code, 429, '탈퇴도 같은 키');
+    reset();
+    await call(ctrl.changePassword, { member, body: { currentPassword: 'bad-bad-bad1', newPassword: 'newpassword1' } });
+    r = await call(ctrl.changePassword, { member, body: { currentPassword: 'secret-pw1', newPassword: 'newpassword1' } });
+    assert.strictEqual(r.body.ok, true);
+    for (let i = 0; i < 5; i++) assert.strictEqual((await call(ctrl.changePassword, { member, body: { currentPassword: 'secret-pw1', newPassword: 'newpassword1' } })).body.ok, true, '성공은 초기화');
     hash = old; // 예전 형식 해시도 확인 가능
     r = await call(ctrl.leave, { member, body: { password: 'oldpw' } });
     assert.strictEqual(r.body.ok, true);

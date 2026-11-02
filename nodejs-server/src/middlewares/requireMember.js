@@ -24,7 +24,12 @@ const readCookie = (header = '') => {
         .split(';')
         .map(part => part.trim())
         .find(part => part.startsWith(`${COOKIE}=`));
-    return found ? decodeURIComponent(found.slice(COOKIE.length + 1)) : null;
+    if (!found) return null;
+    try {
+        return decodeURIComponent(found.slice(COOKIE.length + 1));
+    } catch {
+        return null; // 깨진 퍼센트 인코딩 -> 로그인 안 한 것으로
+    }
 };
 
 // 토큰 검증 → 탈퇴·비활성·비밀번호 변경 전 토큰이면 401. 시각 비교는 DB 안에서(findForSession)

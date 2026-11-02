@@ -35,10 +35,12 @@ const notify = async text => {
 const brief = row => ({ id: row.id, loginId: row.login_id, name: row.name });
 
 // ER_DUP_ENTRY → 어떤 칸이 겹쳤는지(메시지의 키 이름으로)
+// 값에 'login_id'가 들어 있을 수 있으므로 'for key' 뒤의 키 이름(uq_login_id·uq_email)만 본다
 const dupError = error => {
     if (error.code !== 'ER_DUP_ENTRY') return null;
-    if (/login_id/.test(error.message)) return 'Login id taken';
-    if (/email/.test(error.message)) return 'Email taken';
+    const key = String(error.message).split(' for key ').pop();
+    if (/login_id/.test(key)) return 'Login id taken';
+    if (/email/.test(key)) return 'Email taken';
     return null;
 };
 
@@ -69,16 +71,17 @@ exports.register = handle(async (req, res) => {
 exports.login = handle(async (req, res) => {
     const loginId = typeof req.body?.loginId === 'string' ? req.body.loginId.trim() : '';
     const password = req.body?.password;
+    // 빈 값·너무 긴 값은 제한 키를 만들지 않고(메모리 보호) 바로 실패
+    if (!loginId || loginId.length > 50) return res.status(401).json({ error: 'Invalid credentials' });
     const key = `login:${req.ip}|${loginId.toLowerCase()}`;
-    if (rateLimit.isBlocked(key, LOGIN_MAX, LOGIN_WINDOW)) return res.status(429).json({ error: 'Too many attempts' });
+    // 확인 전에 먼저 센다(병렬 요청이 한도를 넘겨 시도하지 못하게)
+    if (!rateLimit.hit(key, LOGIN_MAX, LOGIN_WINDOW)) return res.status(429).json({ error: 'Too many attempts' });
     secretOf();
 
-    const row = loginId ? await Member.findByLoginId(loginId) : undefined;
+    const row = await Member.findByLoginId(loginId);
     const result = await verifyPassword(password, row ? row.password_hash : DUMMY_HASH);
-    if (!row || !result.ok) {
-        rateLimit.hit(key, LOGIN_MAX, LOGIN_WINDOW);
-        return res.status(401).json({ error: 'Invalid credentials' });
-    }
+    await bcrypt.compare(String(password ?? ''), DUMMY_HASH).catch(() => false); // 예전 형식 해시(빠름)도 응답 시간을 맞추려고 항상 1회 더
+    if (!row || !result.ok) return res.status(401).json({ error: 'Invalid credentials' });
     rateLimit.clear(key);
     await Member.markLogin(row.id, result.needsRehash ? await hashPassword(password) : null);
     issueMemberCookie(res, row.id);
@@ -109,23 +112,31 @@ exports.updateMe = handle(async (req, res) => {
 
 // 현재 비밀번호 확인 (예전 형식 해시도 허용)
 const passwordMatches = async (memberId, plain) => {
+    if (!rateLimit.hit(`pw:${memberId}`, LOGIN_MAX, LOGIN_WINDOW)) return 'limited';
     const stored = await Member.findPasswordHash(memberId);
-    return stored ? (await verifyPassword(plain, stored)).ok : false;
+    const ok = stored ? (await verifyPassword(plain, stored)).ok : false;
+    if (ok) rateLimit.clear(`pw:${memberId}`);
+    return ok;
 };
+const tooMany = res => res.status(429).json({ error: 'Too many attempts' });
 
 exports.changePassword = handle(async (req, res) => {
     const { currentPassword, newPassword } = req.body ?? {};
     const error = validateNewPassword(newPassword);
     if (error) return res.status(400).json({ error });
-    if (!(await passwordMatches(req.member.id, currentPassword))) return res.status(400).json({ error: 'Wrong password' });
+    const match = await passwordMatches(req.member.id, currentPassword);
+    if (match === 'limited') return tooMany(res);
+    if (!match) return res.status(400).json({ error: 'Wrong password' });
     await Member.updatePassword(req.member.id, await hashPassword(newPassword));
     issueMemberCookie(res, req.member.id); // 기존 쿠키는 password_changed_at 때문에 무효 — 지금 기기는 새로 발급
     res.json({ ok: true });
 });
 
 exports.leave = handle(async (req, res) => {
-    if (!(await passwordMatches(req.member.id, req.body?.password))) return res.status(400).json({ error: 'Wrong password' });
-    await Member.leave(req.member.id);
+    const match = await passwordMatches(req.member.id, req.body?.password);
+    if (match === 'limited') return tooMany(res);
+    if (!match) return res.status(400).json({ error: 'Wrong password' });
+    if (!(await Member.leave(req.member.id))) return res.status(401).json({ error: 'Login required' }); // 이미 탈퇴
     res.clearCookie(COOKIE, memberCookieOptions());
     res.json({ ok: true });
     await notify(`[회원탈퇴] ${escapeSlack(req.member.name)}님`);

@@ -57,7 +57,7 @@ async function call(path, { method = 'POST', cookie, headers = {}, body = '{}' }
     assert.strictEqual(refreshed.json.error, 'Account not active');
 
     // 3-1) 직원 로그인과 고객 회원 로그인 상호 차단 (서명 검증에서 막혀 DB에 닿지 않음)
-    const memberOnly = jwt.sign({ mid: 1 }, 'member-test');
+    const memberOnly = jwt.sign({ mid: 1 }, process.env.MEMBER_JWT_SECRET || 'member-test'); // 고객 키로 서명해도 직원 API는 열리면 안 됨
     assert.strictEqual((await call('/api/vacation/list', { cookie: `lb_member=${memberOnly}` })).status, 401, '고객 쿠키로 직원 API 통과');
     const staffOnly = jwt.sign({ userId: 'nobody@check.invalid' }, process.env.JWT_SECRET_KEY);
     assert.strictEqual((await call('/api/public/shop/members/me', { method: 'GET', cookie: `x_auth=${staffOnly}` })).status, 401, '직원 쿠키로 고객 API 통과');
