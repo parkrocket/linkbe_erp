@@ -13,7 +13,7 @@ const PUBLIC_PATHS = [
     '/company/list',
     '/test', // 배포 후 헬스체크
 ];
-const PUBLIC_PREFIXES = ['/slack/'];
+const PUBLIC_PREFIXES = ['/slack/', '/public/']; // /public/: 회사 홈페이지 공개 API(읽기·문의 접수)
 
 // 쿠키 헤더에서 x_auth만 꺼냄 (cookie-parser 의존성 없이)
 function readTokenFromCookie(cookieHeader = '') {

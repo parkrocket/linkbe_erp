@@ -37,6 +37,10 @@ async function call(path, { method = 'POST', cookie, headers = {}, body = '{}' }
     assert.strictEqual((await call('/api/admin/balances', { body: '{}' })).status, 401, 'admin/balances 조정 열려 있음');
 
     // 2) 공개 API는 그대로 열림
+    // 홈페이지 공개 API는 로그인 없이 (테이블 생성 전이면 500일 수 있어 401이 아닌 것만 확인)
+    assert.notStrictEqual((await call('/api/public/homepage/faqs', { method: 'GET' })).status, 401, '홈페이지 공개 API가 막힘');
+    // '/public'이 들어간 다른 경로까지 열리면 안 됨
+    assert.strictEqual((await call('/api/users/public', { method: 'GET' })).status, 401, '/public 접두사가 다른 경로를 엶');
     assert.strictEqual((await call('/api/test', { method: 'GET' })).status, 200);
     assert.strictEqual((await call('/api/users/auth')).json.isAuth, false);
 
