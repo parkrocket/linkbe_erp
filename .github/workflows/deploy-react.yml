@@ -1,11 +1,8 @@
 name: Deploy React App to EC2
 
+# 2026-11-02 hibye.kr이 새 앱(hibye-web)으로 전환 → 자동 배포 중지, 되돌리기용 수동 실행만 (2주 후 정리)
 on:
-    push:
-        paths:
-            - 'react-app/**'
-        branches:
-            - master # master 브랜치에 푸시할 때 워크플로를 실행합니다.
+    workflow_dispatch:
 
 jobs:
     build:

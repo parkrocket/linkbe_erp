@@ -26,8 +26,6 @@ const publishHomeView = async (
     encryptedUserId,
 ) => {
     const userName = user.user_name;
-    const gtwStatus = user.gtw_status;
-    const gtwLocation = user.gtw_location;
 
     const startDate = moment(user.user_doe, 'YYYY-MM-DD');
     const startDateFormat = moment(user.user_doe).format('YYYY년 MM월 DD일');
@@ -54,78 +52,9 @@ const publishHomeView = async (
     }
     */
 
-    if (myGtw.length > 0) {
-        const formattedStartTime = moment(myGtw[0].start_time).format(
-            'HH시 mm분 ss초',
-        );
-        const formattedEndTime = myGtw[0].end_time
-            ? moment(myGtw[0].end_time).format('HH시 mm분 ss초')
-            : moment(myGtw[0].start_time)
-                  .add(9, 'hours')
-                  .format('HH시 mm분 ss초');
-        const endTimeLabel = myGtw[0].end_time ? '퇴근 시간' : '퇴근 가능시간';
-
-        actionBlocks.push({
-            type: 'section',
-            text: {
-                type: 'mrkdwn',
-                text: `나의 근무 상태:\n\n출근 시간: ${formattedStartTime}\n${endTimeLabel}: ${formattedEndTime}`,
-            },
-        });
-    }
+    // 출퇴근 상태·출근/퇴근 버튼은 제거 (2026-11-02 — 출퇴근 기록 미사용, 새 앱에 /gtw 없음). 근태 신청·나의 정보만
 
     const addActionBlocks = () => {
-        if (gtwStatus === 0) {
-            actionBlocks.push(
-                {
-                    type: 'section',
-                    text: { type: 'mrkdwn', text: '출근 옵션을 선택하세요:' },
-                },
-                {
-                    type: 'actions',
-                    elements: [
-                        {
-                            type: 'button',
-                            text: { type: 'plain_text', text: '출근하기' },
-                            url: `https://hibye.kr/gtw?userId=${encryptedUserId}&type=gtw&platform=slack&slackuser=${userId}`,
-                            action_id: 'clock_in',
-                        },
-                        {
-                            type: 'button',
-                            text: { type: 'plain_text', text: '재택출근하기' },
-                            url: `https://hibye.kr/gtw?userId=${encryptedUserId}&type=remote_gtw&platform=slack&slackuser=${userId}`,
-                            action_id: 'remote_clock_in',
-                        },
-                    ],
-                },
-            );
-        } else if (gtwStatus === 1) {
-            const url =
-                gtwLocation === 'office'
-                    ? `https://hibye.kr/gtw?userId=${encryptedUserId}&type=go&platform=slack&slackuser=${userId}`
-                    : `https://hibye.kr/gtw?userId=${encryptedUserId}&type=remote_go&platform=slack&slackuser=${userId}`;
-
-            actionBlocks.push(
-                {
-                    type: 'actions',
-                    elements: [
-                        {
-                            type: 'button',
-                            text: { type: 'plain_text', text: '퇴근하기' },
-                            url,
-                            action_id: 'clock_out',
-                        },
-                    ],
-                },
-                { type: 'divider' },
-            );
-        } else if (gtwStatus === 2) {
-            actionBlocks.push({
-                type: 'section',
-                text: { type: 'mrkdwn', text: '오늘 하루 수고하셨습니다!' },
-            });
-        }
-
         actionBlocks.push(
             {
                 type: 'section',
