@@ -78,20 +78,29 @@ async function handleReturn(req, res, no, result) {
 
     const amount = Number(order.amount);
     const custIp = str(req.ip);
-    const ap = await kcp.approve({
-        tranCd: str(body.tran_cd),
-        encData: str(body.enc_data),
-        encInfo: str(body.enc_info),
-        orderNo: no,
-        amount,
-        custIp,
-    });
+    // approve가 throw·reject해도 승인됐는지 모르는 경로로
+    const ap = await Promise.resolve()
+        .then(() =>
+            kcp.approve({
+                tranCd: str(body.tran_cd),
+                encData: str(body.enc_data),
+                encInfo: str(body.enc_info),
+                orderNo: no,
+                amount,
+                custIp,
+            }),
+        )
+        .catch(e => {
+            console.error('kcp approve error:', e.message);
+            return { ok: false, resCd: 'NETWORK' };
+        });
 
     if (!ap.ok) {
-        // KCP 응답 코드(4자리)나 실행 전 거부(INVALID)면 실패 확정, 그 밖(9502·통신 오류)은 승인됐는지 모름 — tno가 없어 자동 취소 불가
+        // KCP 응답 코드(4자리)나 실행 전 거부(INVALID)면 실패 확정, 그 밖(95xx 연동 모듈 통신 오류·NETWORK)은 승인됐는지 모름 — tno가 없어 자동 취소 불가
         const unknown =
             ap.resCd !== 'INVALID' &&
-            (ap.resCd === '9502' || !/^[0-9A-Z]{4}$/.test(str(ap.resCd)));
+            (/^95\d\d$/.test(str(ap.resCd)) ||
+                !/^[0-9A-Z]{4}$/.test(str(ap.resCd)));
         if (unknown) {
             await addHistory(no, `KCP 승인 결과 모름(${ap.resCd}) — 확인 필요`);
             await notify(
@@ -103,6 +112,15 @@ async function handleReturn(req, res, no, result) {
                 `KCP 승인 실패(${ap.resCd}) ${str(ap.resMsg).slice(0, 100)}`,
             );
         }
+        return res.redirect(303, result('?pay=fail'));
+    }
+
+    // 승인됐는데 거래번호가 없으면 자동 취소 불가 — 사람이 직접
+    if (!ap.tno) {
+        await addHistory(no, 'KCP 승인됐으나 거래번호 없음 — 직접 취소 필요');
+        await notify(
+            `⚠️ [결제 확인 필요] 주문번호 ${no} — KCP 거래번호를 받지 못해 자동 취소할 수 없어요 — 상점관리자에서 주문번호로 찾아 직접 취소해 주세요`,
+        );
         return res.redirect(303, result('?pay=fail'));
     }
 

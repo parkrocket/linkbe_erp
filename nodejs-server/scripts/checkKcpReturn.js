@@ -302,7 +302,7 @@ const loc = (path = '') => `/mypage/orders/${NO}${path}`;
     );
 
     // ── 결과 모름(9502·NETWORK) → pending 유지, 기록, 확인 필요 알림 ──
-    for (const resCd of ['9502', 'NETWORK']) {
+    for (const resCd of ['9502', '9501', 'NETWORK']) {
         reset();
         approveResult = {
             ok: false,
@@ -326,6 +326,45 @@ const loc = (path = '') => `/mypage/orders/${NO}${path}`;
             ],
         );
     }
+
+    // ── approve가 throw·reject → 결과 모름 경로(pending 유지, 기록, 확인 필요 알림) ──
+    for (const fail of [new Error('socket'), 'rejected']) {
+        reset();
+        kcp.approve = async a => {
+            approveCalls.push(a);
+            throw fail;
+        };
+        r = await call(pcOk());
+        assert.strictEqual(r.location, loc('?pay=fail'));
+        assert.deepStrictEqual(
+            [transitions.length, cancelCalls.length, histories.length],
+            [0, 0, 1],
+        );
+        assert.match(histories[0][1], /NETWORK/);
+        assert.match(notices[0].text, /^⚠️ \[결제 확인 필요\]/);
+        assert.strictEqual(notices.length, 1);
+    }
+    kcp.approve = async a => {
+        approveCalls.push(a);
+        if (approveGate) await approveGate;
+        return approveResult;
+    };
+
+    // ── 승인 ok인데 tno 없음 → 취소 시도 없이 직접 취소 안내 ──
+    reset();
+    approveResult.tno = null;
+    r = await call(pcOk());
+    assert.strictEqual(r.location, loc('?pay=fail'));
+    assert.deepStrictEqual(
+        [transitions.length, cancelCalls.length, histories.length],
+        [0, 0, 1],
+    );
+    assert.strictEqual(notices.length, 1);
+    assert.ok(
+        notices[0].text.includes(
+            'KCP 거래번호를 받지 못해 자동 취소할 수 없어요 — 상점관리자에서 주문번호로 찾아 직접 취소해 주세요',
+        ),
+    );
 
     // ── 승인 후 transition false → 취소 1회, 경고 1건 ──
     reset();
@@ -382,6 +421,11 @@ const loc = (path = '') => `/mypage/orders/${NO}${path}`;
     Order.findByOrderNo = realFind;
     assert.strictEqual(r.location, loc('?pay=fail'));
     assert.strictEqual(approveCalls.length, 0);
+    // 잠금 해제 증명: 같은 주문으로 다시 호출하면 조회가 다시 일어남
+    const before = findCalls;
+    r = await call(pcOk());
+    assert.strictEqual(findCalls, before + 1, '조회 오류 뒤 잠금 해제');
+    assert.strictEqual(r.location, loc('?pay=ok'));
 
     console.log('checkKcpReturn OK');
 })().catch(e => {
