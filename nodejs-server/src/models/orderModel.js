@@ -5,6 +5,9 @@ const Order = {};
 
 const COLUMNS = 'id, order_no, member_id, product_id, product_title, amount, buyer_name, buyer_email, buyer_phone, pay_method, status, kcp_tno, kcp_app_no, vbank_bank, vbank_account, vbank_holder, vbank_due, deposit_name, buyer_memo, admin_memo, history, paid_at, cancelled_at, created_at, updated_at';
 
+// 고객에게 내보내는 칸 — 관리자 메모·변경 기록·KCP 거래 정보는 제외
+const MEMBER_COLUMNS = 'order_no, product_id, product_title, amount, pay_method, status, buyer_name, buyer_email, buyer_phone, buyer_memo, deposit_name, paid_at, cancelled_at, created_at';
+
 // transition이 바꿀 수 있는 칸(그 밖은 throw). paid_at·cancelled_at은 값 'NOW'면 SQL NOW()
 const TRANSITION_FIELDS = ['kcp_tno', 'kcp_app_no', 'vbank_bank', 'vbank_account', 'vbank_holder', 'vbank_due', 'paid_at', 'cancelled_at'];
 const NOW_FIELDS = ['paid_at', 'cancelled_at'];
@@ -38,6 +41,7 @@ Order.findById = async id => {
 
 // 상태 전이: 현재 상태가 fromStatuses 중 하나일 때만 바꿈(중복 처리·경합 방지). historyLine은 앞에 줄바꿈을 붙여 이어 씀
 Order.transition = async (orderNo, fromStatuses, toStatus, fields, historyLine) => {
+    if (!Array.isArray(fromStatuses) || fromStatuses.length === 0) throw new Error('transition fromStatuses는 비어 있지 않은 배열');
     const sets = ['status = ?'];
     const params = [toStatus];
     for (const [key, value] of Object.entries(fields || {})) {
@@ -58,7 +62,7 @@ Order.transition = async (orderNo, fromStatuses, toStatus, fields, historyLine) 
 // 결제 시도 전(pending)은 회원에게 보이지 않음
 Order.listForMember = async memberId => {
     const [rows] = await pool.query(
-        `SELECT ${COLUMNS} FROM hp_order WHERE member_id = ? AND status <> 'pending' ORDER BY created_at DESC, id DESC`,
+        `SELECT ${MEMBER_COLUMNS} FROM hp_order WHERE member_id = ? AND status <> 'pending' ORDER BY created_at DESC, id DESC`,
         [memberId],
     );
     return rows;
@@ -66,12 +70,14 @@ Order.listForMember = async memberId => {
 
 // 본인 주문만(member_id 조건)
 Order.findForMember = async (memberId, orderNo) => {
-    const [rows] = await pool.query(`SELECT ${COLUMNS} FROM hp_order WHERE member_id = ? AND order_no = ?`, [memberId, orderNo]);
+    const [rows] = await pool.query(`SELECT ${MEMBER_COLUMNS} FROM hp_order WHERE member_id = ? AND order_no = ?`, [memberId, orderNo]);
     return rows[0];
 };
 
 // 기본은 pending 제외, status='pending'을 명시하면 그것만. from·to는 'YYYY-MM-DD'
 Order.listForAdmin = async ({ status, payMethod, from, to, q, page = 1, size = 20 } = {}) => {
+    page = Number(page);
+    size = Number(size);
     const conds = [];
     const params = [];
     if (status) {

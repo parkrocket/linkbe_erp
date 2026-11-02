@@ -1,4 +1,5 @@
 const pool = require('../config/dbPromise');
+const Order = require('./orderModel');
 
 // 개인결제 상품(hp_product) — 모든 값은 바인딩, 명시 컬럼만
 const Product = {};
@@ -25,6 +26,8 @@ Product.findById = async id => {
 
 // 관리 목록: 본문 제외, 주문 건수 포함
 Product.listForAdmin = async ({ page = 1, size = 20 } = {}) => {
+    page = Number(page);
+    size = Number(size);
     const [rows] = await pool.query(
         'SELECT p.id, p.title, p.price, p.image_file_id, p.is_visible, p.sort_order, p.updated_at, (SELECT COUNT(*) FROM hp_order o WHERE o.product_id = p.id) AS order_count FROM hp_product p ORDER BY p.sort_order, p.id DESC LIMIT ? OFFSET ?',
         [size, (page - 1) * size],
@@ -55,12 +58,14 @@ Product.save = async (id, { title, price, bodyHtml, imageFileId, isVisible, sort
     return result.affectedRows === 1 ? id : 'conflict';
 };
 
-// 주문이 있으면 삭제하지 않음('has_orders'). 없으면 삭제 여부(boolean)
+// 주문이 없을 때만 한 문장으로 삭제(경합 방지). 0행이면 주문 때문인지('has_orders') 없는 상품인지(false) 구분
 Product.remove = async id => {
-    const [[{ n }]] = await pool.query('SELECT COUNT(*) AS n FROM hp_order WHERE product_id = ?', [id]);
-    if (Number(n) > 0) return 'has_orders';
-    const [result] = await pool.query('DELETE FROM hp_product WHERE id = ?', [id]);
-    return result.affectedRows === 1;
+    const [result] = await pool.query(
+        'DELETE FROM hp_product WHERE id = ? AND NOT EXISTS (SELECT 1 FROM hp_order WHERE product_id = ?)',
+        [id, id],
+    );
+    if (result.affectedRows === 1) return true;
+    return (await Order.hasOrders(id)) ? 'has_orders' : false;
 };
 
 module.exports = Product;
