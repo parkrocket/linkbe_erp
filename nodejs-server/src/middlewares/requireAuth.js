@@ -56,6 +56,7 @@ function requireAuth(req, res, next) {
         req.userId = decoded.userId;
         req.userRole = account.user_role;
         req.userCpId = account.cp_id;
+        req.userHomepage = Number(account.homepage_access) === 1; // 홈페이지 관리 권한 (requireHomepage)
         next();
     });
 }

@@ -9,6 +9,7 @@ router.get('/users/:mbNo', admin.getUser);
 router.post('/users/:mbNo/profile', admin.updateProfile);
 router.post('/users/:mbNo/status', admin.changeStatus);
 router.post('/users/:mbNo/role', admin.changeRole);
+router.post('/users/:mbNo/homepage', admin.changeHomepageAccess);
 router.get('/balances', admin.listBalances);
 router.post('/balances', admin.adjustBalances);
 router.get('/balances/:mbNo/logs', admin.balanceLogs);

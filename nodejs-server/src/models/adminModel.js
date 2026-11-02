@@ -4,7 +4,7 @@ const pool = require('../config/dbPromise');
 const Admin = {};
 
 // dept_id·position_id: 조직 탭 소속 명단용 (개인정보 아님)
-const SAFE_COLUMNS = 'mb_no, user_id, user_name, user_phone, user_role, user_status, user_datetime, dept_id, position_id';
+const SAFE_COLUMNS = 'mb_no, user_id, user_name, user_phone, user_role, user_status, user_datetime, dept_id, position_id, homepage_access';
 
 Admin.listUsers = async (cpId, status) => {
     const [rows] = status
@@ -66,6 +66,7 @@ Admin.listLeaves = async (cpId, from, to) => {
 };
 
 Admin.updateStatus = (mbNo, status) => pool.query('UPDATE lk_user SET user_status = ? WHERE mb_no = ?', [status, mbNo]);
+Admin.updateHomepageAccess = (mbNo, access) => pool.query('UPDATE lk_user SET homepage_access = ? WHERE mb_no = ?', [access, mbNo]);
 Admin.updateRole = (mbNo, role) => pool.query('UPDATE lk_user SET user_role = ? WHERE mb_no = ?', [role, mbNo]);
 
 module.exports = Admin;

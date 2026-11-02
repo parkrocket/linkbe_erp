@@ -83,6 +83,10 @@ const runMiddleware = (mw, req) =>
     assert.strictEqual(r.req.userId, 'a@b.c');
     assert.strictEqual(r.req.userRole, 'admin');
     assert.strictEqual(r.req.userCpId, 3);
+    assert.strictEqual(r.req.userHomepage, false, '홈페이지 권한 없음');
+    statusRow = { user_status: 'approved', user_role: 'member', cp_id: 3, homepage_access: 1 };
+    r = await runMiddleware(requireAuth, req());
+    assert.strictEqual(r.req.userHomepage, true, '홈페이지 권한 (매 요청 DB 값)');
 
     // requireAdmin: member 403, admin 통과
     r = await runMiddleware(requireAdmin, { userRole: 'member' });

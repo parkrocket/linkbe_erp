@@ -91,6 +91,17 @@ exports.changeStatus = handle(async (req, res) => {
     res.json({ ok: true });
 });
 
+// 홈페이지 관리 권한 부여·해제 (hibye 관리자만 — requireAdmin)
+exports.changeHomepageAccess = handle(async (req, res) => {
+    const target = await loadTarget(req, res);
+    if (!target) return;
+    const { access } = req.body;
+    if (typeof access !== 'boolean') return fail(res, 400, 'Invalid access');
+    await Admin.updateHomepageAccess(target.mb_no, access ? 1 : 0);
+    await record(req, target, access ? '홈페이지 관리자로 지정' : '홈페이지 관리자에서 해제');
+    res.json({ ok: true });
+});
+
 exports.changeRole = handle(async (req, res) => {
     const target = await loadTarget(req, res);
     if (!target) return;
