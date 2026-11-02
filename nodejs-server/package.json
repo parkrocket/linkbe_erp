@@ -22,6 +22,7 @@
         "express-session": "^1.18.0",
         "fs": "^0.0.1-security",
         "googleapis": "^140.0.1",
+        "iconv-lite": "^0.4.24",
         "jsonwebtoken": "^9.0.2",
         "moment": "^2.30.1",
         "multer": "^2.5.0",
