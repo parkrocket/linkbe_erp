@@ -23,4 +23,11 @@ router.post('/orders', requireMember, shop.createOrder);
 router.get('/orders', requireMember, shop.listOrders);
 router.get('/orders/:orderNo', requireMember, shop.getOrder);
 
+// KCP 결제창 결과(PC 폼 UTF-8·모바일 EUC-KR) — 본문은 직접 해석, 쿠키 사용 안 함
+router.post(
+    '/kcp/return',
+    express.raw({ type: '*/*', limit: '64kb' }),
+    require('../controllers/kcpController').kcpReturn,
+);
+
 module.exports = router;

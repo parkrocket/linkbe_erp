@@ -60,6 +60,9 @@ const kstStamp = () => {
     return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}:${p.second}`;
 };
 
+exports.notify = notify;
+exports.kstStamp = kstStamp;
+
 const toProduct = row => ({ id: row.id, title: row.title, price: Number(row.price), imageUrl: publicFileUrl(row.image_file_id) });
 const toOrder = row => ({
     orderNo: row.order_no,
