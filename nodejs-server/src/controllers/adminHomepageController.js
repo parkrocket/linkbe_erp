@@ -56,6 +56,9 @@ const handle = fn => async (req, res) => {
 
 const actorNo = async req => (await Admin.findByUserId(req.userCpId, req.userId))?.mb_no ?? null;
 
+// 쇼핑 관리 API(adminShopController)가 같은 규칙을 쓰도록 공개
+exports.helpers = { intIn, flag, text, html, publicFileOrNull, actorNo };
+
 // ── 글(공지·포트폴리오) ──
 exports.listPosts = handle(async (req, res) => {
     const board = boardOf(req);

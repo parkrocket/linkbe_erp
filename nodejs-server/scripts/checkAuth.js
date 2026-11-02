@@ -34,6 +34,7 @@ async function call(path, { method = 'POST', cookie, headers = {}, body = '{}' }
     assert.strictEqual((await call('/api/admin/org', { method: 'GET' })).status, 401, 'admin/org 열려 있음');
     assert.strictEqual((await call('/api/admin/homepage/inquiries', { method: 'GET' })).status, 401, '홈페이지 관리 API 열려 있음');
     assert.strictEqual((await call('/api/admin/shop/members', { method: 'GET' })).status, 401, '고객 회원 관리 API 열려 있음');
+    for (const p of ['orders', 'products']) assert.strictEqual((await call(`/api/admin/shop/${p}`, { method: 'GET' })).status, 401, `쇼핑 관리 ${p} API 열려 있음`);
     assert.strictEqual((await call('/api/admin/leaves?from=2026-11-01&to=2026-11-30', { method: 'GET' })).status, 401, 'admin/leaves 열려 있음');
     assert.strictEqual((await call('/api/admin/leaves/1/cancel', { body: '{"reason":"x"}' })).status, 401, 'admin 대신 취소 열려 있음');
     assert.strictEqual((await call('/api/admin/balances', { body: '{}' })).status, 401, 'admin/balances 조정 열려 있음');
