@@ -78,6 +78,7 @@ app.use('/api/calendar', calendarRoutes);
 
 // 회사 홈페이지(linkbe.kr) 공개 API — 로그인 없음
 app.use('/api/public/homepage', require('./routes/publicHomepage'));
+app.use('/api/public/shop', require('./routes/publicShop'));
 
 // 홈페이지 관리 API — 관리자 또는 홈페이지 권한자 (아래 /api/admin(관리자 전용)보다 먼저 연결해야 권한자가 막히지 않음)
 app.use('/api/admin/homepage', require('./middlewares/requireHomepage').requireHomepage, require('./routes/adminHomepage'));

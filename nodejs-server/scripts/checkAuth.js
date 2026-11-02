@@ -56,6 +56,12 @@ async function call(path, { method = 'POST', cookie, headers = {}, body = '{}' }
     assert.strictEqual(refreshed.status, 401, '승인된 계정이 아니면 차단');
     assert.strictEqual(refreshed.json.error, 'Account not active');
 
+    // 3-1) 직원 로그인과 고객 회원 로그인 상호 차단 (서명 검증에서 막혀 DB에 닿지 않음)
+    const memberOnly = jwt.sign({ mid: 1 }, 'member-test');
+    assert.strictEqual((await call('/api/vacation/list', { cookie: `lb_member=${memberOnly}` })).status, 401, '고객 쿠키로 직원 API 통과');
+    const staffOnly = jwt.sign({ userId: 'nobody@check.invalid' }, process.env.JWT_SECRET_KEY);
+    assert.strictEqual((await call('/api/public/shop/members/me', { method: 'GET', cookie: `x_auth=${staffOnly}` })).status, 401, '직원 쿠키로 고객 API 통과');
+
     // 4) Slack: 서명 없으면 401, 올바른 서명이면 통과
     assert.strictEqual((await call('/api/slack/home')).status, 401, 'Slack 서명 없이 통과됨');
     const ts = Math.floor(Date.now() / 1000);

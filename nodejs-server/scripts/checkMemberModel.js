@@ -31,6 +31,13 @@ const all = () => calls.map(c => c.sql).join('\n');
     assert.ok(!/password_hash/.test(last().sql), 'findById는 해시 제외');
     assert.deepStrictEqual(last().params, [3]);
 
+    // 세션 조회: active만, 시각 비교는 DB 안(FROM_UNIXTIME), 해시 제외
+    reply = [[{ id: 3 }]];
+    assert.deepStrictEqual(await Member.findForSession(3, 1700000000), { id: 3 });
+    assert.ok(/status = 'active'/.test(last().sql) && /FROM_UNIXTIME\(\?\)/.test(last().sql) && /AS token_stale/.test(last().sql));
+    assert.ok(!/password_hash/.test(last().sql), 'findForSession은 해시 제외');
+    assert.deepStrictEqual(last().params, [1700000000, 3]);
+
     // 해시 조회: active만, 없으면 null
     reply = [[]];
     assert.strictEqual(await Member.findPasswordHash(3), null);

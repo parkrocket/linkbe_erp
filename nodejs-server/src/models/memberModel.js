@@ -28,6 +28,15 @@ Member.findById = async id => {
     return rows[0];
 };
 
+// 로그인 쿠키 확인용 — active만. 비밀번호 변경 뒤 발급된 토큰인지는 DB 시계로 비교(JS Date는 시간대가 어긋난 이력)
+Member.findForSession = async (id, iatSeconds) => {
+    const [rows] = await pool.query(
+        "SELECT id, login_id, name, email, phone, created_at, (password_changed_at IS NOT NULL AND password_changed_at > FROM_UNIXTIME(?)) AS token_stale FROM hp_member WHERE id = ? AND status = 'active'",
+        [iatSeconds, id],
+    );
+    return rows[0];
+};
+
 Member.findPasswordHash = async id => {
     const [rows] = await pool.query("SELECT password_hash FROM hp_member WHERE id = ? AND status = 'active'", [id]);
     return rows[0] ? rows[0].password_hash : null;
