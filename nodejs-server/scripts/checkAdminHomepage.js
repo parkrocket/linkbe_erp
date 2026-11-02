@@ -110,7 +110,12 @@ const post = { title: '공지', bodyHtml: '<p>본문</p>', isVisible: true };
     assert.deepStrictEqual(res.body.files, [{ id: 8, name: '견적.pdf', mime: 'application/pdf', size: 10 }]);
     res = await call(ctrl.updateInquiry, { params: { id: '5' }, body: { status: 'done', adminMemo: '회신 완료' } });
     assert.deepStrictEqual(calls.find(c => c[0] === 'updateInquiry').slice(1), [5, { status: 'done', adminMemo: '회신 완료' }]);
-    res = await call(ctrl.updateInquiry, { params: { id: '5' }, body: { status: 'deleted' } });
+    // 상태만 바꾸면 메모는 그대로 (undefined = 손대지 않음), 숫자 메모는 거절
+    await call(ctrl.updateInquiry, { params: { id: '5' }, body: { status: 'in_progress' } });
+    assert.deepStrictEqual(calls.filter(c => c[0] === 'updateInquiry').pop().slice(1), [5, { status: 'in_progress', adminMemo: undefined }]);
+    res = await call(ctrl.updateInquiry, { params: { id: '5' }, body: { status: 'done', adminMemo: 123 } });
+    assert.strictEqual(res.code, 400);
+        res = await call(ctrl.updateInquiry, { params: { id: '5' }, body: { status: 'deleted' } });
     assert.strictEqual(res.code, 400);
     // 첨부 내려받기: 그 문의의 파일만, 원본 이름으로
     res = await call(ctrl.downloadInquiryFile, { params: { id: '5', fileId: '8' } });

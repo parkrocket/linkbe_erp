@@ -185,8 +185,11 @@ Homepage.findInquiry = async id => {
     return rows[0];
 };
 
+// adminMemo undefined면 상태만 바꿈 (메모를 지우지 않게)
 Homepage.updateInquiry = (id, { status, adminMemo }) =>
-    pool.query('UPDATE hp_inquiry SET status = ?, admin_memo = ? WHERE id = ?', [status, adminMemo, id]);
+    adminMemo === undefined
+        ? pool.query('UPDATE hp_inquiry SET status = ? WHERE id = ?', [status, id])
+        : pool.query('UPDATE hp_inquiry SET status = ?, admin_memo = ? WHERE id = ?', [status, adminMemo, id]);
 
 // 스팸 판정용 — 같은 IP의 최근 N분 접수 건수
 Homepage.countRecentByIp = async (ip, minutes) => {

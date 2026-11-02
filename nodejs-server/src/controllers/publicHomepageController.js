@@ -105,16 +105,17 @@ exports.getFile = handle(async (req, res) => {
 });
 
 // 문의 접수 — 스팸으로 보이면 저장·알림 없이 같은 성공 응답(봇에게 단서 주지 않음)
-// ponytail: IP는 X-Forwarded-For 첫 값(request-ip) — 위조 가능, 강한 차단이 필요하면 로드밸런서·nginx 단에서 제한
+// IP는 req.ip(앞단 프록시만 신뢰 — config/trustProxy.js). 대량 요청 차단은 nginx limit_req에서
 exports.createInquiry = handle(async (req, res) => {
     const { kind } = req.params;
     if (!KINDS.includes(kind)) return notFound(res);
     const body = req.body || {};
     const files = req.files || [];
+    const clientIp = req.ip || '';
 
     const startedAt = Number(body.startedAt);
     const tooFast = !body.startedAt || !Number.isFinite(startedAt) || Date.now() - startedAt < MIN_FILL_MS;
-    if (body.website || tooFast || (await Homepage.countRecentByIp(req.clientIp, RATE_WINDOW_MIN)) >= RATE_MAX) {
+    if (body.website || tooFast || (await Homepage.countRecentByIp(clientIp, RATE_WINDOW_MIN)) >= RATE_MAX) {
         return res.json({ ok: true });
     }
 
@@ -125,7 +126,7 @@ exports.createInquiry = handle(async (req, res) => {
 
     const stored = files.map(f => saveUpload(f, 'private'));
     try {
-        await Homepage.createInquiryWithFiles({ ...input.value, ip: req.clientIp }, stored);
+        await Homepage.createInquiryWithFiles({ ...input.value, ip: clientIp }, stored);
     } catch (error) {
         stored.forEach(f => removeUpload(f.storedName, 'private')); // DB 저장 실패 → 써 둔 파일 정리
         throw error;

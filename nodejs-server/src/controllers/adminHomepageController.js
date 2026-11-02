@@ -200,10 +200,12 @@ exports.getInquiry = handle(async (req, res) => {
 exports.updateInquiry = handle(async (req, res) => {
     const id = positiveInt(req.params.id);
     if (!id || !(await Homepage.findInquiry(id))) return fail(res, 404, 'Not found');
-    const { status } = req.body;
-    const adminMemo = req.body.adminMemo === undefined || req.body.adminMemo === null ? null : text(req.body.adminMemo, 2000);
-    if (!STATUSES.includes(status) || adminMemo === null && req.body.adminMemo) return fail(res, 400, 'Invalid field');
-    await Homepage.updateInquiry(id, { status, adminMemo: adminMemo || null });
+    const { status, adminMemo: memo } = req.body;
+    // undefined: 메모는 그대로 / null·'': 지우기 / 문자열: 저장(2000자)
+    const validMemo = memo === undefined || memo === null || (typeof memo === 'string' && memo.length <= 2000);
+    if (!STATUSES.includes(status) || !validMemo) return fail(res, 400, 'Invalid field');
+    const adminMemo = memo === undefined ? undefined : memo?.trim() || null;
+    await Homepage.updateInquiry(id, { status, adminMemo });
     res.json({ ok: true });
 });
 

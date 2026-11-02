@@ -38,6 +38,8 @@ async function call(path, { method = 'POST', cookie, headers = {}, body = '{}' }
     assert.strictEqual((await call('/api/admin/balances', { body: '{}' })).status, 401, 'admin/balances 조정 열려 있음');
 
     // 2) 공개 API는 그대로 열림
+    // 본문 크기: 관리자 글(최대 500KB HTML)이 들어가도록 JSON 한도 1MB (기본 100KB면 413)
+    assert.notStrictEqual((await call('/api/test', { body: JSON.stringify({ x: 'a'.repeat(300 * 1024) }) })).status, 413, 'JSON 본문 한도가 너무 작음');
     // 홈페이지 공개 API는 로그인 없이 (테이블 생성 전이면 500일 수 있어 401이 아닌 것만 확인)
     assert.notStrictEqual((await call('/api/public/homepage/faqs', { method: 'GET' })).status, 401, '홈페이지 공개 API가 막힘');
     // '/public'이 들어간 다른 경로까지 열리면 안 됨

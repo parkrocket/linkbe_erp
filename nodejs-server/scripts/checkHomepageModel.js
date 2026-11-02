@@ -69,6 +69,14 @@ const all = () => calls.map(c => c.sql).join('\n');
     assert.deepStrictEqual(await Homepage.findFile(4), { id: 4, visibility: 'private' });
     assert.deepStrictEqual(last().params, [4]);
 
+    // 문의 수정: 메모 undefined면 상태만
+    pool.query = async (sql, params) => (calls.push({ sql, params }), [{ affectedRows: 1 }]);
+    await Homepage.updateInquiry(5, { status: 'done', adminMemo: undefined });
+    assert.ok(!/admin_memo/.test(last().sql), '메모 안 건드림');
+    assert.deepStrictEqual(last().params, ['done', 5]);
+    await Homepage.updateInquiry(5, { status: 'done', adminMemo: null });
+    assert.ok(/admin_memo = \?/.test(last().sql), 'null은 메모 지우기');
+
     // 모든 쿼리에 값 직접 삽입 없음 (따옴표 문자열 리터럴은 상수만)
     assert.ok(!/'\$\{/.test(all()));
 

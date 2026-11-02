@@ -28,6 +28,8 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 app.use(requestIp.mw());
+// 실제 클라이언트 IP(req.ip) — 로드밸런서·nginx만 신뢰 (config/trustProxy.js)
+app.set('trust proxy', require('./config/trustProxy').TRUST_PROXY);
 
 // 환경 변수 로드
 if (process.env.NODE_ENV === 'production') {
@@ -40,7 +42,8 @@ if (process.env.NODE_ENV === 'production') {
 
 // JSON 요청을 파싱하는 미들웨어
 // verify: Slack 서명 검증용 원문 보관
-app.use(express.json({ verify: keepRawBody }));
+// limit: 관리자 글 본문(최대 500KB HTML)이 들어가도록 1MB (기본 100KB)
+app.use(express.json({ limit: '1mb', verify: keepRawBody }));
 
 // /api 전체에 로그인(JWT 쿠키) 검사 — 예외 경로는 requireAuth.js 참고
 app.use('/api', requireAuth);

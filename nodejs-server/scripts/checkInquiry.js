@@ -36,7 +36,7 @@ const call = async (kind, body, files = []) => {
     const res = { code: 200 };
     res.status = c => ((res.code = c), res);
     res.json = b => ((res.body = b), res);
-    await ctrl.createInquiry({ params: { kind }, body, files, clientIp: '1.2.3.4' }, res);
+    await ctrl.createInquiry({ params: { kind }, body, files, ip: '1.2.3.4' }, res);
     return res;
 };
 const reset = () => ((saved = undefined), (notices = []), (recent = 0), (failSave = false), (slackFails = false));
@@ -150,7 +150,7 @@ const reset = () => ((saved = undefined), (notices = []), (recent = 0), (failSav
     // 실제 HTTP(multipart): 10MB 초과·4번째 파일은 라우터에서 400 (저장 전)
     const express = require('express');
     const app = express();
-    app.use((req, r, next) => ((req.clientIp = '9.9.9.9'), next()));
+    app.set('trust proxy', require('../src/config/trustProxy').TRUST_PROXY); // 운영과 같은 설정
     app.use('/h', require('../src/routes/publicHomepage'));
     const server = app.listen(0);
     const url = `http://127.0.0.1:${server.address().port}/h/inquiries/qna`;
@@ -169,6 +169,15 @@ const reset = () => ((saved = undefined), (notices = []), (recent = 0), (failSav
     http = await fetch(url, { method: 'POST', body: form([['ok.pdf', 10]]) });
     assert.deepStrictEqual([http.status, await http.json()], [200, { ok: true }]);
     assert.strictEqual(saved.files.length, 1, '정상 multipart 접수');
+    // 클라이언트 IP: 로드밸런서·nginx(사설·루프백)가 붙인 값만 믿음 — 클라이언트가 보낸 X-Forwarded-For 앞부분은 무시
+    for (const [xff, expected] of [
+        ['6.6.6.6, 203.0.113.9', '203.0.113.9'], // 앞의 6.6.6.6은 클라이언트가 지어낸 값
+        ['1.1.1.1, 203.0.113.9, 172.31.5.5', '203.0.113.9'], // 마지막은 로드밸런서(사설 IP)
+    ]) {
+        reset();
+        http = await fetch(url, { method: 'POST', headers: { 'X-Forwarded-For': xff }, body: form([]) });
+        assert.strictEqual(saved.inquiry.ip, expected, xff);
+    }
     server.close();
 
     fs.rmSync(process.env.UPLOAD_ROOT, { recursive: true, force: true });
