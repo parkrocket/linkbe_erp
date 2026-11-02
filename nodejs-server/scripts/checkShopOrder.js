@@ -166,6 +166,28 @@ const reset = () => {
     assert.strictEqual(r.code, 200);
     assert.strictEqual(saved.length, 1);
 
+    // ── Host 허용 목록 ──
+    reset();
+    const hostReq = host => ({ get: h => ({ host, 'user-agent': 'UA' })[h], body: { productId: 1, payMethod: 'card', device: 'mobile' } });
+    for (const bad of ['evil.example', undefined, 'linkbe.kr.evil.example']) {
+        r = await call(ctrl.createOrder, hostReq(bad));
+        assert.deepStrictEqual([r.code, r.body], [400, { error: 'Invalid host' }], `host ${bad}`);
+    }
+    assert.strictEqual(saved.length, 0);
+    assert.strictEqual(approvalCalls.length, 0);
+    assert.strictEqual((await call(ctrl.createOrder, hostReq('LINKBE.KR'))).code, 200);
+    assert.strictEqual(approvalCalls[0].retUrl.startsWith('https://LINKBE.KR/'), true);
+
+    // ── 가격 1 미만 ──
+    reset();
+    for (const bad of [0, -5, 'abc', null]) {
+        products[1].price = bad;
+        r = await call(ctrl.createOrder, { body: { productId: 1, payMethod: 'deposit', depositName: '홍' } });
+        assert.deepStrictEqual([r.code, r.body], [400, { error: 'Invalid product' }], `price ${bad}`);
+    }
+    products[1].price = 12000;
+    assert.strictEqual(saved.length, 0);
+
     // ── 시간당 10회 ──
     reset();
     for (let i = 0; i < 10; i++) assert.strictEqual((await call(ctrl.createOrder, { body: { productId: 1, payMethod: 'deposit', depositName: '홍' } })).code, 200);

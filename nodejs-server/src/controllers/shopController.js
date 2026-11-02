@@ -84,8 +84,15 @@ exports.getProduct = handle(async (req, res) => {
     res.json({ product: { ...toProduct(row), bodyHtml: sanitizeHtml(row.body_html) } });
 });
 
-exports.payOptions = (req, res) => {
+exports.payOptions = handle(async (req, res) => {
     res.json({ methods: availableMethods(), bankAccount: bankAccount() });
+});
+
+// Ret_URL·action에 들어갈 Host 허용 목록(대소문자 무시) — 조작된 Host로 결제 결과가 다른 곳에 가지 않게
+const allowedHosts = () => {
+    const list = (process.env.SHOP_ALLOWED_HOSTS || 'linkbe.kr,www.linkbe.kr').split(',');
+    if (process.env.NODE_ENV !== 'production') list.push('localhost:3002');
+    return list.map(h => h.trim().toLowerCase()).filter(Boolean);
 };
 
 // 결제창에 넘길 값 — PC (영카트 orderform 필드 그대로, 결과용 빈 칸 포함)
@@ -150,6 +157,8 @@ exports.createOrder = handle(async (req, res) => {
     if (typeof payMethod !== 'string' || !availableMethods().includes(payMethod)) return res.status(400).json({ error: 'Invalid method' });
     const isDeposit = payMethod === 'deposit';
     if (!isDeposit && device !== 'pc' && device !== 'mobile') return res.status(400).json({ error: 'Invalid device' });
+    // 무통장은 Host를 쓰지 않으므로 KCP 경로(card·bank)만 검사
+    if (!isDeposit && !allowedHosts().includes(String(req.get('host') || '').toLowerCase())) return res.status(400).json({ error: 'Invalid host' });
     let depositName = null;
     if (isDeposit) {
         depositName = typeof body.depositName === 'string' ? body.depositName.trim() : '';
@@ -159,6 +168,7 @@ exports.createOrder = handle(async (req, res) => {
     const pid = parseId(body.productId);
     const product = pid && (await Product.findVisible(pid));
     if (!product) return res.status(404).json({ error: 'Not found' });
+    if (!(Number(product.price) >= 1)) return res.status(400).json({ error: 'Invalid product' }); // 0·음수·숫자 아님
 
     const row = {
         member_id: member.id,
