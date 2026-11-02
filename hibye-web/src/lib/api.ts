@@ -5,6 +5,7 @@ export class ApiError extends Error {
     constructor(
         public status: number,
         public reason?: string,
+        public detail?: string,
     ) {
         super(`API ${status}`);
         this.name = 'ApiError';
@@ -36,8 +37,8 @@ export async function apiFetch<T>(path: string, { method = 'GET', body, cookie }
     });
 
     if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as { error?: unknown } | null;
-        throw new ApiError(res.status, typeof data?.error === 'string' ? data.error : undefined);
+        const data = (await res.json().catch(() => null)) as { error?: unknown; message?: unknown } | null;
+        throw new ApiError(res.status, typeof data?.error === 'string' ? data.error : undefined, typeof data?.message === 'string' ? data.message : undefined);
     }
     return res.json() as Promise<T>;
 }

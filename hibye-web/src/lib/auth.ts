@@ -39,3 +39,15 @@ export async function getAdminPendingCount(): Promise<number> {
         return 0;
     }
 }
+
+// 홈페이지 권한자용 입금 대기 주문 수 — 실패해도 헤더는 그려지도록 0
+export async function getShopAwaitingCount(): Promise<number> {
+    const token = (await cookies()).get('x_auth')?.value;
+    if (!token) return 0;
+    try {
+        const res = await apiFetch<{ awaitingCount: number }>('/api/admin/shop/summary', { cookie: `x_auth=${token}` });
+        return Number(res.awaitingCount) || 0;
+    } catch {
+        return 0;
+    }
+}

@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { getAdminPendingCount, getCurrentUser } from '@/lib/auth';
+import { getAdminPendingCount, getCurrentUser, getShopAwaitingCount } from '@/lib/auth';
 import { canManageHomepage } from '@/lib/homepage';
 import { HeaderView, Logo } from './HeaderView';
 
@@ -17,10 +17,11 @@ async function HeaderWithUser() {
     const user = await getCurrentUser().catch(() => undefined);
     if (user === undefined) return <HeaderFallback />;
     const isAdmin = user?.user_role === 'admin';
-    const pendingCount = isAdmin ? await getAdminPendingCount() : 0;
     // '관리' 메뉴: 관리자 + 홈페이지 권한자(홈페이지 탭만)
     const canManage = !!user && canManageHomepage({ user_role: user.user_role ?? 'member', homepage_access: user.homepage_access });
-    return <HeaderView userName={user?.user_name ?? null} canManage={canManage} pendingCount={pendingCount} />;
+    // 배지 = 가입 대기(관리자만) + 입금 대기 주문(홈페이지 권한자)
+    const [pending, awaiting] = await Promise.all([isAdmin ? getAdminPendingCount() : 0, canManage ? getShopAwaitingCount() : 0]);
+    return <HeaderView userName={user?.user_name ?? null} canManage={canManage} pendingCount={pending + awaiting} />;
 }
 
 function HeaderFallback() {

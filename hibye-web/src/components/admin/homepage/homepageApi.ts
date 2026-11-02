@@ -1,5 +1,6 @@
 import { apiFetch, ApiError } from '@/lib/api';
 import type { Board, InquiryStatus, PopupForm, PostForm } from '@/lib/homepage';
+import type { ProductForm } from '@/lib/shop';
 
 // 홈페이지 관리 API (/api/admin/homepage/*) — 권한: 관리자 또는 홈페이지 권한자
 const BASE = '/api/admin/homepage';
@@ -117,3 +118,41 @@ export const leaveCustomer = (id: number) =>
     apiFetch<{ ok: boolean }>(`/api/admin/shop/members/${id}/leave`, {
         method: 'POST',
     });
+
+// ── 개인결제 상품·주문 (/api/admin/shop/*) ──
+const SHOP = '/api/admin/shop';
+export const saveProduct = (id: number | null, f: ProductForm, expectedUpdatedAt?: string) =>
+    apiFetch<{ ok: boolean; id: number }>(`${SHOP}/products${id ? `/${id}` : ''}`, {
+        method: 'POST',
+        body: {
+            title: f.title.trim(),
+            price: Number(f.price),
+            bodyHtml: f.bodyHtml,
+            imageFileId: f.imageFileId,
+            isVisible: f.isVisible,
+            sortOrder: f.sortOrder.trim() || '0',
+            ...(id && { expectedUpdatedAt }),
+        },
+    });
+export const deleteProduct = (id: number) => apiFetch(`${SHOP}/products/${id}`, { method: 'DELETE' });
+
+export const ordersPath = (p: { status: string; payMethod: string; from: string; to: string; q: string; page: number }) =>
+    `${SHOP}/orders?${new URLSearchParams(Object.entries({ ...p, page: String(p.page), size: '30' }).filter(([, v]) => v))}`;
+export const orderAction = (id: number, action: 'confirm-deposit' | 'complete') =>
+    apiFetch(`${SHOP}/orders/${id}/${action}`, { method: 'POST' });
+export const saveOrderMemo = (id: number, memo: string) => apiFetch(`${SHOP}/orders/${id}/memo`, { method: 'POST', body: { memo } });
+export const cancelOrder = (id: number, reason: string) =>
+    apiFetch<{ ok: boolean; refundManually: boolean }>(`${SHOP}/orders/${id}/cancel`, { method: 'POST', body: { reason } });
+
+// 상품·주문 오류 문구 (공통 문구는 homepageErrorMessage)
+export function shopErrorMessage(error: unknown) {
+    if (error instanceof ApiError) {
+        if (error.reason === 'KCP cancel failed') return `KCP 취소에 실패했어요: ${error.detail ?? ''}`;
+        if (error.reason === 'Order changed') return '그사이 주문 상태가 바뀌었어요. 다시 불러올게요.';
+        if (error.reason === 'Invalid transition') return '이 상태에서는 할 수 없는 작업이에요.';
+        if (error.reason === 'Product changed') return '다른 사람이 먼저 수정했어요. 다시 불러온 뒤 수정해 주세요.';
+        if (error.reason === 'Has orders') return '주문이 있어 삭제할 수 없어요. 판매 안 함으로 바꿔 주세요.';
+        if (error.reason === 'Order not found') return '주문을 찾을 수 없어요. 새로고침해 주세요.';
+    }
+    return homepageErrorMessage(error);
+}

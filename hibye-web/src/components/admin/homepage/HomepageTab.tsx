@@ -4,12 +4,16 @@ import { useState } from 'react';
 import { CustomersPanel } from './CustomersPanel';
 import { FaqPanel } from './FaqPanel';
 import { InquiriesPanel } from './InquiriesPanel';
+import { OrdersPanel } from './OrdersPanel';
 import { PagesPanel } from './PagesPanel';
 import { PopupPanel } from './PopupPanel';
 import { PostsPanel } from './PostsPanel';
+import { ProductsPanel } from './ProductsPanel';
 
 const MENUS = [
     ['inquiries', '문의함'],
+    ['orders', '주문'],
+    ['products', '개인결제 상품'],
     ['customers', '고객 회원'],
     ['notice', '공지사항'],
     ['portfolio', '포트폴리오'],
@@ -42,6 +46,8 @@ export function HomepageTab() {
                 ))}
             </div>
             {menu === 'inquiries' && <InquiriesPanel />}
+            {menu === 'orders' && <OrdersPanel />}
+            {menu === 'products' && <ProductsPanel />}
             {menu === 'customers' && <CustomersPanel />}
             {(menu === 'notice' || menu === 'portfolio') && <PostsPanel key={menu} board={menu} />}
             {menu === 'faq' && <FaqPanel />}
