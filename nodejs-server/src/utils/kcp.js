@@ -31,18 +31,27 @@ exports.PAY_METHODS = {
 
 // 실행 파일 존재 여부는 경로별로 한 번만 확인(점검은 resetKcpConfig로 다시)
 let binCache = null;
+let envWarned = false;
 exports.resetKcpConfig = () => {
     binCache = null;
+    envWarned = false;
 };
 
 // 사이트 키는 내부용 — 바깥으로 내보내는 kcpConfig()에는 넣지 않음
 function settings() {
-    const env = process.env.KCP_ENV === 'live' ? 'live' : 'test';
+    const rawEnv = process.env.KCP_ENV || 'test';
+    const envValid = rawEnv === 'test' || rawEnv === 'live';
+    if (!envValid && !envWarned) {
+        envWarned = true;
+        console.warn('[kcp] KCP_ENV는 test 또는 live여야 함 — 결제 비활성');
+    }
+    const env = rawEnv === 'live' ? 'live' : 'test';
     const home = process.env.KCP_HOME || path.join(os.homedir(), 'kcp');
     const bin = path.join(home, 'bin', 'pp_cli_x64');
     if (!binCache || binCache.bin !== bin) binCache = { bin, exists: fs.existsSync(bin) };
     return {
         env,
+        envValid,
         home,
         bin,
         binExists: binCache.exists,
@@ -56,7 +65,7 @@ function settings() {
 exports.kcpConfig = () => {
     const s = settings();
     return {
-        ready: Boolean(s.siteCd && s.siteKey && s.binExists),
+        ready: Boolean(s.envValid && s.siteCd && s.siteKey && s.binExists),
         env: s.env,
         siteCd: s.siteCd,
         siteName: s.siteName,
@@ -68,8 +77,13 @@ exports.kcpConfig = () => {
 // pp_ax_hub_lib.php mf_do_tx와 같은 인자 순서
 const FIELD_ORDER = ['home', 'site_cd', 'site_key', 'tx_cd', 'pa_url', 'pa_port', 'ordr_idxx', 'payx_data', 'ordr_data', 'rcvr_data',
     'escw_data', 'modx_data', 'enc_data', 'enc_info', 'trace_no', 'cust_ip', 'log_path', 'log_level', 'opt'];
-// 쉼표는 인자 구분자, 따옴표·줄바꿈은 결과 줄을 깨뜨림, 한글은 인코딩이 달라(UTF-8 vs EUC-KR) 금지
-const BAD_VALUE = /[,"\r\n\0]|[^\x00-\x7f]/;
+// 여러 값을 chr(31) 등으로 이어 붙이는 칸 — 구성값은 조립 전에 SINGLE로 검사
+const COMPOSED = ['payx_data', 'ordr_data', 'rcvr_data', 'escw_data', 'modx_data'];
+// 단일 값: 쉼표(인자 구분자)·따옴표·제어문자(줄바꿈·하위 구분자 \x1f·\x1e·\x1d)·비ASCII(UTF-8 vs EUC-KR) 금지
+const SINGLE = /[,"\x00-\x1f\x7f]|[^\x00-\x7f]/;
+// 조립된 칸: 하위 구분자는 허용, 쉼표·따옴표·줄바꿈·비ASCII 금지
+const COMPOSED_BAD = /[,"\r\n\0]|[^\x00-\x7f]/;
+const isSingle = (v) => typeof v === 'string' && !SINGLE.test(v);
 
 function parseLine(line) {
     const res = {};
@@ -89,7 +103,7 @@ exports.runPpCli = async (fields) => {
     }
     for (const k of FIELD_ORDER) {
         all[k] = all[k] == null ? '' : String(all[k]);
-        if (BAD_VALUE.test(all[k])) throw new Error(`Invalid KCP field: ${k}`);
+        if ((COMPOSED.includes(k) ? COMPOSED_BAD : SINGLE).test(all[k])) throw new Error(`Invalid KCP field: ${k}`);
     }
     const arg = FIELD_ORDER.map((k) => `${k}=${all[k]}`).join(',');
     return new Promise((resolve) => {
@@ -99,7 +113,7 @@ exports.runPpCli = async (fields) => {
                 console.error('[kcp] pp_cli 실행 실패', err.code || '', err.signal || '');
                 return resolve({ ...ERR_9502 });
             }
-            // 예전 PHP exec()처럼 앞쪽 로그 줄은 버리고 마지막 줄만 결과로 씀(종료 코드는 보지 않음)
+            // 예전 PHP exec()처럼 앞쪽 로그 줄은 버리고 마지막 줄만 결과로 씀(숫자 종료 코드는 보지 않음)
             const lines = stdout ? iconv.decode(stdout, 'cp949').split('\n').map((l) => l.trim()).filter(Boolean) : [];
             const res = lines.length ? parseLine(lines[lines.length - 1]) : {};
             if (!res.res_cd) return resolve({ ...ERR_9502 });
@@ -108,24 +122,36 @@ exports.runPpCli = async (fields) => {
     });
 };
 
+// 설정값(KCP_HOME 등)이 이상해 runPpCli가 거부해도 throw 대신 실패로
+async function safeRun(fields) {
+    try {
+        return await exports.runPpCli(fields);
+    } catch (err) {
+        console.error('[kcp] 인자 거부', err.message);
+        return { res_cd: 'INVALID', res_msg: err.message };
+    }
+}
+
 function logFail(what, res) {
     console.error(`[kcp] ${what} 실패`, res.res_cd, res.res_msg);
 }
 
 exports.approve = async ({ tranCd, encData, encInfo, orderNo, amount, custIp }) => {
+    const invalid = (resMsg) => ({ ok: false, resCd: 'INVALID', resMsg, tno: null, amount: null, appNo: null });
     // tranCd·encData·encInfo는 결제창(브라우저)이 준 값 — 형식이 이상하면 실행하지 않음
-    const fields = {
+    if (!isSingle(tranCd) || !/^\d{8}$/.test(tranCd)) return invalid('Invalid tran_cd');
+    if (!isSingle(encData) || !isSingle(encInfo)) return invalid('Invalid enc data');
+    if (!isSingle(orderNo) || !orderNo) return invalid('Invalid order no');
+    if (!isSingle(custIp)) return invalid('Invalid cust ip');
+    if (!Number.isSafeInteger(amount) || amount <= 0) return invalid('Invalid amount');
+    const res = await safeRun({
         tx_cd: tranCd,
         ordr_idxx: orderNo,
         ordr_data: `ordr_data=ordr_mony=${amount}${US}`,
         enc_data: encData,
         enc_info: encInfo,
         cust_ip: custIp,
-    };
-    const valid = /^\d{8}$/.test(String(tranCd)) && Number.isSafeInteger(amount) && amount > 0
-        && [encData, encInfo, orderNo, custIp].every((v) => typeof v === 'string' && !BAD_VALUE.test(v));
-    if (!valid) return { ok: false, resCd: 'INVALID', resMsg: 'Invalid payment data', tno: null, amount: null, appNo: null };
-    const res = await exports.runPpCli(fields);
+    });
     const ok = res.res_cd === '0000';
     if (!ok) logFail('승인', res);
     const paid = Number(res.amount);
@@ -139,13 +165,18 @@ exports.approve = async ({ tranCd, encData, encInfo, orderNo, amount, custIp }) 
     };
 };
 
-// 전체 취소(STSC). orderNo는 선택(예전 자동 취소는 주문번호를 함께 보냄)
+// 전체 취소(STSC). orderNo는 선택(예전 자동 취소는 주문번호를 함께 보냄), trace_no는 예전처럼 tno
 exports.cancel = async ({ tno, reason, custIp, orderNo = '' }) => {
-    if (/[^\x20-\x7e]/.test(reason)) throw new Error('Cancel reason must be ASCII');
-    const res = await exports.runPpCli({
+    const invalid = (resMsg) => ({ ok: false, resCd: 'INVALID', resMsg });
+    if (typeof tno !== 'string' || !/^\d+$/.test(tno)) return invalid('Invalid tno');
+    if (!isSingle(reason) || !/^[\x20-\x7e]+$/.test(reason)) return invalid('Cancel reason must be non-empty ASCII without comma or quote');
+    if (!isSingle(custIp)) return invalid('Invalid cust ip');
+    if (!isSingle(orderNo)) return invalid('Invalid order no');
+    const res = await safeRun({
         tx_cd: '00200000',
         ordr_idxx: orderNo,
         modx_data: `mod_data=tno=${tno}${US}mod_type=STSC${US}mod_ip=${custIp}${US}mod_desc=${reason}${US}`,
+        trace_no: tno,
         cust_ip: custIp,
     });
     const ok = res.res_cd === '0000';
@@ -202,7 +233,7 @@ exports.requestMobileApprovalKey = async ({ orderNo, amount, goodName, payMethod
     const resMsg = (errBlock && tagText(errBlock[1], 'message')) || '';
     const approvalKey = tagText(data, 'approvalKey');
     const payUrl = tagText(data, 'payUrl');
-    if (code !== '0000' || !approvalKey || !payUrl) {
+    if (code !== '0000' || !approvalKey || !payUrl || !payUrl.startsWith('https://')) {
         console.error('[kcp] 모바일 승인 키 실패', code, resMsg);
         return fail(resMsg || '연동 오류');
     }

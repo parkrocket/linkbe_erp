@@ -68,6 +68,15 @@ for (const k of ['log', 'error', 'warn']) {
     delete process.env.KCP_SITE_CD;
     delete process.env.SHOP_SITE_NAME;
 
+    // 알 수 없는 KCP_ENV → ready false, 경고 1회
+    process.env.KCP_ENV = 'prod';
+    const before = logged.length;
+    assert.strictEqual(kcp.kcpConfig().ready, false);
+    assert.strictEqual(kcp.kcpConfig().ready, false);
+    assert.strictEqual(logged.slice(before).filter((l) => l.includes('KCP_ENV')).length, 1);
+    process.env.KCP_ENV = 'test';
+    assert.strictEqual(kcp.kcpConfig().ready, true);
+
     assert.deepStrictEqual(kcp.PAY_METHODS, {
         card: { pc: '100000000000', mobile: 'CARD', action: 'card' },
         bank: { pc: '010000000000', mobile: 'BANK', action: 'acnt' },
@@ -93,7 +102,7 @@ for (const k of ['log', 'error', 'warn']) {
 
     // 화면이 보낸 값이 이상하면 실행 안 하고 ok:false
     calls = [];
-    for (const bad of [{ encData: 'a,b' }, { encData: 'a"b' }, { encInfo: 'a\nb' }, { tranCd: '0010' }, { encData: '한글' }, { amount: 0 }, { amount: 1.5 }]) {
+    for (const bad of [{ encData: 'a,b' }, { encData: 'a"b' }, { encInfo: 'a\nb' }, { tranCd: '0010' }, { tranCd: 1 }, { encData: '한글' }, { encData: 'a\x1fb' }, { encInfo: 'a\x1eb' }, { custIp: '\x1fx' }, { orderNo: '' }, { amount: 0 }, { amount: 1.5 }]) {
         r = await kcp.approve({ tranCd: '00100000', encData: 'E', encInfo: 'I', orderNo: 'P1', amount: 1000, custIp: '::1', ...bad });
         assert.strictEqual(r.ok, false, JSON.stringify(bad));
     }
@@ -110,8 +119,24 @@ for (const k of ['log', 'error', 'warn']) {
     out(`res_cd=0000${US}res_msg=ok`, Object.assign(new Error(`Command failed: site_key=${SITE_KEY}`), { killed: true, signal: 'SIGTERM' }));
     assert.deepStrictEqual(await kcp.runPpCli({ tx_cd: '00100000' }), E9502);
 
+    // CRLF로 끝나는 출력, 숫자 종료 코드(1)라도 마지막 줄이 정상이면 그 결과
+    nextOut = { err: null, stdout: Buffer.from(`log line\r\nres_cd=0000${US}res_msg=ok\r\n`) };
+    assert.deepStrictEqual(await kcp.runPpCli({ tx_cd: '00100000' }), { res_cd: '0000', res_msg: 'ok' });
+    out(`res_cd=0000${US}res_msg=ok${US}tno=9`, Object.assign(new Error('Command failed'), { code: 1 }));
+    assert.deepStrictEqual(await kcp.runPpCli({ tx_cd: '00100000' }), { res_cd: '0000', res_msg: 'ok', tno: '9' });
+
+    // 실행 경로 설정에 쉼표 → throw 대신 ok:false, 실행 안 함
+    calls = [];
+    process.env.KCP_HOME = home + ',x';
+    r = await kcp.approve({ tranCd: '00100000', encData: 'E', encInfo: 'I', orderNo: 'P1', amount: 1000, custIp: '::1' });
+    assert.strictEqual(r.ok, false);
+    assert.strictEqual(r.resCd, 'INVALID');
+    assert.strictEqual((await kcp.cancel({ tno: '1', reason: 'x', custIp: '::1' })).resCd, 'INVALID');
+    assert.strictEqual(calls.length, 0);
+    process.env.KCP_HOME = home;
+
     // 값에 구분자·줄바꿈·한글·모르는 칸 → throw
-    for (const v of ['a,b', 'a"b', 'a\nb', 'a\rb', '한']) {
+    for (const v of ['a,b', 'a"b', 'a\nb', 'a\rb', '한', 'a\x1fb', 'a\x1db']) {
         await assert.rejects(kcp.runPpCli({ tx_cd: '00100000', ordr_idxx: v }), /Invalid KCP field/);
     }
     await assert.rejects(kcp.runPpCli({ tx_cdd: '1' }), /Unknown KCP field/);
@@ -125,7 +150,19 @@ for (const k of ['log', 'error', 'warn']) {
     assert.ok(arg.includes(',tx_cd=00200000,'));
     assert.ok(arg.includes(`,modx_data=mod_data=tno=20261103000001${US}mod_type=STSC${US}mod_ip=10.0.0.1${US}mod_desc=admin cancel${US},`));
     assert.ok(arg.includes(',ordr_data=,') && arg.includes(',enc_data=,enc_info=,'));
-    await assert.rejects(kcp.cancel({ tno: '1', reason: '관리자 취소', custIp: '::1' }), /ASCII/);
+    assert.ok(arg.includes(',trace_no=20261103000001,'));
+
+    // 취소 구성값 주입·누락 → 실행 없이 INVALID
+    calls = [];
+    const base = { tno: '20261103000001', reason: 'admin cancel', custIp: '10.0.0.1' };
+    for (const bad of [{ custIp: '1.1.1.1\x1fmod_type=STPC' }, { tno: '1\x1fmod_type=STPC' }, { tno: null }, { tno: 1 }, { reason: '관리자 취소' },
+        { reason: undefined }, { reason: '' }, { reason: 'a,b' }, { reason: 'a\x1fb' }, { orderNo: 'P1\x1fx' }]) {
+        r = await kcp.cancel({ ...base, ...bad });
+        assert.strictEqual(r.ok, false, JSON.stringify(bad));
+        assert.strictEqual(r.resCd, 'INVALID', JSON.stringify(bad));
+    }
+    assert.strictEqual(calls.length, 0);
+    assert.match((await kcp.cancel({ ...base, reason: 'a,b' })).resMsg, /reason/);
     out(`res_cd=8061${US}res_msg=원거래없음`);
     assert.deepStrictEqual(await kcp.cancel({ tno: '1', reason: 'x', custIp: '::1' }), { ok: false, resCd: '8061', resMsg: '원거래없음' });
 
@@ -161,6 +198,10 @@ for (const k of ['log', 'error', 'warn']) {
     assert.strictEqual(posted.url, 'https://smpay.kcp.co.kr/services/KCPPaymentService.KCPPaymentServiceHttpSoap11Endpoint/');
     process.env.KCP_ENV = 'test';
     delete process.env.KCP_SITE_CD;
+
+    // payUrl이 https가 아니면 실패
+    axios.post = async () => ({ status: 200, data: okXml.replace('https://devpggw', 'http://devpggw') });
+    assert.strictEqual((await kcp.requestMobileApprovalKey({ orderNo: 'P1', amount: 1, goodName: 'g', payMethod: 'card', retUrl: 'u', userAgent: '' })).ok, false);
 
     // 실패: 오류 코드·네트워크 오류·잘못된 결제수단
     axios.post = async () => ({ status: 200, data: '<a:error><a:code>8888</a:code><a:message>실패</a:message></a:error>' });
