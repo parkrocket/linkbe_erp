@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { CustomersPanel } from './CustomersPanel';
 import { FaqPanel } from './FaqPanel';
 import { InquiriesPanel } from './InquiriesPanel';
 import { PagesPanel } from './PagesPanel';
@@ -9,6 +10,7 @@ import { PostsPanel } from './PostsPanel';
 
 const MENUS = [
     ['inquiries', '문의함'],
+    ['customers', '고객 회원'],
     ['notice', '공지사항'],
     ['portfolio', '포트폴리오'],
     ['faq', 'FAQ'],
@@ -40,6 +42,7 @@ export function HomepageTab() {
                 ))}
             </div>
             {menu === 'inquiries' && <InquiriesPanel />}
+            {menu === 'customers' && <CustomersPanel />}
             {(menu === 'notice' || menu === 'portfolio') && <PostsPanel key={menu} board={menu} />}
             {menu === 'faq' && <FaqPanel />}
             {menu === 'popup' && <PopupPanel />}
