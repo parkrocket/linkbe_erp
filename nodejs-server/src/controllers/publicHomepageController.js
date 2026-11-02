@@ -1,4 +1,5 @@
 const Homepage = require('../models/homepageModel');
+const { sanitizeHtml } = require('../utils/sanitizeHtml');
 const { uploadDir, isStoredName, publicFileUrl, sniffAllowed, saveUpload, removeUpload, extOf, ATTACHMENT_EXTS } = require('../utils/uploads');
 const { validateInquiry, KINDS } = require('../utils/inquiryValidation');
 const { escapeSlack } = require('../utils/slackEscape');
@@ -35,10 +36,11 @@ const handle = fn => async (req, res) => {
 };
 
 // 공개용 글 형태 — 숨김·정렬·작성자 등 내부 칸은 빼고
+// 본문 HTML은 내보낼 때도 정제 — 관리 화면은 저장 시 정제하지만, 이전 스크립트·직접 INSERT로 들어온 값도 막기 위해(비용 작음, 사이트가 60초 캐시)
 const toPublicPost = (row, withBody) => ({
     id: row.id,
     title: row.title,
-    ...(withBody && { bodyHtml: row.body_html }),
+    ...(withBody && { bodyHtml: sanitizeHtml(row.body_html ?? '') }),
     thumbnailUrl: publicFileUrl(row.thumbnail_file_id),
     ...(row.client !== undefined && { client: row.client ?? null }),
     ...(row.category !== undefined && { category: row.category ?? null }),
@@ -66,7 +68,7 @@ exports.getPost = handle(async (req, res) => {
 
 exports.listFaqs = handle(async (req, res) => {
     const faqs = await Homepage.listFaqs({ visibleOnly: true });
-    res.json({ faqs: faqs.map(f => ({ id: f.id, question: f.question, answerHtml: f.answer_html })) });
+    res.json({ faqs: faqs.map(f => ({ id: f.id, question: f.question, answerHtml: sanitizeHtml(f.answer_html ?? '') })) });
 });
 
 exports.listPopups = handle(async (req, res) => {
@@ -90,7 +92,7 @@ exports.getPage = handle(async (req, res) => {
     if (!/^[a-z0-9-]{1,50}$/.test(slug)) return notFound(res);
     const page = await Homepage.getPage(slug);
     if (!page) return notFound(res);
-    res.json({ page: { slug: page.slug, title: page.title, bodyHtml: page.body_html, updatedAt: page.updated_at } });
+    res.json({ page: { slug: page.slug, title: page.title, bodyHtml: sanitizeHtml(page.body_html ?? ''), updatedAt: page.updated_at } });
 });
 
 // 공개 이미지 — public 파일만, 저장 폴더 밖 접근 불가(root + UUID 이름)

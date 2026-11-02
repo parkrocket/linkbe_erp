@@ -6,7 +6,7 @@ const Homepage = require('../src/models/homepageModel');
 const posts = {
     notice: [{ id: 1, title: '공지', body_html: '<p>본문</p>', thumbnail_file_id: null, is_visible: 1, created_at: '2026-11-01' }],
     portfolio: [
-        { id: 2, title: '보이는 글', body_html: '<p>a</p>', thumbnail_file_id: 7, client: '고객', category: '홈페이지', site_url: 'https://a.example', is_visible: 1, show_on_main: 1, created_at: '2026-11-01' },
+        { id: 2, title: '보이는 글', body_html: '<p>a</p><script>alert(1)</script><img src=x onerror=alert(1)>', thumbnail_file_id: 7, client: '고객', category: '홈페이지', site_url: 'https://a.example', is_visible: 1, show_on_main: 1, created_at: '2026-11-01' },
         { id: 3, title: '숨긴 글', body_html: '<p>b</p>', thumbnail_file_id: null, is_visible: 0, show_on_main: 0, created_at: '2026-11-01' },
     ],
 };
@@ -18,10 +18,10 @@ Homepage.listPosts = async (board, opts) => {
     return { rows: rows.map(({ body_html, ...r }) => r), total: rows.length };
 };
 Homepage.findPost = async (board, id, { visibleOnly }) => posts[board].find(p => p.id === id && (!visibleOnly || p.is_visible));
-Homepage.listFaqs = async ({ visibleOnly }) => (visibleOnly ? [{ id: 1, question: 'Q', answer_html: '<p>A</p>', sort_order: 1, is_visible: 1 }] : []);
+Homepage.listFaqs = async ({ visibleOnly }) => (visibleOnly ? [{ id: 1, question: 'Q', answer_html: '<p>A</p><iframe src="//evil.example"></iframe>', sort_order: 1, is_visible: 1 }] : []);
 let popupArgs;
 Homepage.listPopups = async args => ((popupArgs = args), [{ id: 5, title: '팝업', image_file_id: 7, link_url: null, pos_left: 10, pos_top: 20, width: 400, ends_at: '2026-12-31' }]);
-Homepage.getPage = async slug => (slug === 'privacy' ? { slug, title: '개인정보처리방침', body_html: '<p>x</p>', updated_at: '2026-11-01' } : undefined);
+Homepage.getPage = async slug => (slug === 'privacy' ? { slug, title: '개인정보처리방침', body_html: '<p>x</p><a href="javascript:alert(1)">y</a>', updated_at: '2026-11-01' } : undefined);
 Homepage.findFile = async id => files[id];
 
 const ctrl = require('../src/controllers/publicHomepageController');
@@ -52,7 +52,7 @@ const call = async (fn, req) => {
         assert.strictEqual(res.code, 404, board);
     }
 
-    // 상세: 숨김 글 404, 정상은 본문 포함
+    // 상세: 숨김 글 404, 정상은 본문 포함 — DB에 정제 안 된 HTML이 있어도 내보낼 때 정제(이전 스크립트·직접 INSERT 대비)
     res = await call(ctrl.getPost, { params: { board: 'portfolio', id: '3' } });
     assert.strictEqual(res.code, 404, '숨김 글 상세');
     res = await call(ctrl.getPost, { params: { board: 'portfolio', id: 'x' } });
@@ -77,6 +77,7 @@ const call = async (fn, req) => {
     assert.deepStrictEqual(res.body.popups[0], { id: 5, title: '팝업', imageUrl: '/node/api/public/homepage/files/7', linkUrl: null, posLeft: 10, posTop: 20, width: 400, endsAt: '2026-12-31' });
     res = await call(ctrl.getPage, { params: { slug: 'privacy' } });
     assert.strictEqual(res.body.page.title, '개인정보처리방침');
+    assert.ok(!/javascript:/i.test(res.body.page.bodyHtml) && /<p>x<\/p>/.test(res.body.page.bodyHtml), '안내 페이지 본문 정제');
     for (const slug of ['nope', '../etc', 'A B']) {
         res = await call(ctrl.getPage, { params: { slug } });
         assert.strictEqual(res.code, 404, slug);

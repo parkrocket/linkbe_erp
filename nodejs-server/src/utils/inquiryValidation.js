@@ -15,7 +15,8 @@ exports.validateInquiry = (body = {}, kind) => {
     const phone = text(body.phone);
     const company = text(body.company);
     const email = text(body.email);
-    const content = text(body.body);
+    // 브라우저는 줄바꿈을 CRLF로 보냄 → LF로 맞춰 화면 검사(5000자)와 같은 기준으로 셈
+    const content = text(body.body).replace(/\r\n?/g, '\n');
     if (!name || name.length > 30) return { error: 'Invalid name' };
     if (!PHONE_RULE.test(phone)) return { error: 'Invalid phone' };
     if (!company || company.length > 100) return { error: 'Invalid company' };

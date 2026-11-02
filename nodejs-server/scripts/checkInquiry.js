@@ -54,6 +54,10 @@ const reset = () => ((saved = undefined), (notices = []), (recent = 0), (failSav
         body: '문의합니다',
     });
     // 견적: 이메일 선택, 분류 필수, 연락 수단 선택
+    // 줄바꿈: 브라우저는 CRLF로 보냄 → LF로 세서 화면(5000자)과 같은 기준, 저장도 LF
+    const lines = ('a'.repeat(99) + '\r\n').repeat(49) + 'a'.repeat(99); // LF 기준 4999자, CRLF 기준 5048자
+    const multi = validateInquiry({ ...qna, body: lines }, 'qna');
+    assert.ok(multi.value && !multi.value.body.includes('\r'), '줄 많은 5000자 이내 본문은 통과, CR 제거');
     assert.deepStrictEqual(validateInquiry(estimate, 'estimate').value.category, 'homepage');
     assert.deepStrictEqual(validateInquiry({ ...estimate, contactMethod: '' }, 'estimate').value.contactMethod, null);
     const bad = [
