@@ -19,7 +19,8 @@ const fakeRes = () => {
     const r = { code: 200, cookies: [] };
     r.status = c => ((r.code = c), r);
     r.json = b => ((r.body = b), r);
-    r.cookie = (name, value) => r.cookies.push(name);
+    r.cookie = (name, value, options) => (r.cookies.push(name), (r.cookieOptions = options));
+    r.clearCookie = (name, options) => (r.cleared = { name, options });
     return r;
 };
 const runMiddleware = (mw, req) =>
@@ -51,6 +52,20 @@ const runMiddleware = (mw, req) =>
     userController.login({ body: { email: 'a@b.c', password: 'x' } }, ok);
     assert.strictEqual(ok.body.loginSuccess, true);
     assert.deepStrictEqual(ok.cookies, ['x_auth']);
+    // 쿠키 보안 (2026-11-02 전환 후): 화면 코드가 읽지 못하게, 24시간(JWT 만료와 같음), 다른 사이트 요청엔 안 실림
+    assert.deepStrictEqual(ok.cookieOptions, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 24 * 60 * 60 * 1000, path: '/' });
+    assert.ok(!('token' in ok.body), '로그인 응답 본문에 토큰을 싣지 않음 (쿠키로만)');
+    // 운영은 HTTPS 전용
+    const prevEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    const prod = fakeRes();
+    userController.login({ body: { email: 'a@b.c', password: 'x' } }, prod);
+    assert.strictEqual(prod.cookieOptions.secure, true);
+    // 로그아웃도 같은 속성으로 지워야 브라우저가 같은 쿠키로 인식
+    const out = fakeRes();
+    userController.logout({}, out);
+    assert.deepStrictEqual(out.cleared, { name: 'x_auth', options: { httpOnly: true, secure: true, sameSite: 'lax', path: '/' } });
+    process.env.NODE_ENV = prevEnv;
 
     // requireAuth: 유효한 토큰이어도 비활성·없는 계정은 401, 승인이면 통과 + 권한·회사 설정
     const token = jwt.sign({ userId: 'a@b.c' }, process.env.JWT_SECRET_KEY);

@@ -10,6 +10,11 @@ const slack = require('../utils/slack'); // 호출 시점에 slack.sendSlackMess
 
 const ADMIN_URL = 'https://hibye.kr/admin';
 
+// 로그인 쿠키 속성 (2026-11-02 새 앱 전환 후) — 화면 코드가 읽지 못하게(httpOnly), 운영은 HTTPS 전용,
+// 다른 사이트에서 보낸 요청엔 안 실림(lax). 지울 때도 같은 속성이어야 브라우저가 같은 쿠키로 인식
+const TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // JWT expiresIn '24h'와 같게
+const cookieOptions = () => ({ httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/' });
+
 // 로그인 차단 상태 → 사유 (approved만 로그인 가능)
 const LOGIN_BLOCKED_REASONS = {
     pending: 'Pending approval',
@@ -48,9 +53,10 @@ exports.login = (req, res) => {
             // JWT 생성 및 전송
 
             const token = jwt.sign({ userId: user.user_id }, secretKey, { expiresIn: '24h' });
-            res.cookie('x_auth', token, { httpOnly: false });
+            res.cookie('x_auth', token, { ...cookieOptions(), maxAge: TOKEN_TTL_MS });
 
-            return res.json({ loginSuccess: true, message: 'Login successful', user: toSafeUser(user), token });
+            // 토큰은 쿠키로만 (본문에 실으면 화면 스크립트가 읽을 수 있음)
+            return res.json({ loginSuccess: true, message: 'Login successful', user: toSafeUser(user) });
         });
     });
 };
@@ -141,6 +147,6 @@ exports.refresh = (req, res) => {
 };
 
 exports.logout = (req, res) => {
-    res.clearCookie('x_auth');
+    res.clearCookie('x_auth', cookieOptions());
     res.json({ logoutSuccess: true });
 };
