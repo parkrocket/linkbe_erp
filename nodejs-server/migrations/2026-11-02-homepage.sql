@@ -67,6 +67,7 @@ CREATE TABLE hp_inquiry (
     company VARCHAR(100) NOT NULL,
     email VARCHAR(150) NOT NULL,
     category VARCHAR(50) NULL,
+    contact_method VARCHAR(10) NULL,
     body TEXT NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'new',
     admin_memo TEXT NULL,

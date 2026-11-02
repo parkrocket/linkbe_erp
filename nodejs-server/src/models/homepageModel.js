@@ -139,15 +139,32 @@ Homepage.savePage = (slug, title, bodyHtml, mbNo) =>
     );
 
 // ── 문의 ──
-const INQUIRY_COLUMNS = 'id, kind, name, phone, company, email, category, body, status, admin_memo, created_at';
+const INQUIRY_COLUMNS = 'id, kind, name, phone, company, email, category, contact_method, body, status, admin_memo, created_at';
 
 // conn: 첨부와 함께 저장하는 트랜잭션 연결(없으면 pool)
-Homepage.createInquiry = async ({ kind, name, phone, company, email, category, body, ip }, conn = pool) => {
+Homepage.createInquiry = async ({ kind, name, phone, company, email, category, contactMethod, body, ip }, conn = pool) => {
     const [result] = await conn.query(
-        'INSERT INTO hp_inquiry (kind, name, phone, company, email, category, body, ip) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [kind, name, phone, company, email, category, body, ip],
+        'INSERT INTO hp_inquiry (kind, name, phone, company, email, category, contact_method, body, ip) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [kind, name, phone, company, email, category, contactMethod, body, ip],
     );
     return result.insertId;
+};
+
+// 문의 + 첨부를 한 트랜잭션으로 (하나라도 실패하면 둘 다 취소)
+Homepage.createInquiryWithFiles = async (inquiry, files) => {
+    const conn = await pool.getConnection();
+    try {
+        await conn.beginTransaction();
+        const id = await Homepage.createInquiry(inquiry, conn);
+        for (const f of files) await Homepage.insertFile({ ownerType: 'inquiry', ownerId: id, visibility: 'private', ...f }, conn);
+        await conn.commit();
+        return id;
+    } catch (error) {
+        await conn.rollback();
+        throw error;
+    } finally {
+        conn.release();
+    }
 };
 
 Homepage.listInquiries = async ({ kind = null, status = null, page = 1, size = 30 } = {}) => {

@@ -1,5 +1,15 @@
 const Homepage = require('../models/homepageModel');
-const { uploadDir, isStoredName, publicFileUrl } = require('../utils/uploads');
+const { uploadDir, isStoredName, publicFileUrl, sniffAllowed, saveUpload, removeUpload, extOf, ATTACHMENT_EXTS } = require('../utils/uploads');
+const { validateInquiry, KINDS } = require('../utils/inquiryValidation');
+const { escapeSlack } = require('../utils/slackEscape');
+const slack = require('../utils/slack'); // 호출 시점 참조 (점검 스크립트에서 가짜 교체)
+
+const MAX_FILES = 3;
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const MIN_FILL_MS = 3000; // 이보다 빨리 제출하면 봇으로 봄
+const RATE_WINDOW_MIN = 10;
+const RATE_MAX = 5;
+const KIND_LABEL = { qna: '1:1 문의', estimate: '견적 요청' };
 
 // 회사 홈페이지(linkbe.kr) 공개 API — 로그인 없음, 읽기 전용(+ 문의 접수)
 // 숨김 글·기간 밖 팝업·비공개 파일은 절대 내보내지 않음
@@ -92,4 +102,41 @@ exports.getFile = handle(async (req, res) => {
     res.set('Cache-Control', 'public, max-age=86400');
     res.set('X-Content-Type-Options', 'nosniff');
     res.sendFile(file.stored_name, { root: uploadDir('public') }, error => error && !res.headersSent && notFound(res));
+});
+
+// 문의 접수 — 스팸으로 보이면 저장·알림 없이 같은 성공 응답(봇에게 단서 주지 않음)
+// ponytail: IP는 X-Forwarded-For 첫 값(request-ip) — 위조 가능, 강한 차단이 필요하면 로드밸런서·nginx 단에서 제한
+exports.createInquiry = handle(async (req, res) => {
+    const { kind } = req.params;
+    if (!KINDS.includes(kind)) return notFound(res);
+    const body = req.body || {};
+    const files = req.files || [];
+
+    const startedAt = Number(body.startedAt);
+    const tooFast = !body.startedAt || !Number.isFinite(startedAt) || Date.now() - startedAt < MIN_FILL_MS;
+    if (body.website || tooFast || (await Homepage.countRecentByIp(req.clientIp, RATE_WINDOW_MIN)) >= RATE_MAX) {
+        return res.json({ ok: true });
+    }
+
+    const input = validateInquiry(body, kind);
+    if (input.error) return res.status(400).json({ error: input.error });
+    const fileOk = f => f.size <= MAX_FILE_SIZE && ATTACHMENT_EXTS.includes(extOf(f.originalname)) && sniffAllowed(f.buffer, extOf(f.originalname));
+    if (files.length > MAX_FILES || !files.every(fileOk)) return res.status(400).json({ error: 'Invalid file' });
+
+    const stored = files.map(f => saveUpload(f, 'private'));
+    try {
+        await Homepage.createInquiryWithFiles({ ...input.value, ip: req.clientIp }, stored);
+    } catch (error) {
+        stored.forEach(f => removeUpload(f.storedName, 'private')); // DB 저장 실패 → 써 둔 파일 정리
+        throw error;
+    }
+
+    // 알림은 저장 후 — 연락처·내용은 넣지 않음(개인정보), 실패해도 접수는 성공
+    try {
+        const v = input.value;
+        await slack.sendSlackMessage('#hibye-관리', `[${KIND_LABEL[kind]}] ${escapeSlack(v.company)} ${escapeSlack(v.name)}님 → https://hibye.kr/admin?tab=homepage`);
+    } catch (error) {
+        console.error('inquiry slack notice failed:', error.message);
+    }
+    res.json({ ok: true });
 });
