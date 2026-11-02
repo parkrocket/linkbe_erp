@@ -5,10 +5,11 @@ const PHONE_RULE = /^[0-9-]{9,13}$/;
 
 const text = v => (typeof v === 'string' ? v.trim() : '');
 
-// 오류 문자열 또는 null
-const validateNewPassword = pw => (typeof pw === 'string' && pw.length >= 8 && pw.length <= 72 ? null : 'Invalid password');
+// 오류 문자열 또는 null (최대 72는 글자 수가 아니라 바이트 — bcrypt가 72바이트 뒤를 버림)
+const validateNewPassword = pw => (typeof pw === 'string' && pw.length >= 8 && Buffer.byteLength(pw, 'utf8') <= 72 ? null : 'Invalid password');
 
-const validateProfile = (body = {}) => {
+const validateProfile = input => {
+    const body = input ?? {};
     const name = text(body.name);
     const email = text(body.email).toLowerCase();
     const phone = text(body.phone);
@@ -18,7 +19,8 @@ const validateProfile = (body = {}) => {
     return { value: { name, email, phone: phone || null } };
 };
 
-const validateRegister = (body = {}) => {
+const validateRegister = input => {
+    const body = input ?? {};
     const loginId = text(body.loginId).toLowerCase();
     if (!LOGIN_RULE.test(loginId)) return { error: 'Invalid login id' };
     const pwError = validateNewPassword(body.password);

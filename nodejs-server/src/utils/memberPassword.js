@@ -11,7 +11,8 @@ exports.verifyPassword = async (plain, stored) => {
         const calc = '*' + sha1(sha1(Buffer.from(plain, 'utf8'))).toString('hex').toUpperCase();
         const a = Buffer.from(calc);
         const b = Buffer.from(stored.toUpperCase());
-        return { ok: crypto.timingSafeEqual(a, b), needsRehash: true };
+        const ok = a.length === b.length && crypto.timingSafeEqual(a, b);
+        return { ok, needsRehash: ok };
     }
     if (stored.startsWith('$2')) {
         const ok = await bcrypt.compare(plain, stored).catch(() => false);

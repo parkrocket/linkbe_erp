@@ -8,7 +8,8 @@ const rateLimit = require('../src/utils/rateLimit');
     // MySQL PASSWORD('password') 알려진 값
     const old = '*2470C0C06DEE42FD1618BB99005ADCA2EC9D1E19';
     assert.deepStrictEqual(await verifyPassword('password', old), { ok: true, needsRehash: true });
-    assert.strictEqual((await verifyPassword('wrong', old)).ok, false);
+    assert.deepStrictEqual(await verifyPassword('wrong', old), { ok: false, needsRehash: false });
+    assert.deepStrictEqual(await verifyPassword('password', '*' + old.slice(1).toLowerCase()), { ok: true, needsRehash: true }); // 소문자 hex 저장분
     const h = await hashPassword('abcd1234');
     assert.deepStrictEqual(await verifyPassword('abcd1234', h), { ok: true, needsRehash: false });
     assert.strictEqual((await verifyPassword('x', h)).ok, false);
@@ -36,6 +37,21 @@ const rateLimit = require('../src/utils/rateLimit');
     assert.strictEqual(validateNewPassword('abcd1234'), null);
     assert.strictEqual(validateNewPassword('short'), 'Invalid password');
 
+    // 경계 통과
+    const pass = patch => assert.ok(validateRegister({ ...ok, ...patch }).value, JSON.stringify(patch));
+    pass({ loginId: 'abcd' });
+    pass({ loginId: 'a'.repeat(20) });
+    pass({ password: 'a'.repeat(8) });
+    pass({ password: 'a'.repeat(72) });
+    pass({ password: '가'.repeat(24) }); // 72바이트
+    pass({ name: 'a'.repeat(30) });
+    pass({ phone: '1'.repeat(9) });
+    pass({ phone: '1'.repeat(13) });
+    err({ password: '가'.repeat(25) }, 'Invalid password'); // 75바이트
+    assert.strictEqual(validateNewPassword('가'.repeat(25)), 'Invalid password');
+    assert.ok(validateRegister(null).error);
+    assert.ok(validateProfile(null).error);
+
     rateLimit.reset();
     assert.strictEqual(rateLimit.hit('k', 2, 1000), true);
     assert.strictEqual(rateLimit.hit('k', 2, 1000), true);
@@ -43,6 +59,12 @@ const rateLimit = require('../src/utils/rateLimit');
     assert.strictEqual(rateLimit.isBlocked('k', 2, 1000), true);
     rateLimit.clear('k');
     assert.strictEqual(rateLimit.isBlocked('k', 2, 1000), false);
+
+    // 창 만료
+    rateLimit.hit('w', 1, 5);
+    assert.strictEqual(rateLimit.hit('w', 1, 5), false);
+    await new Promise(r => setTimeout(r, 20));
+    assert.strictEqual(rateLimit.hit('w', 1, 5), true);
 
     console.log('checkMemberUtils OK');
 })().catch(e => { console.error(e); process.exit(1); });
