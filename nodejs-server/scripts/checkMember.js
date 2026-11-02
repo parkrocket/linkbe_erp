@@ -130,6 +130,18 @@ const tokenFor = (mid, secret = 'test-member') => jwt.sign({ mid }, secret);
     r = await call(ctrl.login, { ip: '9.9.9.9', body: { loginId: 'bcuser', password: 'secret-pw1' } });
     assert.strictEqual(r.body.ok, true, '다른 IP는 영향 없음');
 
+    // 응답 시간 균등화: 세 경우 모두 bcrypt.compare 정확히 1회
+    reset();
+    const origCompare = bcrypt.compare;
+    let compares = 0;
+    bcrypt.compare = (...a) => (compares++, origCompare(...a));
+    for (const [id, pw, label] of [['ghost', 'x', '없는 아이디'], ['bcuser', 'wrong-pw99', 'bcrypt 사용자'], ['Old_User', 'oldpw', '예전 형식']]) {
+        compares = 0;
+        await call(ctrl.login, { body: { loginId: id, password: pw } });
+        assert.strictEqual(compares, 1, `${label}: bcrypt 1회`);
+    }
+    bcrypt.compare = origCompare;
+
     // 병렬 실패 10건 중 5건 초과분은 429 (확인 전에 먼저 센다)
     reset();
     const burst = await Promise.all(Array.from({ length: 10 }, () => call(ctrl.login, { body: { loginId: 'bcuser', password: 'wrong-pw99' } })));

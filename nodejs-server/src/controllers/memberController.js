@@ -80,7 +80,8 @@ exports.login = handle(async (req, res) => {
 
     const row = await Member.findByLoginId(loginId);
     const result = await verifyPassword(password, row ? row.password_hash : DUMMY_HASH);
-    await bcrypt.compare(String(password ?? ''), DUMMY_HASH).catch(() => false); // 예전 형식 해시(빠름)도 응답 시간을 맞추려고 항상 1회 더
+    // 예전 형식 해시는 bcrypt를 안 쓰므로 더미로 1회 보충 — 없는 아이디·bcrypt 사용자·예전 형식 모두 bcrypt 1회
+    if (row && !String(row.password_hash).startsWith('$2')) await bcrypt.compare(String(password ?? ''), DUMMY_HASH).catch(() => false);
     if (!row || !result.ok) return res.status(401).json({ error: 'Invalid credentials' });
     rateLimit.clear(key);
     await Member.markLogin(row.id, result.needsRehash ? await hashPassword(password) : null);
