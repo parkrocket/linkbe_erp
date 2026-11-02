@@ -9,7 +9,7 @@ const DETAIL_COLUMNS = 'id, title, price, body_html, image_file_id, is_visible, 
 // 공개 목록: 판매 중인 것만, 본문 제외
 Product.listVisible = async () => {
     const [rows] = await pool.query(
-        'SELECT id, title, price, image_file_id FROM hp_product WHERE is_visible = 1 ORDER BY sort_order, id DESC',
+        'SELECT id, title, price, image_file_id FROM hp_product WHERE is_visible = 1 ORDER BY sort_order DESC, id DESC',
     );
     return rows;
 };
@@ -29,7 +29,7 @@ Product.listForAdmin = async ({ page = 1, size = 20 } = {}) => {
     page = Number(page);
     size = Number(size);
     const [rows] = await pool.query(
-        'SELECT p.id, p.title, p.price, p.image_file_id, p.is_visible, p.sort_order, p.updated_at, (SELECT COUNT(*) FROM hp_order o WHERE o.product_id = p.id) AS order_count FROM hp_product p ORDER BY p.sort_order, p.id DESC LIMIT ? OFFSET ?',
+        'SELECT p.id, p.title, p.price, p.image_file_id, p.is_visible, p.sort_order, p.updated_at, (SELECT COUNT(*) FROM hp_order o WHERE o.product_id = p.id) AS order_count FROM hp_product p ORDER BY p.sort_order DESC, p.id DESC LIMIT ? OFFSET ?',
         [size, (page - 1) * size],
     );
     const [[{ n }]] = await pool.query('SELECT COUNT(*) AS n FROM hp_product');

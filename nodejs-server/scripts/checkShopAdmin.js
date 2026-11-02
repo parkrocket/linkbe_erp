@@ -112,7 +112,7 @@ const call = async (fn, req) => {
     // ── 주문 ──
     const mk = (id, payMethod, status) => ({ id, order_no: `LB${id}`, product_title: '<상품>', amount: 5000, pay_method: payMethod, status, kcp_tno: '123', history: 'h', admin_memo: 'm', buyer_email: 'e', buyer_phone: 'p' });
     const orders = {};
-    [[1, 'deposit', 'awaiting_deposit'], [2, 'deposit', 'paid'], [3, 'deposit', 'completed'], [4, 'card', 'paid'], [5, 'bank', 'completed'], [6, 'card', 'pending'], [7, 'card', 'cancelled'], [8, 'card', 'awaiting_deposit'], [9, 'deposit', 'pending']]
+    [[1, 'deposit', 'awaiting_deposit'], [2, 'deposit', 'paid'], [3, 'deposit', 'completed'], [4, 'card', 'paid'], [5, 'bank', 'completed'], [6, 'card', 'pending'], [7, 'card', 'cancelled'], [8, 'card', 'awaiting_deposit'], [9, 'deposit', 'pending'], [10, 'vbank', 'awaiting_deposit'], [11, 'vbank', 'paid']]
         .forEach(([id, m, s]) => (orders[id] = mk(id, m, s)));
     Order.findById = async id => orders[id];
     const trans = [];
@@ -177,6 +177,10 @@ const call = async (fn, req) => {
     assert.deepStrictEqual((await act(ctrl.cancelOrder, 2, { reason: 'r' })).body, { ok: true, refundManually: true });
     assert.deepStrictEqual((await act(ctrl.cancelOrder, 3, { reason: 'r' })).body, { ok: true, refundManually: true });
     assert.deepStrictEqual(trans.at(-1)[1], ['paid', 'completed']);
+    assert.strictEqual(kcpCalls.length, 0);
+    // 예전 가상계좌 주문 → KCP 호출 없이 deposit과 같게
+    assert.deepStrictEqual((await act(ctrl.cancelOrder, 10, { reason: 'r' })).body, { ok: true, refundManually: false });
+    assert.deepStrictEqual((await act(ctrl.cancelOrder, 11, { reason: 'r' })).body, { ok: true, refundManually: true });
     assert.strictEqual(kcpCalls.length, 0);
     // 카드·계좌이체 → KCP 취소(ASCII 사유 고정)
     res = await act(ctrl.cancelOrder, 4, { reason: '한글 사유 <b>' });

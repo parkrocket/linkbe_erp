@@ -65,8 +65,11 @@ export function validateProductForm(f: ProductForm): Partial<Record<'title' | 'p
     return errors;
 }
 
-// 취소 확인 창 문구 — 카드·계좌이체는 KCP까지 취소, 무통장은 직접 환불
+// KCP로 취소되는 수단 — 그 밖(무통장·예전 가상계좌)은 직접 환불
+export const isKcpCancel = (m: PayMethod) => m === 'card' || m === 'bank';
+
+// 취소 확인 창 문구 — 카드·계좌이체는 KCP까지 취소, 무통장·가상계좌는 직접 환불
 export const cancelConfirmText = (m: PayMethod) =>
-    m === 'deposit'
+    !isKcpCancel(m)
         ? '정말 취소할까요? 입금된 주문이면 계좌로 직접 환불해야 해요.'
         : '정말 취소할까요? 카드·계좌이체는 KCP 결제까지 취소되고 되돌릴 수 없어요.';

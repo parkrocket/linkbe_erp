@@ -209,7 +209,7 @@ exports.cancelOrder = handle(async (req, res) => {
     const reason = text(req.body?.reason, 200);
     if (!reason) return fail(res, 400, 'Invalid reason');
     const wasPaid = ['paid', 'completed'].includes(order.status);
-    const viaKcp = order.pay_method !== 'deposit';
+    const viaKcp = ['card', 'bank'].includes(order.pay_method);
     const canCancel = viaKcp ? wasPaid : wasPaid || order.status === 'awaiting_deposit';
     if (!canCancel) return fail(res, 400, 'Invalid transition');
 

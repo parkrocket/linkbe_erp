@@ -427,6 +427,14 @@ const loc = (path = '') => `/mypage/orders/${NO}${path}`;
     assert.strictEqual(findCalls, before + 1, '조회 오류 뒤 잠금 해제');
     assert.strictEqual(r.location, loc('?pay=ok'));
 
+    // ── 실패 기록이 20줄 넘은 주문: 기록만 건너뛰고 응답은 그대로 ──
+    reset();
+    orders[NO].history = Array.from({ length: 21 }, (_, i) => `h${i}`).join('\n');
+    approveResult = { ok: false, resCd: '8128', resMsg: 'x' };
+    r = await call(pcOk());
+    assert.strictEqual(r.location, loc('?pay=fail'));
+    assert.strictEqual(histories.length, 0, '기록 20줄 초과면 실패 기록 생략');
+
     console.log('checkKcpReturn OK');
 })().catch(e => {
     console.error(e);

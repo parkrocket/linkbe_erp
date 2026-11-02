@@ -17,6 +17,7 @@ describe('shop', () => {
     });
     it('취소 문구는 수단별', () => {
         expect(cancelConfirmText('deposit')).toContain('직접 환불');
+        expect(cancelConfirmText('vbank')).toContain('직접 환불');
         expect(cancelConfirmText('card')).toContain('KCP');
     });
 });

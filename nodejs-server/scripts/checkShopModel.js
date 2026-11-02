@@ -15,7 +15,7 @@ const all = () => calls.map(c => c.sql).join('\n');
     // 상품 공개 조회: 판매 중만, 본문 제외 목록
     reply = [[{ id: 1 }]];
     assert.deepStrictEqual(await Product.listVisible(), [{ id: 1 }]);
-    assert.ok(/is_visible = 1/.test(last().sql) && /ORDER BY sort_order, id DESC/.test(last().sql) && !/body_html/.test(last().sql));
+    assert.ok(/is_visible = 1/.test(last().sql) && /ORDER BY sort_order DESC, id DESC/.test(last().sql) && !/body_html/.test(last().sql));
     assert.deepStrictEqual(await Product.findVisible(5), { id: 1 });
     assert.ok(/id = \? AND is_visible = 1/.test(last().sql) && /body_html/.test(last().sql) && /updated_at/.test(last().sql));
     assert.deepStrictEqual(last().params, [5]);
@@ -113,9 +113,9 @@ const all = () => calls.map(c => c.sql).join('\n');
     await Order.listForAdmin({ status: 'pending', payMethod: 'card', from: '2026-11-01', to: '2026-11-03', q: 'a%b_c\\', page: 2, size: 10 });
     s = calls[0].sql;
     assert.ok(!/<> 'pending'/.test(s) && /status = \?/.test(s) && /pay_method = \?/.test(s));
-    assert.ok(/created_at >= \?/.test(s) && /created_at < DATE_ADD\(\?, INTERVAL 1 DAY\)/.test(s) && /order_no LIKE \? OR buyer_name LIKE \?/.test(s));
-    assert.deepStrictEqual(calls[0].params, ['pending', 'card', '2026-11-01', '2026-11-03', '%a\\%b\\_c\\\\%', '%a\\%b\\_c\\\\%', 10, 10]);
-    assert.deepStrictEqual(calls[1].params, calls[0].params.slice(0, 6), '건수 쿼리는 같은 조건, 페이지 제외');
+    assert.ok(/created_at >= \?/.test(s) && /created_at < DATE_ADD\(\?, INTERVAL 1 DAY\)/.test(s) && /order_no LIKE \? OR buyer_name LIKE \? OR product_title LIKE \?/.test(s));
+    assert.deepStrictEqual(calls[0].params, ['pending', 'card', '2026-11-01', '2026-11-03', '%a\\%b\\_c\\\\%', '%a\\%b\\_c\\\\%', '%a\\%b\\_c\\\\%', 10, 10]);
+    assert.deepStrictEqual(calls[1].params, calls[0].params.slice(0, 7), '건수 쿼리는 같은 조건, 페이지 제외');
     pool.query = async (sql, params) => (calls.push({ sql, params }), seen.push(sql), reply);
 
     // page·size 문자열도 숫자로 바인딩

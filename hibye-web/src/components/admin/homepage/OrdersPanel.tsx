@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { cancelConfirmText, formatWon, ORDER_STATUS_LABEL, PAY_METHOD_LABEL, type OrderRow, type OrderStatus } from '@/lib/shop';
+import { cancelConfirmText, formatWon, isKcpCancel, ORDER_STATUS_LABEL, PAY_METHOD_LABEL, type OrderRow, type OrderStatus } from '@/lib/shop';
 import { NoticeLine } from './HomepageTab';
 import { Pager } from './Pager';
 import { cancelOrder, orderAction, ordersPath, saveOrderMemo, shopErrorMessage } from './homepageApi';
@@ -236,9 +236,9 @@ function OrderDetail({
         }, '취소했어요.');
     };
 
-    // KCP 결제(카드·계좌이체)는 결제 완료 후에만, 무통장은 입금 대기에서도 취소 가능
+    // KCP 결제(카드·계좌이체)는 결제 완료 후에만, 무통장·예전 가상계좌는 입금 대기에서도 취소 가능
     const paid = order.status === 'paid' || order.status === 'completed';
-    const canCancel = order.payMethod === 'deposit' ? paid || order.status === 'awaiting_deposit' : paid;
+    const canCancel = isKcpCancel(order.payMethod) ? paid : paid || order.status === 'awaiting_deposit';
 
     const rows: [string, React.ReactNode][] = [
         ['상품', order.productTitle],

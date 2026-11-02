@@ -100,8 +100,8 @@ Order.listForAdmin = async ({ status, payMethod, from, to, q, page = 1, size = 2
     }
     if (q) {
         const like = `%${escapeLike(q)}%`;
-        conds.push('(order_no LIKE ? OR buyer_name LIKE ?)');
-        params.push(like, like);
+        conds.push('(order_no LIKE ? OR buyer_name LIKE ? OR product_title LIKE ?)');
+        params.push(like, like, like);
     }
     const where = ` WHERE ${conds.join(' AND ')}`;
     const [rows] = await pool.query(

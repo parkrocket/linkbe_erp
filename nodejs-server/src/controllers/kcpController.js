@@ -64,6 +64,13 @@ const addHistory = (no, line) =>
         console.error('kcp history failed:', e.message),
     );
 
+// 실패 기록 남용 방지 — 주문당 20줄 넘으면 기록만 건너뜀(상태·응답은 그대로)
+const MAX_HISTORY_LINES = 20;
+const addFailHistory = (order, line) =>
+    String(order.history || '').split('\n').length > MAX_HISTORY_LINES
+        ? undefined
+        : addHistory(order.order_no, line);
+
 async function handleReturn(req, res, no, result) {
     const body = exports.parseReturnBody(req.body);
     const order = await Order.findByOrderNo(no);
@@ -102,13 +109,13 @@ async function handleReturn(req, res, no, result) {
             (/^95\d\d$/.test(str(ap.resCd)) ||
                 !/^[0-9A-Z]{4}$/.test(str(ap.resCd)));
         if (unknown) {
-            await addHistory(no, `KCP 승인 결과 모름(${ap.resCd}) — 확인 필요`);
+            await addFailHistory(order, `KCP 승인 결과 모름(${ap.resCd}) — 확인 필요`);
             await notify(
                 `⚠️ [결제 확인 필요] 주문번호 ${no} — KCP 승인 결과를 받지 못했어요. KCP 상점관리자에서 승인 여부를 확인해 주세요.`,
             );
         } else {
-            await addHistory(
-                no,
+            await addFailHistory(
+                order,
                 `KCP 승인 실패(${ap.resCd}) ${str(ap.resMsg).slice(0, 100)}`,
             );
         }
@@ -117,7 +124,7 @@ async function handleReturn(req, res, no, result) {
 
     // 승인됐는데 거래번호가 없으면 자동 취소 불가 — 사람이 직접
     if (!ap.tno) {
-        await addHistory(no, 'KCP 승인됐으나 거래번호 없음 — 직접 취소 필요');
+        await addFailHistory(order, 'KCP 승인됐으나 거래번호 없음 — 직접 취소 필요');
         await notify(
             `⚠️ [결제 확인 필요] 주문번호 ${no} — KCP 거래번호를 받지 못해 자동 취소할 수 없어요 — 상점관리자에서 주문번호로 찾아 직접 취소해 주세요`,
         );
