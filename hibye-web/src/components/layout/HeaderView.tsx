@@ -17,12 +17,12 @@ const NAV = [
 const isActive = (pathname: string, href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href);
 
-type Props = { userName: string | null; isAdmin?: boolean; pendingCount?: number };
+type Props = { userName: string | null; canManage?: boolean; pendingCount?: number };
 
-export function HeaderView({ userName, isAdmin = false, pendingCount = 0 }: Props) {
+export function HeaderView({ userName, canManage = false, pendingCount = 0 }: Props) {
     const pathname = usePathname();
-    // 관리자에게만 '관리' 메뉴 (승인 대기 인원 배지)
-    const nav = isAdmin ? [...NAV, { href: '/admin', label: '관리', badge: pendingCount }] : NAV;
+    // 관리자·홈페이지 권한자에게 '관리' 메뉴 (승인 대기 인원 배지는 관리자만 — 권한자는 0)
+    const nav = canManage ? [...NAV, { href: '/admin', label: '관리', badge: pendingCount }] : NAV;
     const router = useRouter();
     const [menuOpen, setMenuOpen] = useState(false);
     const [userMenuOpen, setUserMenuOpen] = useState(false);

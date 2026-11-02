@@ -24,7 +24,7 @@ import {
     type ProfileErrors,
     type ProfileForm,
 } from '@/lib/profile';
-import { joinedAt, saveBalances, saveProfile, STATUS_LABEL, STATUS_TONE, type OrgItem, type OrgLists } from './adminApi';
+import { changeHomepageAccess, joinedAt, saveBalances, saveProfile, STATUS_LABEL, STATUS_TONE, type OrgItem, type OrgLists } from './adminApi';
 
 type Tab = 'profile' | 'balance';
 type Notice = { tab: Tab; tone: 'ok' | 'error'; text: string } | null;
@@ -218,6 +218,7 @@ function ProfileFields({
                     연차 {days(user.user_stip)} · 휴가 {days(user.user_vaca)}
                 </dd>
             </dl>
+            <HomepageAccess user={user} />
 
             <div className="grid gap-4 sm:grid-cols-2">
                 <TextField
@@ -400,5 +401,37 @@ function SelectField({
                 ))}
             </select>
         </label>
+    );
+}
+
+// 홈페이지 관리 권한 — 체크하면 바로 저장 (관리자는 권한 없이도 항상 가능)
+function HomepageAccess({ user }: { user: MemberDetail }) {
+    const [on, setOn] = useState(Number(user.homepage_access) === 1);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState('');
+    if (user.user_role === 'admin') return null;
+
+    const toggle = async (next: boolean) => {
+        setSaving(true);
+        setError('');
+        try {
+            await changeHomepageAccess(user.mb_no, next);
+            setOn(next);
+        } catch {
+            setError('권한을 바꾸지 못했어요. 잠시 후 다시 시도해 주세요.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-line px-3 py-2.5 text-sm">
+            <label className="flex items-center gap-2 font-medium">
+                <input type="checkbox" checked={on} disabled={saving} onChange={e => toggle(e.target.checked)} className="size-4 accent-primary" />
+                홈페이지 관리 권한
+            </label>
+            <span className="text-xs text-muted">linkbe.kr 공지·포트폴리오·문의를 관리할 수 있어요 (바로 적용)</span>
+            {error && <span className="w-full text-xs text-rejected-fg">{error}</span>}
+        </div>
     );
 }

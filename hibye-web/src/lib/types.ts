@@ -9,6 +9,7 @@ export type User = {
     user_vaca?: number | string | null;
     user_role?: 'member' | 'admin';
     user_status?: 'pending' | 'approved' | 'rejected' | 'inactive';
+    homepage_access?: number; // 1이면 홈페이지 관리 권한
     [key: string]: unknown;
 };
 

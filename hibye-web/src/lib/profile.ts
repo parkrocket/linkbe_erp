@@ -24,6 +24,7 @@ export type MemberDetail = {
     employment_type: EmploymentType | null;
     user_stip: number | null;
     user_vaca: number | null;
+    homepage_access?: number; // 1이면 홈페이지 관리 권한
 };
 
 // 폼 값은 모두 문자열, 빈 문자열 = 선택 안 함

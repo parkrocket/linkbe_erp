@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { getAdminPendingCount, getCurrentUser } from '@/lib/auth';
+import { canManageHomepage } from '@/lib/homepage';
 import { HeaderView, Logo } from './HeaderView';
 
 // 쿠키를 읽는 부분만 Suspense로 감싸 정적 셸을 먼저 보냄 (cacheComponents)
@@ -17,7 +18,9 @@ async function HeaderWithUser() {
     if (user === undefined) return <HeaderFallback />;
     const isAdmin = user?.user_role === 'admin';
     const pendingCount = isAdmin ? await getAdminPendingCount() : 0;
-    return <HeaderView userName={user?.user_name ?? null} isAdmin={isAdmin} pendingCount={pendingCount} />;
+    // '관리' 메뉴: 관리자 + 홈페이지 권한자(홈페이지 탭만)
+    const canManage = !!user && canManageHomepage({ user_role: user.user_role ?? 'member', homepage_access: user.homepage_access });
+    return <HeaderView userName={user?.user_name ?? null} canManage={canManage} pendingCount={pendingCount} />;
 }
 
 function HeaderFallback() {
