@@ -40,7 +40,8 @@ export const savePopup = (id: number | null, form: PopupForm) =>
     });
 export const deletePopup = (id: number) => apiFetch(`${BASE}/popups/${id}`, { method: 'DELETE' });
 
-export const savePage = (slug: string, body: { title: string; bodyHtml: string }) =>
+// create: 새로 만들기 — 같은 주소가 있으면 서버가 409(덮어쓰기 방지)
+export const savePage = (slug: string, body: { title: string; bodyHtml: string; create?: boolean }) =>
     apiFetch(`${BASE}/pages/${slug}`, { method: 'POST', body });
 
 export const updateInquiry = (id: number, body: { status: InquiryStatus; adminMemo: string }) =>
@@ -61,6 +62,8 @@ export function homepageErrorMessage(error: unknown) {
     if (error instanceof ApiError) {
         if (error.reason === 'Invalid file') return '이미지 파일(png·jpg·gif·webp, 5MB 이하)만 올릴 수 있어요.';
         if (error.reason === 'Invalid period') return '노출 기간을 확인해 주세요.';
+        if (error.reason === 'Page exists') return '이미 있는 주소예요. 목록에서 그 페이지를 열어 수정해 주세요.';
+        if (error.status === 413) return '파일이 너무 커요. 이미지는 5MB 이하만 올릴 수 있어요.';
         if (error.reason === 'Not found') return '이미 삭제됐거나 찾을 수 없어요. 새로고침해 주세요.';
         if (error.status === 403) return '홈페이지 관리 권한이 없어요.';
         if (error.status === 400 || error.status === 413) return '입력값을 확인해 주세요.';

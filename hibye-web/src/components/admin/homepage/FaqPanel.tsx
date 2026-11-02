@@ -22,6 +22,7 @@ export function FaqPanel() {
     const { state, reload, refresh } = useApiData<{ faqs?: FaqRow[] }>('/api/admin/homepage/faqs', undefined, 'GET');
     const [editing, setEditing] = useState<FaqRow | 'new' | null>(null);
     const [notice, setNotice] = useState<Notice>(null);
+    const [dirty, setDirty] = useState(false);
     const faqs = state.status === 'ok' ? (state.data.faqs ?? []) : [];
 
     const move = async (id: number, direction: 'up' | 'down') => {
@@ -37,7 +38,7 @@ export function FaqPanel() {
         <>
             <NoticeLine notice={notice} />
             <div className="mb-3 flex justify-end">
-                <Button onClick={() => setEditing('new')}>FAQ 추가</Button>
+                <Button onClick={() => (setDirty(false), setEditing('new'))}>FAQ 추가</Button>
             </div>
             {state.status === 'loading' && <Skeleton className="h-48 w-full" />}
             {state.status === 'error' && <ErrorState onRetry={reload} />}
@@ -50,7 +51,7 @@ export function FaqPanel() {
                             <li key={f.id} className="flex items-center gap-2 py-2">
                                 <button
                                     type="button"
-                                    onClick={() => setEditing(f)}
+                                    onClick={() => (setDirty(false), setEditing(f))}
                                     className="min-w-0 flex-1 truncate rounded px-1 py-1 text-left text-sm font-medium hover:bg-surface focus-visible:outline-2 focus-visible:outline-primary"
                                 >
                                     {f.question}
@@ -67,8 +68,15 @@ export function FaqPanel() {
                     </ul>
                 ))}
             {editing !== null && (
-                <Modal open size="lg" title={editing === 'new' ? 'FAQ 추가' : 'FAQ 수정'} onClose={() => setEditing(null)}>
+                <Modal
+                    open
+                    size="lg"
+                    title={editing === 'new' ? 'FAQ 추가' : 'FAQ 수정'}
+                    onClose={() => setEditing(null)}
+                    canClose={() => !dirty || window.confirm('저장하지 않은 변경이 있어요. 닫을까요?')}
+                >
                     <FaqEditor
+                        onDirty={() => setDirty(true)}
                         faq={editing === 'new' ? undefined : editing}
                         onDone={text => {
                             setEditing(null);
@@ -82,7 +90,7 @@ export function FaqPanel() {
     );
 }
 
-function FaqEditor({ faq, onDone }: { faq?: FaqRow; onDone: (text: string) => void }) {
+function FaqEditor({ faq, onDone, onDirty }: { faq?: FaqRow; onDone: (text: string) => void; onDirty: () => void }) {
     const [question, setQuestion] = useState(faq?.question ?? '');
     const [answerHtml, setAnswerHtml] = useState(faq?.answer_html ?? '');
     const [isVisible, setIsVisible] = useState(faq ? faq.is_visible === 1 : true);
@@ -113,13 +121,19 @@ function FaqEditor({ faq, onDone }: { faq?: FaqRow; onDone: (text: string) => vo
 
     return (
         <div className="flex flex-col gap-4">
-            <TextField label="질문" name="question" maxLength={300} value={question} onChange={e => setQuestion(e.target.value)} />
-            <RichTextEditor label="답변" value={answerHtml} onChange={setAnswerHtml} />
+            <TextField
+                label="질문"
+                name="question"
+                maxLength={300}
+                value={question}
+                onChange={e => (onDirty(), setQuestion(e.target.value))}
+            />
+            <RichTextEditor label="답변" value={answerHtml} onChange={html => (onDirty(), setAnswerHtml(html))} />
             <label className="flex items-center gap-2 text-sm font-medium">
                 <input
                     type="checkbox"
                     checked={isVisible}
-                    onChange={e => setIsVisible(e.target.checked)}
+                    onChange={e => (onDirty(), setIsVisible(e.target.checked))}
                     className="size-4 accent-primary"
                 />
                 홈페이지에 보이기

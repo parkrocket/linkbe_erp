@@ -19,6 +19,7 @@ import {
     type InquiryStatus,
 } from '@/lib/homepage';
 import { NoticeLine } from './HomepageTab';
+import { Pager } from './Pager';
 import { homepageErrorMessage, inquiryFileUrl, updateInquiry } from './homepageApi';
 
 const STATUS_TONE: Record<InquiryStatus, BadgeTone> = { new: 'pending', in_progress: 'info', done: 'approved' };
@@ -31,7 +32,8 @@ export function InquiriesPanel() {
     const [kind, setKind] = useState('');
     const [status, setStatus] = useState('');
     const [opened, setOpened] = useState<number | null>(null);
-    const query = new URLSearchParams({ ...(kind && { kind }), ...(status && { status }) }).toString();
+    const [page, setPage] = useState(1);
+    const query = new URLSearchParams({ ...(kind && { kind }), ...(status && { status }), page: String(page) }).toString();
     const { state, reload, refresh } = useApiData<{ rows?: InquiryRow[]; total?: number }>(
         `/api/admin/homepage/inquiries?${query}`,
         undefined,
@@ -42,7 +44,7 @@ export function InquiriesPanel() {
     return (
         <>
             <div className="mb-3 flex flex-wrap gap-2">
-                <select aria-label="종류" className={SELECT} value={kind} onChange={e => setKind(e.target.value)}>
+                <select aria-label="종류" className={SELECT} value={kind} onChange={e => (setKind(e.target.value), setPage(1))}>
                     <option value="">전체 종류</option>
                     {Object.entries(INQUIRY_KIND_LABEL).map(([v, l]) => (
                         <option key={v} value={v}>
@@ -50,7 +52,7 @@ export function InquiriesPanel() {
                         </option>
                     ))}
                 </select>
-                <select aria-label="상태" className={SELECT} value={status} onChange={e => setStatus(e.target.value)}>
+                <select aria-label="상태" className={SELECT} value={status} onChange={e => (setStatus(e.target.value), setPage(1))}>
                     <option value="">전체 상태</option>
                     {Object.entries(INQUIRY_STATUS_LABEL).map(([v, l]) => (
                         <option key={v} value={v}>
@@ -86,6 +88,7 @@ export function InquiriesPanel() {
                         ))}
                     </ul>
                 ))}
+            {state.status === 'ok' && <Pager page={page} total={state.data.total ?? 0} onPage={setPage} />}
             {opened !== null && <InquiryDialog id={opened} onClose={() => setOpened(null)} onSaved={refresh} />}
         </>
     );
@@ -154,7 +157,7 @@ function InquiryDetail({ inquiry, files, onSaved }: { inquiry: InquiryRow; files
                 {rows.map(([k, v]) => (
                     <div key={k} className="contents">
                         <dt className="text-muted">{k}</dt>
-                        <dd className="break-words">{v}</dd>
+                        <dd className="break-words">{v || '-'}</dd>
                     </div>
                 ))}
             </dl>

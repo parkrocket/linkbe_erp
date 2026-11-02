@@ -21,13 +21,14 @@ export function PagesPanel() {
     const { state, reload, refresh } = useApiData<{ pages?: PageRow[] }>('/api/admin/homepage/pages', undefined, 'GET');
     const [editing, setEditing] = useState<string | 'new' | null>(null);
     const [notice, setNotice] = useState<Notice>(null);
+    const [dirty, setDirty] = useState(false);
     const pages = state.status === 'ok' ? (state.data.pages ?? []) : [];
 
     return (
         <>
             <NoticeLine notice={notice} />
             <div className="mb-3 flex justify-end">
-                <Button onClick={() => setEditing('new')}>페이지 추가</Button>
+                <Button onClick={() => (setDirty(false), setEditing('new'))}>페이지 추가</Button>
             </div>
             {state.status === 'loading' && <Skeleton className="h-32 w-full" />}
             {state.status === 'error' && <ErrorState onRetry={reload} />}
@@ -40,7 +41,7 @@ export function PagesPanel() {
                             <li key={p.slug}>
                                 <button
                                     type="button"
-                                    onClick={() => setEditing(p.slug)}
+                                    onClick={() => (setDirty(false), setEditing(p.slug))}
                                     className="flex w-full items-center gap-2 rounded-lg px-1 py-2.5 text-left text-sm hover:bg-surface focus-visible:outline-2 focus-visible:outline-primary"
                                 >
                                     <span className="min-w-0 flex-1 truncate font-medium">{p.title}</span>
@@ -52,8 +53,18 @@ export function PagesPanel() {
                     </ul>
                 ))}
             {editing !== null && (
-                <Modal open size="lg" title={editing === 'new' ? '안내 페이지 추가' : '안내 페이지 수정'} onClose={() => setEditing(null)}>
-                    {editing === 'new' ? <PageEditor onDone={done} /> : <ExistingPage slug={editing} onDone={done} />}
+                <Modal
+                    open
+                    size="lg"
+                    title={editing === 'new' ? '안내 페이지 추가' : '안내 페이지 수정'}
+                    onClose={() => setEditing(null)}
+                    canClose={() => !dirty || window.confirm('저장하지 않은 변경이 있어요. 닫을까요?')}
+                >
+                    {editing === 'new' ? (
+                        <PageEditor onDone={done} onDirty={() => setDirty(true)} existing={pages.map(x => x.slug)} />
+                    ) : (
+                        <ExistingPage slug={editing} onDone={done} onDirty={() => setDirty(true)} />
+                    )}
                 </Modal>
             )}
         </>
@@ -66,14 +77,24 @@ export function PagesPanel() {
     }
 }
 
-function ExistingPage({ slug, onDone }: { slug: string; onDone: (text: string) => void }) {
+function ExistingPage({ slug, onDone, onDirty }: { slug: string; onDone: (text: string) => void; onDirty: () => void }) {
     const { state, reload } = useApiData<{ page?: PageRow }>(`/api/admin/homepage/pages/${slug}`, undefined, 'GET');
     if (state.status === 'loading') return <Skeleton className="h-64 w-full" />;
     if (state.status === 'error' || !state.data.page) return <ErrorState onRetry={reload} />;
-    return <PageEditor page={state.data.page} onDone={onDone} />;
+    return <PageEditor page={state.data.page} onDone={onDone} onDirty={onDirty} />;
 }
 
-function PageEditor({ page, onDone }: { page?: PageRow; onDone: (text: string) => void }) {
+function PageEditor({
+    page,
+    onDone,
+    onDirty,
+    existing = [],
+}: {
+    page?: PageRow;
+    onDone: (text: string) => void;
+    onDirty: () => void;
+    existing?: string[];
+}) {
     const [slug, setSlug] = useState(page?.slug ?? '');
     const [title, setTitle] = useState(page?.title ?? '');
     const [bodyHtml, setBodyHtml] = useState(page?.body_html ?? '');
@@ -82,11 +103,12 @@ function PageEditor({ page, onDone }: { page?: PageRow; onDone: (text: string) =
 
     const save = async () => {
         if (!/^[a-z0-9-]{1,50}$/.test(slug)) return setError('주소 이름은 영문 소문자·숫자·-만 쓸 수 있어요. (예: privacy)');
+        if (!page && existing.includes(slug)) return setError('이미 있는 주소예요. 목록에서 그 페이지를 열어 수정해 주세요.');
         if (!title.trim()) return setError('제목을 입력해 주세요.');
         setSaving(true);
         setError('');
         try {
-            await savePage(slug, { title: title.trim(), bodyHtml });
+            await savePage(slug, { title: title.trim(), bodyHtml, create: !page });
             onDone('저장했어요.');
         } catch (e) {
             setError(homepageErrorMessage(e));
@@ -102,11 +124,11 @@ function PageEditor({ page, onDone }: { page?: PageRow; onDone: (text: string) =
                 maxLength={50}
                 value={slug}
                 disabled={!!page}
-                onChange={e => setSlug(e.target.value.toLowerCase())}
+                onChange={e => (onDirty(), setSlug(e.target.value.toLowerCase()))}
                 hint={page ? '만든 뒤에는 바꿀 수 없어요' : '예: privacy'}
             />
-            <TextField label="제목" name="title" maxLength={200} value={title} onChange={e => setTitle(e.target.value)} />
-            <RichTextEditor label="내용" value={bodyHtml} onChange={setBodyHtml} />
+            <TextField label="제목" name="title" maxLength={200} value={title} onChange={e => (onDirty(), setTitle(e.target.value))} />
+            <RichTextEditor label="내용" value={bodyHtml} onChange={html => (onDirty(), setBodyHtml(html))} />
             {error && (
                 <p role="alert" className="text-sm text-rejected-fg">
                     {error}

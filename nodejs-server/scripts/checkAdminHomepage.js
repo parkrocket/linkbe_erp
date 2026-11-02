@@ -102,7 +102,14 @@ const post = { title: '공지', bodyHtml: '<p>본문</p>', isVisible: true };
     assert.strictEqual(res.code, 404);
     res = await call(ctrl.moveFaq, { params: { id: '1' }, body: { direction: 'left' } });
     assert.strictEqual(res.code, 400);
-    res = await call(ctrl.savePage, { params: { slug: '../x' }, body: { title: 't', bodyHtml: '<p>x</p>' } });
+    // 새 페이지 만들기(create)인데 같은 주소가 있으면 409 — 기존 페이지 덮어쓰기 방지
+    Homepage.getPage = async slug => (slug === 'privacy' ? { slug, title: '기존', body_html: '<p>x</p>' } : undefined);
+    res = await call(ctrl.savePage, { params: { slug: 'privacy' }, body: { title: '새', bodyHtml: '<p>y</p>', create: true } });
+    assert.deepStrictEqual([res.code, res.body.error], [409, 'Page exists']);
+    assert.ok(!calls.some(c => c[0] === 'savePage'), '덮어쓰지 않음');
+    res = await call(ctrl.savePage, { params: { slug: 'privacy' }, body: { title: '수정', bodyHtml: '<p>y</p>' } });
+    assert.deepStrictEqual(res.body, { ok: true }, '수정은 그대로');
+        res = await call(ctrl.savePage, { params: { slug: '../x' }, body: { title: 't', bodyHtml: '<p>x</p>' } });
     assert.strictEqual(res.code, 404);
 
     // ── 문의 ──

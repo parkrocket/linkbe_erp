@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canManageHomepage, kstInput, validatePopupForm, validatePostForm, type PopupForm, type PostForm } from './homepage';
+import { canManageHomepage, kstInput, pageCount, validatePopupForm, validatePostForm, type PopupForm, type PostForm } from './homepage';
 
 describe('canManageHomepage', () => {
     it('관리자 또는 홈페이지 권한자', () => {
@@ -42,5 +42,14 @@ describe('validatePopupForm', () => {
         expect(validatePopupForm({ ...popup, startsAt: '' }).startsAt).toBe('시작 시각을 입력해 주세요.');
         expect(validatePopupForm({ ...popup, width: '50' }).width).toBe('100~1200 사이로 입력해 주세요.');
         expect(validatePopupForm({ ...popup, imageFileId: null }).imageFileId).toBe('이미지를 올려 주세요.');
+    });
+});
+
+describe('pageCount', () => {
+    it('전체 건수 → 페이지 수 (30건씩, 최소 1)', () => {
+        expect(pageCount(0, 30)).toBe(1);
+        expect(pageCount(30, 30)).toBe(1);
+        expect(pageCount(31, 30)).toBe(2);
+        expect(pageCount(243, 30)).toBe(9);
     });
 });

@@ -22,6 +22,7 @@ export function PopupPanel() {
     const { state, reload, refresh } = useApiData<{ popups?: PopupRow[] }>('/api/admin/homepage/popups', undefined, 'GET');
     const [editing, setEditing] = useState<PopupRow | 'new' | null>(null);
     const [notice, setNotice] = useState<Notice>(null);
+    const [dirty, setDirty] = useState(false);
     const popups = state.status === 'ok' ? (state.data.popups ?? []) : [];
     // 노출 중 표시 기준 시각 — 화면을 연 시점 (렌더마다 시계를 읽지 않게)
     const [now] = useState(() => Date.now());
@@ -30,7 +31,7 @@ export function PopupPanel() {
         <>
             <NoticeLine notice={notice} />
             <div className="mb-3 flex justify-end">
-                <Button onClick={() => setEditing('new')}>팝업 추가</Button>
+                <Button onClick={() => (setDirty(false), setEditing('new'))}>팝업 추가</Button>
             </div>
             {state.status === 'loading' && <Skeleton className="h-48 w-full" />}
             {state.status === 'error' && <ErrorState onRetry={reload} />}
@@ -45,7 +46,7 @@ export function PopupPanel() {
                                 <li key={p.id}>
                                     <button
                                         type="button"
-                                        onClick={() => setEditing(p)}
+                                        onClick={() => (setDirty(false), setEditing(p))}
                                         className="flex w-full flex-wrap items-center gap-2 rounded-lg px-1 py-2.5 text-left text-sm hover:bg-surface focus-visible:outline-2 focus-visible:outline-primary"
                                     >
                                         <Badge tone={live ? 'approved' : 'neutral'}>{live ? '노출 중' : '노출 안 함'}</Badge>
@@ -60,8 +61,15 @@ export function PopupPanel() {
                     </ul>
                 ))}
             {editing !== null && (
-                <Modal open size="lg" title={editing === 'new' ? '팝업 추가' : '팝업 수정'} onClose={() => setEditing(null)}>
+                <Modal
+                    open
+                    size="lg"
+                    title={editing === 'new' ? '팝업 추가' : '팝업 수정'}
+                    onClose={() => setEditing(null)}
+                    canClose={() => !dirty || window.confirm('저장하지 않은 변경이 있어요. 닫을까요?')}
+                >
                     <PopupEditor
+                        onDirty={() => setDirty(true)}
                         popup={editing === 'new' ? undefined : editing}
                         onDone={text => {
                             setEditing(null);
@@ -87,12 +95,15 @@ const toForm = (p?: PopupRow): PopupForm => ({
     isVisible: p ? p.is_visible === 1 : true,
 });
 
-function PopupEditor({ popup, onDone }: { popup?: PopupRow; onDone: (text: string) => void }) {
+function PopupEditor({ popup, onDone, onDirty }: { popup?: PopupRow; onDone: (text: string) => void; onDirty: () => void }) {
     const [form, setForm] = useState<PopupForm>(() => toForm(popup));
     const [errors, setErrors] = useState<FormErrors<PopupForm>>({});
     const [error, setError] = useState('');
     const [saving, setSaving] = useState(false);
-    const set = <K extends keyof PopupForm>(key: K, value: PopupForm[K]) => setForm(prev => ({ ...prev, [key]: value }));
+    const set = <K extends keyof PopupForm>(key: K, value: PopupForm[K]) => {
+        onDirty();
+        setForm(prev => ({ ...prev, [key]: value }));
+    };
 
     const save = async () => {
         const found = validatePopupForm(form);

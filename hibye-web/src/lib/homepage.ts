@@ -112,3 +112,6 @@ export function validatePopupForm(form: PopupForm): FormErrors<PopupForm> {
     if (!intBetween(form.posTop, 0, 2000)) errors.posTop = '0~2000 사이로 입력해 주세요.';
     return errors;
 }
+
+// 목록 페이지 수 (최소 1)
+export const pageCount = (total: number, size: number) => Math.max(1, Math.ceil(total / size));

@@ -178,6 +178,8 @@ exports.savePage = handle(async (req, res) => {
     const title = text(req.body.title, 200);
     const bodyHtml = html(req.body.bodyHtml ?? '');
     if (!title || bodyHtml === null) return fail(res, 400, 'Invalid field');
+    // 새로 만들기(create)인데 같은 주소가 있으면 거절 — 저장은 덮어쓰기(ON DUPLICATE)라 기존 페이지가 사라지지 않게
+    if (req.body.create === true && (await Homepage.getPage(slug))) return fail(res, 409, 'Page exists');
     await Homepage.savePage(slug, title, bodyHtml, await actorNo(req));
     res.json({ ok: true });
 });

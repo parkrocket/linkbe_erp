@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { TextField } from '@/components/ui/TextField';
 import { BOARD_LABEL, validatePostForm, type Board, type FormErrors, type PostForm, type PostRow } from '@/lib/homepage';
 import { NoticeLine } from './HomepageTab';
+import { Pager } from './Pager';
 import { deletePost, homepageErrorMessage, savePost } from './homepageApi';
 import { ImageField } from './ImageField';
 import { RichTextEditor } from './RichTextEditor';
@@ -20,7 +21,12 @@ type Notice = { tone: 'ok' | 'error'; text: string } | null;
 
 // 공지사항·포트폴리오 목록 — 숨김 글도 보임(관리용)
 export function PostsPanel({ board }: { board: Board }) {
-    const { state, reload, refresh } = useApiData<{ rows?: PostRow[] }>(`/api/admin/homepage/posts/${board}`, undefined, 'GET');
+    const [page, setPage] = useState(1);
+    const { state, reload, refresh } = useApiData<{ rows?: PostRow[]; total?: number }>(
+        `/api/admin/homepage/posts/${board}?page=${page}`,
+        undefined,
+        'GET',
+    );
     const [editing, setEditing] = useState<number | 'new' | null>(null);
     const [notice, setNotice] = useState<Notice>(null);
     const rows = state.status === 'ok' ? (state.data.rows ?? []) : [];
@@ -54,6 +60,7 @@ export function PostsPanel({ board }: { board: Board }) {
                         ))}
                     </ul>
                 ))}
+            {state.status === 'ok' && <Pager page={page} total={state.data.total ?? 0} onPage={setPage} />}
             {editing !== null && (
                 <PostDialog
                     board={board}
@@ -81,19 +88,32 @@ function PostDialog({
     onClose: () => void;
     onDone: (text: string) => void;
 }) {
+    // 저장하지 않은 변경이 있으면 닫기 전 확인 (배경 클릭·Esc 포함)
+    const [dirty, setDirty] = useState(false);
+    const markDirty = () => setDirty(true);
     return (
-        <Modal open size="lg" title={`${BOARD_LABEL[board]} ${id ? '수정' : '쓰기'}`} onClose={onClose}>
-            {id === null ? <PostEditor board={board} onDone={onDone} /> : <ExistingPost board={board} id={id} onDone={onDone} />}
+        <Modal
+            open
+            size="lg"
+            title={`${BOARD_LABEL[board]} ${id ? '수정' : '쓰기'}`}
+            onClose={onClose}
+            canClose={() => !dirty || window.confirm('저장하지 않은 변경이 있어요. 닫을까요?')}
+        >
+            {id === null ? (
+                <PostEditor board={board} onDone={onDone} onDirty={markDirty} />
+            ) : (
+                <ExistingPost board={board} id={id} onDone={onDone} onDirty={markDirty} />
+            )}
         </Modal>
     );
 }
 
 // 수정: 본문까지 불러온 뒤 편집기 표시
-function ExistingPost({ board, id, onDone }: { board: Board; id: number; onDone: (text: string) => void }) {
+function ExistingPost({ board, id, onDone, onDirty }: { board: Board; id: number; onDone: (text: string) => void; onDirty: () => void }) {
     const { state, reload } = useApiData<{ post?: PostRow }>(`/api/admin/homepage/posts/${board}/${id}`, undefined, 'GET');
     if (state.status === 'loading') return <Skeleton className="h-64 w-full" />;
     if (state.status === 'error' || !state.data.post) return <ErrorState onRetry={reload} />;
-    return <PostEditor board={board} post={state.data.post} onDone={onDone} />;
+    return <PostEditor board={board} post={state.data.post} onDone={onDone} onDirty={onDirty} />;
 }
 
 const toForm = (p?: PostRow): PostForm => ({
@@ -108,12 +128,25 @@ const toForm = (p?: PostRow): PostForm => ({
     thumbnailFileId: p?.thumbnail_file_id ?? null,
 });
 
-function PostEditor({ board, post, onDone }: { board: Board; post?: PostRow; onDone: (text: string) => void }) {
+function PostEditor({
+    board,
+    post,
+    onDone,
+    onDirty,
+}: {
+    board: Board;
+    post?: PostRow;
+    onDone: (text: string) => void;
+    onDirty: () => void;
+}) {
     const [form, setForm] = useState<PostForm>(() => toForm(post));
     const [errors, setErrors] = useState<FormErrors<PostForm>>({});
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
-    const set = <K extends keyof PostForm>(key: K, value: PostForm[K]) => setForm(prev => ({ ...prev, [key]: value }));
+    const set = <K extends keyof PostForm>(key: K, value: PostForm[K]) => {
+        onDirty();
+        setForm(prev => ({ ...prev, [key]: value }));
+    };
 
     const save = async () => {
         const found = validatePostForm(form);
