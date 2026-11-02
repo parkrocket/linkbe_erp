@@ -1,4 +1,5 @@
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 const Member = require('../models/memberModel');
 const { hashPassword, verifyPassword } = require('../utils/memberPassword');
 const { validateRegister, validateProfile, validateNewPassword } = require('../utils/memberValidation');
@@ -6,6 +7,7 @@ const rateLimit = require('../utils/rateLimit');
 const { escapeSlack } = require('../utils/slackEscape');
 const { memberCookieOptions, issueMemberCookie, secretOf, COOKIE } = require('../middlewares/requireMember');
 const slack = require('../utils/slack'); // 호출 시점 참조 (점검 스크립트에서 가짜 교체)
+const mailer = require('../utils/mailer'); // 호출 시점 참조 (점검에서 가짜 교체)
 
 // 고객 회원 API(/api/public/shop/members/*) — 직원 로그인과 분리
 const MIN_FILL_MS = 3000; // 이보다 빨리 제출하면 봇으로 봄
@@ -141,4 +143,46 @@ exports.leave = handle(async (req, res) => {
     res.clearCookie(COOKIE, memberCookieOptions());
     res.json({ ok: true });
     await notify(`[회원탈퇴] ${escapeSlack(req.member.name)}님`);
+});
+
+const sha256 = v => crypto.createHash('sha256').update(v).digest('hex');
+const EMAIL_RULE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+// 대상 존재 여부를 응답으로 알 수 없게 항상 200 { ok: true } (제한 초과만 429)
+exports.forgotPassword = handle(async (req, res) => {
+    if (!rateLimit.hit(`forgot:${req.ip}`, 5, HOUR)) return res.status(429).json({ error: 'Too many requests' });
+    const raw = req.body?.email;
+    const email = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
+    if (!EMAIL_RULE.test(email) || email.length > 150) return res.json({ ok: true });
+
+    // 운영에서 사이트 주소가 없으면 잘못된 링크가 나가지 않도록 보내지 않음
+    const site = process.env.SHOP_SITE_URL || (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3002');
+    if (!site) {
+        console.error('member reset mail skipped: SHOP_SITE_URL missing');
+        return res.json({ ok: true });
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const target = await Member.setResetToken(email, sha256(token));
+    res.json({ ok: true });
+    if (!target) return;
+    try {
+        await mailer.sendMail({
+            to: email,
+            subject: '[링크비] 비밀번호 재설정 안내',
+            text: `${target.name}님, 안녕하세요.\n\n아래 링크에서 1시간 안에 새 비밀번호를 설정해 주세요.\n${site.replace(/\/+$/, '')}/password/reset?token=${token}\n\n비밀번호 재설정을 요청하지 않으셨다면 이 메일은 무시하셔도 됩니다.\n\n링크비`,
+        });
+    } catch (error) {
+        console.error('member reset mail failed:', error.message);
+    }
+});
+
+exports.resetPassword = handle(async (req, res) => {
+    if (!rateLimit.hit(`reset:${req.ip}`, 10, HOUR)) return res.status(429).json({ error: 'Too many requests' });
+    const { token, newPassword } = req.body ?? {};
+    const error = validateNewPassword(newPassword);
+    if (error) return res.status(400).json({ error });
+    if (typeof token !== 'string' || !/^[0-9a-f]{64}$/.test(token)) return res.status(400).json({ error: 'Invalid or expired token' });
+    if (!(await Member.resetPasswordByToken(sha256(token), await hashPassword(newPassword)))) return res.status(400).json({ error: 'Invalid or expired token' });
+    res.json({ ok: true }); // 자동 로그인 안 함
 });

@@ -65,13 +65,13 @@ const all = () => calls.map(c => c.sql).join('\n');
     // 재설정 토큰: UPDATE 1건일 때만 대상 반환
     calls = [];
     pool.query = async (sql, params) => (calls.push({ sql, params }), /^UPDATE/.test(sql) ? [{ affectedRows: 1 }] : [[{ id: 5, name: '홍' }]]);
-    const exp = new Date('2026-11-05T00:00:00Z');
-    assert.deepStrictEqual(await Member.setResetToken('a@b.c', 'th', exp), { id: 5, name: '홍' });
+    assert.deepStrictEqual(await Member.setResetToken('a@b.c', 'th'), { id: 5, name: '홍' });
     assert.ok(/WHERE email = \? AND status = 'active'/.test(calls[0].sql));
-    assert.deepStrictEqual(calls[0].params, ['th', exp, 'a@b.c']);
+    assert.deepStrictEqual(calls[0].params, ['th', 'a@b.c']);
+    assert.ok(/reset_expires_at = DATE_ADD\(NOW\(\), INTERVAL 1 HOUR\)/.test(calls[0].sql), '만료는 DB 시계로 1시간');
     pool.query = async (sql, params) => (calls.push({ sql, params }), [{ affectedRows: 0 }]);
     calls = [];
-    assert.strictEqual(await Member.setResetToken('x@b.c', 'th', exp), undefined);
+    assert.strictEqual(await Member.setResetToken('x@b.c', 'th'), undefined);
     assert.strictEqual(calls.length, 1, '대상 없으면 SELECT 안 함');
 
     // 토큰으로 재설정: 만료·active 조건부, affectedRows 1

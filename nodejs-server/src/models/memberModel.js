@@ -62,11 +62,11 @@ Member.updatePassword = async (id, hash) => {
     );
 };
 
-// email은 호출부가 소문자·trim. active이고 일치할 때만 토큰 저장 후 { id, name } 반환
-Member.setResetToken = async (email, tokenHash, expiresAt) => {
+// email은 호출부가 소문자·trim. 만료(1시간)는 DB 시계로. active이고 일치할 때만 토큰 저장 후 { id, name } 반환
+Member.setResetToken = async (email, tokenHash) => {
     const [result] = await pool.query(
-        "UPDATE hp_member SET reset_token_hash = ?, reset_expires_at = ? WHERE email = ? AND status = 'active'",
-        [tokenHash, expiresAt, email],
+        "UPDATE hp_member SET reset_token_hash = ?, reset_expires_at = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE email = ? AND status = 'active'",
+        [tokenHash, email],
     );
     if (result.affectedRows !== 1) return undefined;
     const [rows] = await pool.query("SELECT id, name FROM hp_member WHERE email = ? AND status = 'active'", [email]);

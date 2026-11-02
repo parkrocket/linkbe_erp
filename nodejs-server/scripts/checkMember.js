@@ -11,7 +11,21 @@ const slack = require('../src/utils/slack');
 let notices = [];
 slack.sendSlackMessage = async (channel, text) => void notices.push({ channel, text });
 
+const mailer = require('../src/utils/mailer');
+const mails = [];
+let mailFail = false;
+mailer.sendMail = async m => {
+    if (mailFail) throw new Error('smtp down');
+    mails.push(m);
+};
+
 const Member = require('../src/models/memberModel');
+const resetCalls = [];
+let resetTarget = { id: 5, name: '홍길동' };
+let resetOk = true;
+Member.setResetToken = async (email, th) => (resetCalls.push([email, th]), resetTarget);
+const resetByToken = [];
+Member.resetPasswordByToken = async (th, h) => (resetByToken.push([th, h]), resetOk);
 const calls = { leave: [], markLogin: [], create: [], updatePassword: [], updateProfile: [] };
 let dupMessage = null;
 let byLoginId = {};
@@ -54,6 +68,7 @@ const reg = { loginId: 'newuser', password: 'password1', name: '홍길동', emai
 const reset = () => {
     rateLimit.reset();
     notices = [];
+    mails.length = resetCalls.length = resetByToken.length = 0;
     dupMessage = null;
     for (const k of Object.keys(calls)) calls[k] = [];
 };
@@ -263,6 +278,81 @@ const tokenFor = (mid, secret = 'test-member') => jwt.sign({ mid }, secret);
     hash = old; // 예전 형식 해시도 확인 가능
     r = await call(ctrl.leave, { member, body: { password: 'oldpw' } });
     assert.strictEqual(r.body.ok, true);
+
+    // ── 비밀번호 재설정 메일 ──
+    process.env.SHOP_SITE_URL = 'https://shop.test';
+    reset();
+    r = await call(ctrl.forgotPassword, { body: { email: ' A@B.Co ' } });
+    assert.deepStrictEqual([r.code, r.body], [200, { ok: true }]);
+    assert.strictEqual(resetCalls[0][0], 'a@b.co', '이메일 정규화');
+    assert.ok(/^[0-9a-f]{64}$/.test(resetCalls[0][1]), '저장은 64자 hex 해시');
+    assert.strictEqual(mails.length, 1);
+    assert.strictEqual(mails[0].subject, '[링크비] 비밀번호 재설정 안내');
+    assert.strictEqual(mails[0].to, 'a@b.co');
+    const tok = /https:\/\/shop\.test\/password\/reset\?token=([0-9a-f]{64})/.exec(mails[0].text)[1];
+    assert.strictEqual(crypto.createHash('sha256').update(tok).digest('hex'), resetCalls[0][1], '메일 토큰의 sha256이 저장값');
+    assert.ok(mails[0].text.includes('1시간') && mails[0].text.includes('홍길동') && !/a@b|010/.test(mails[0].text), '이름 외 개인정보 없음');
+
+    // 없는 이메일·형식 오류·빈 값: 같은 200, 메일 0건
+    reset();
+    resetTarget = undefined;
+    r = await call(ctrl.forgotPassword, { body: { email: 'none@b.co' } });
+    assert.deepStrictEqual([r.code, r.body], [200, { ok: true }]);
+    assert.strictEqual(mails.length, 0);
+    resetCalls.length = 0;
+    for (const email of ['bad', '', undefined, 123]) assert.deepStrictEqual((await call(ctrl.forgotPassword, { body: { email } })).body, { ok: true });
+    assert.strictEqual(resetCalls.length, 0, '형식 오류는 DB 호출 없음');
+    resetTarget = { id: 5, name: '홍길동' };
+
+    // 메일 실패: 같은 200
+    reset();
+    mailFail = true;
+    r = await call(ctrl.forgotPassword, { body: { email: 'a@b.co' } });
+    assert.deepStrictEqual([r.code, r.body], [200, { ok: true }]);
+    mailFail = false;
+
+    // 운영에서 SHOP_SITE_URL 없으면 보내지 않음(DB 호출도 없음), 로컬은 localhost:3002
+    reset();
+    delete process.env.SHOP_SITE_URL;
+    process.env.NODE_ENV = 'production';
+    r = await call(ctrl.forgotPassword, { body: { email: 'a@b.co' } });
+    assert.deepStrictEqual([r.code, r.body], [200, { ok: true }]);
+    assert.strictEqual(mails.length + resetCalls.length, 0);
+    process.env.NODE_ENV = 'development';
+    await call(ctrl.forgotPassword, { body: { email: 'a@b.co' } });
+    assert.ok(mails[0].text.includes('http://localhost:3002/password/reset?token='));
+    process.env.SHOP_SITE_URL = 'https://shop.test';
+
+    // IP당 시간 5회
+    reset();
+    for (let i = 0; i < 5; i++) assert.strictEqual((await call(ctrl.forgotPassword, { body: { email: 'a@b.co' } })).code, 200);
+    r = await call(ctrl.forgotPassword, { body: { email: 'a@b.co' } });
+    assert.deepStrictEqual([r.code, r.body], [429, { error: 'Too many requests' }]);
+
+    // reset
+    reset();
+    const goodTok = 'ab'.repeat(32);
+    r = await call(ctrl.resetPassword, { body: { token: goodTok, newPassword: 'short' } });
+    assert.deepStrictEqual([r.code, r.body], [400, { error: 'Invalid password' }]);
+    for (const token of ['abc', 'Z'.repeat(64), 'AB'.repeat(32), undefined, 5]) {
+        r = await call(ctrl.resetPassword, { body: { token, newPassword: 'newpassword1' } });
+        assert.deepStrictEqual([r.code, r.body], [400, { error: 'Invalid or expired token' }]);
+    }
+    assert.strictEqual(resetByToken.length, 0, '형식 오류 토큰은 DB 조회 없음');
+    resetOk = false;
+    r = await call(ctrl.resetPassword, { body: { token: goodTok, newPassword: 'newpassword1' } });
+    assert.deepStrictEqual([r.code, r.body], [400, { error: 'Invalid or expired token' }]);
+    resetOk = true;
+    r = await call(ctrl.resetPassword, { body: { token: goodTok, newPassword: 'newpassword1' } });
+    assert.deepStrictEqual(r.body, { ok: true });
+    assert.strictEqual(r.cookies.length, 0, '자동 로그인 없음');
+    const lastReset = resetByToken[resetByToken.length - 1];
+    assert.strictEqual(lastReset[0], crypto.createHash('sha256').update(goodTok).digest('hex'));
+    assert.ok(lastReset[1].startsWith('$2'), 'bcrypt 해시 전달');
+    reset();
+    for (let i = 0; i < 10; i++) await call(ctrl.resetPassword, { body: { token: goodTok, newPassword: 'newpassword1' } });
+    r = await call(ctrl.resetPassword, { body: { token: goodTok, newPassword: 'newpassword1' } });
+    assert.deepStrictEqual([r.code, r.body], [429, { error: 'Too many requests' }]);
 
     console.log('checkMember OK');
     process.exit(0);

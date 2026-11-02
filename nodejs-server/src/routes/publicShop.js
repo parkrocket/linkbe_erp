@@ -7,6 +7,8 @@ const router = express.Router();
 router.post('/members/register', ctrl.register);
 router.post('/members/login', ctrl.login);
 router.post('/members/logout', ctrl.logout);
+router.post('/members/password/forgot', ctrl.forgotPassword);
+router.post('/members/password/reset', ctrl.resetPassword);
 router.get('/members/me', requireMember, ctrl.me);
 router.patch('/members/me', requireMember, ctrl.updateMe);
 router.post('/members/me/password', requireMember, ctrl.changePassword);
