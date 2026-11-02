@@ -82,6 +82,7 @@ app.use('/api/public/shop', require('./routes/publicShop'));
 
 // 홈페이지 관리 API — 관리자 또는 홈페이지 권한자 (아래 /api/admin(관리자 전용)보다 먼저 연결해야 권한자가 막히지 않음)
 app.use('/api/admin/homepage', require('./middlewares/requireHomepage').requireHomepage, require('./routes/adminHomepage'));
+app.use('/api/admin/shop', require('./middlewares/requireHomepage').requireHomepage, require('./routes/adminShop'));
 
 // 관리자 API — requireAuth(위 /api 전체) + 관리자 권한
 app.use('/api/admin', requireAdmin, require('./routes/admin'));
