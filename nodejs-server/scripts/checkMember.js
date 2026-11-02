@@ -15,15 +15,20 @@ const mailer = require('../src/utils/mailer');
 const mails = [];
 let mailFail = false;
 mailer.sendMail = async m => {
-    if (mailFail) throw new Error('smtp down');
+    if (mailFail) throw Object.assign(new Error(`smtp down for ${m.to}`), { code: 'EENVELOPE' });
     mails.push(m);
 };
 
 const Member = require('../src/models/memberModel');
 const resetCalls = [];
-let resetTarget = { id: 5, name: '홍길동' };
+let resetTarget = { id: 5, name: '홍길동', email: 'a@b.co' };
 let resetOk = true;
-Member.setResetToken = async (email, th) => (resetCalls.push([email, th]), resetTarget);
+let resetThrows = false;
+Member.setResetToken = async (email, th) => {
+    resetCalls.push([email, th]);
+    if (resetThrows) throw new Error('db down');
+    return resetTarget;
+};
 const resetByToken = [];
 Member.resetPasswordByToken = async (th, h) => (resetByToken.push([th, h]), resetOk);
 const calls = { leave: [], markLogin: [], create: [], updatePassword: [], updateProfile: [] };
@@ -42,9 +47,9 @@ Member.markLogin = async (id, h) => void calls.markLogin.push([id, h]);
 let leaveResult = true;
 Member.leave = async id => (calls.leave.push(id), leaveResult);
 Member.updatePassword = async (id, h) => void calls.updatePassword.push([id, h]);
-Member.updateProfile = async (id, v) => {
+Member.updateProfile = async (id, v, emailChanged) => {
     if (dupMessage) throw Object.assign(new Error(dupMessage), { code: 'ER_DUP_ENTRY' });
-    calls.updateProfile.push([id, v]);
+    calls.updateProfile.push([id, v, emailChanged]);
 };
 Member.findPasswordHash = async () => hash;
 
@@ -162,6 +167,19 @@ const tokenFor = (mid, secret = 'test-member') => jwt.sign({ mid }, secret);
     const burst = await Promise.all(Array.from({ length: 10 }, () => call(ctrl.login, { body: { loginId: 'bcuser', password: 'wrong-pw99' } })));
     assert.strictEqual(burst.filter(x => x.code === 429).length, 5, '병렬 10건 중 5건 429');
     assert.strictEqual(burst.filter(x => x.code === 401).length, 5);
+    // 같은 IP 총량: 아이디를 바꿔 가며 30회 실패 → 31번째(다른 아이디·맞는 비밀번호여도) 429, 다른 IP는 영향 없음
+    reset();
+    for (let i = 0; i < 30; i++) assert.strictEqual((await call(ctrl.login, { body: { loginId: 'spray' + i, password: 'x' } })).code, 401, `${i + 1}번째 401`);
+    r = await call(ctrl.login, { body: { loginId: 'bcuser', password: 'secret-pw1' } });
+    assert.deepStrictEqual([r.code, r.body], [429, { error: 'Too many attempts' }], 'IP 총량 31번째 429');
+    r = await call(ctrl.login, { ip: '9.9.9.9', body: { loginId: 'bcuser', password: 'secret-pw1' } });
+    assert.strictEqual(r.body.ok, true, '다른 IP는 영향 없음');
+    // 성공은 아이디 키만 비움(IP 총량은 유지)
+    reset();
+    for (let i = 0; i < 29; i++) await call(ctrl.login, { body: { loginId: 'spray' + i, password: 'x' } });
+    assert.strictEqual((await call(ctrl.login, { body: { loginId: 'bcuser', password: 'secret-pw1' } })).body.ok, true, '30번째 성공');
+    assert.strictEqual((await call(ctrl.login, { body: { loginId: 'bcuser', password: 'secret-pw1' } })).code, 429, '성공해도 IP 총량은 그대로');
+
     // 너무 긴/빈 아이디는 제한 키를 만들지 않고 401
     reset();
     r = await call(ctrl.login, { body: { loginId: 'a'.repeat(1000), password: 'x' } });
@@ -224,13 +242,32 @@ const tokenFor = (mid, secret = 'test-member') => jwt.sign({ mid }, secret);
     assert.ok(!('password_hash' in r.body.member) && !('reset_token_hash' in r.body.member));
 
     reset();
-    r = await call(ctrl.updateMe, { member, body: { name: '새이름', email: 'X@B.co', phone: '' } });
-    assert.deepStrictEqual(calls.updateProfile[0], [5, { name: '새이름', email: 'x@b.co', phone: null }]);
+    hash = bc;
+    const me5 = { ...member, email: 'x@b.co' };
+    // 이메일 그대로(대소문자만 다름)면 비밀번호 불필요, 토큰 유지
+    r = await call(ctrl.updateMe, { member: me5, body: { name: '새이름', email: 'X@B.co', phone: '' } });
+    assert.deepStrictEqual(calls.updateProfile[0], [5, { name: '새이름', email: 'x@b.co', phone: null }, false]);
     assert.strictEqual(r.body.ok, true);
-    r = await call(ctrl.updateMe, { member, body: { name: '', email: 'x@b.co' } });
+    r = await call(ctrl.updateMe, { member: me5, body: { name: '', email: 'x@b.co' } });
     assert.strictEqual(r.code, 400);
+    // 이메일 변경: 현재 비밀번호 없음·틀림 400, 맞으면 200 + 재설정 토큰 비움 요청
+    calls.updateProfile = [];
+    r = await call(ctrl.updateMe, { member: me5, body: { name: 'n', email: 'new@b.co' } });
+    assert.deepStrictEqual([r.code, r.body], [400, { error: 'Wrong password' }], '비밀번호 없음');
+    r = await call(ctrl.updateMe, { member: me5, body: { name: 'n', email: 'new@b.co', currentPassword: 'wrong-pw99' } });
+    assert.deepStrictEqual([r.code, r.body], [400, { error: 'Wrong password' }], '비밀번호 틀림');
+    assert.strictEqual(calls.updateProfile.length, 0);
+    r = await call(ctrl.updateMe, { member: me5, body: { name: 'n', email: 'new@b.co', currentPassword: 'secret-pw1' } });
+    assert.strictEqual(r.body.ok, true);
+    assert.deepStrictEqual(calls.updateProfile[0], [5, { name: 'n', email: 'new@b.co', phone: null }, true]);
+    // 같은 pw 키로 시도 제한
+    reset();
+    for (let i = 0; i < 5; i++) await call(ctrl.updateMe, { member: me5, body: { name: 'n', email: 'new@b.co', currentPassword: 'bad-bad-bad1' } });
+    r = await call(ctrl.updateMe, { member: me5, body: { name: 'n', email: 'new@b.co', currentPassword: 'secret-pw1' } });
+    assert.deepStrictEqual([r.code, r.body], [429, { error: 'Too many attempts' }]);
+    reset();
     dupMessage = "Duplicate entry for key 'hp_member.email'";
-    r = await call(ctrl.updateMe, { member, body: { name: 'n', email: 'x@b.co' } });
+    r = await call(ctrl.updateMe, { member: me5, body: { name: 'n', email: 'x@b.co' } });
     assert.deepStrictEqual([r.code, r.body], [409, { error: 'Email taken' }]);
 
     // ── 비밀번호 변경 ──
@@ -293,6 +330,23 @@ const tokenFor = (mid, secret = 'test-member') => jwt.sign({ mid }, secret);
     assert.strictEqual(crypto.createHash('sha256').update(tok).digest('hex'), resetCalls[0][1], '메일 토큰의 sha256이 저장값');
     assert.ok(mails[0].text.includes('1시간') && mails[0].text.includes('홍길동') && !/a@b|010/.test(mails[0].text), '이름 외 개인정보 없음');
 
+    // 수신자는 입력값이 아니라 DB 값(정렬 규칙이 다른 값을 같은 것으로 볼 수 있음)
+    reset();
+    resetTarget = { id: 5, name: '홍길동', email: 'real@b.co' };
+    await call(ctrl.forgotPassword, { body: { email: 'REAL@b.co' } });
+    assert.strictEqual(mails[0].to, 'real@b.co', '메일 수신자 = DB 이메일');
+    resetTarget = { id: 5, name: '홍길동', email: 'a@b.co' };
+    // 악센트·특수문자 이메일은 DB 조회 없이 200
+    reset();
+    for (const email of ['victim@exämple.com', 'a,b@x.co', 'a<b@x.co']) assert.deepStrictEqual((await call(ctrl.forgotPassword, { body: { email } })).body, { ok: true });
+    assert.strictEqual(resetCalls.length + mails.length, 0, '규칙 밖 이메일은 DB·메일 없음');
+    // 응답을 먼저 보냄: 이후 DB 오류여도 200 { ok: true }
+    reset();
+    resetThrows = true;
+    r = await call(ctrl.forgotPassword, { body: { email: 'a@b.co' } });
+    assert.deepStrictEqual([r.code, r.body], [200, { ok: true }], 'DB 오류에도 200');
+    resetThrows = false;
+
     // 없는 이메일·형식 오류·빈 값: 같은 200, 메일 0건
     reset();
     resetTarget = undefined;
@@ -302,13 +356,18 @@ const tokenFor = (mid, secret = 'test-member') => jwt.sign({ mid }, secret);
     resetCalls.length = 0;
     for (const email of ['bad', '', undefined, 123]) assert.deepStrictEqual((await call(ctrl.forgotPassword, { body: { email } })).body, { ok: true });
     assert.strictEqual(resetCalls.length, 0, '형식 오류는 DB 호출 없음');
-    resetTarget = { id: 5, name: '홍길동' };
+    resetTarget = { id: 5, name: '홍길동', email: 'a@b.co' };
 
-    // 메일 실패: 같은 200
+    // 메일 실패: 같은 200, 로그에 수신자 없음
     reset();
     mailFail = true;
+    const origErr = console.error;
+    const logged = [];
+    console.error = (...a) => void logged.push(a.join(' '));
     r = await call(ctrl.forgotPassword, { body: { email: 'a@b.co' } });
+    console.error = origErr;
     assert.deepStrictEqual([r.code, r.body], [200, { ok: true }]);
+    assert.ok(logged.length === 1 && !logged[0].includes('a@b.co'), '메일 실패 로그에 수신자 없음: ' + logged[0]);
     mailFail = false;
 
     // 운영에서 SHOP_SITE_URL 없으면 보내지 않음(DB 호출도 없음), 로컬은 localhost:3002

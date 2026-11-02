@@ -2,7 +2,7 @@ const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const Member = require('../models/memberModel');
 const { hashPassword, verifyPassword } = require('../utils/memberPassword');
-const { validateRegister, validateProfile, validateNewPassword } = require('../utils/memberValidation');
+const { validateRegister, validateProfile, validateNewPassword, EMAIL_RULE } = require('../utils/memberValidation');
 const rateLimit = require('../utils/rateLimit');
 const { escapeSlack } = require('../utils/slackEscape');
 const { memberCookieOptions, issueMemberCookie, secretOf, COOKIE } = require('../middlewares/requireMember');
@@ -14,6 +14,7 @@ const MIN_FILL_MS = 3000; // 이보다 빨리 제출하면 봇으로 봄
 const HOUR = 60 * 60 * 1000;
 const LOGIN_WINDOW = 15 * 60 * 1000;
 const LOGIN_MAX = 5;
+const LOGIN_IP_MAX = 30; // 같은 IP에서 아이디를 바꿔 가며 시도하는 것 제한
 // 없는 아이디도 bcrypt 비교 1회를 하도록(응답 시간으로 계정 존재를 알 수 없게)
 const DUMMY_HASH = bcrypt.hashSync('dummy-password', 10);
 
@@ -76,8 +77,10 @@ exports.login = handle(async (req, res) => {
     // 빈 값·너무 긴 값은 제한 키를 만들지 않고(메모리 보호) 바로 실패
     if (!loginId || loginId.length > 50) return res.status(401).json({ error: 'Invalid credentials' });
     const key = `login:${req.ip}|${loginId.toLowerCase()}`;
-    // 확인 전에 먼저 센다(병렬 요청이 한도를 넘겨 시도하지 못하게)
-    if (!rateLimit.hit(key, LOGIN_MAX, LOGIN_WINDOW)) return res.status(429).json({ error: 'Too many attempts' });
+    // 확인 전에 먼저 센다(병렬 요청이 한도를 넘겨 시도하지 못하게). IP 총량·아이디 둘 중 하나라도 넘으면 429
+    const ipOk = rateLimit.hit(`loginip:${req.ip}`, LOGIN_IP_MAX, LOGIN_WINDOW);
+    const idOk = rateLimit.hit(key, LOGIN_MAX, LOGIN_WINDOW);
+    if (!ipOk || !idOk) return res.status(429).json({ error: 'Too many attempts' });
     secretOf();
 
     const row = await Member.findByLoginId(loginId);
@@ -85,7 +88,7 @@ exports.login = handle(async (req, res) => {
     // 예전 형식 해시는 bcrypt를 안 쓰므로 더미로 1회 보충 — 없는 아이디·bcrypt 사용자·예전 형식 모두 bcrypt 1회
     if (row && !String(row.password_hash).startsWith('$2')) await bcrypt.compare(String(password ?? ''), DUMMY_HASH).catch(() => false);
     if (!row || !result.ok) return res.status(401).json({ error: 'Invalid credentials' });
-    rateLimit.clear(key);
+    rateLimit.clear(key); // IP 총량은 유지
     await Member.markLogin(row.id, result.needsRehash ? await hashPassword(password) : null);
     issueMemberCookie(res, row.id);
     res.json({ ok: true, member: brief(row) });
@@ -104,8 +107,15 @@ exports.me = (req, res) => {
 exports.updateMe = handle(async (req, res) => {
     const checked = validateProfile(req.body);
     if (checked.error) return res.status(400).json({ error: checked.error });
+    // 이메일(비밀번호 재설정 수신처) 변경은 현재 비밀번호 확인
+    const emailChanged = checked.value.email !== String(req.member.email ?? '').toLowerCase();
+    if (emailChanged) {
+        const match = await passwordMatches(req.member.id, req.body.currentPassword);
+        if (match === 'limited') return tooMany(res);
+        if (!match) return res.status(400).json({ error: 'Wrong password' });
+    }
     try {
-        await Member.updateProfile(req.member.id, checked.value);
+        await Member.updateProfile(req.member.id, checked.value, emailChanged);
     } catch (error) {
         if (dupError(error) === 'Email taken') return res.status(409).json({ error: 'Email taken' });
         throw error;
@@ -146,34 +156,34 @@ exports.leave = handle(async (req, res) => {
 });
 
 const sha256 = v => crypto.createHash('sha256').update(v).digest('hex');
-const EMAIL_RULE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-// 대상 존재 여부를 응답으로 알 수 없게 항상 200 { ok: true } (제한 초과만 429)
+// 대상 존재 여부를 응답으로 알 수 없게 항상 200 { ok: true } (제한 초과만 429) — 응답을 먼저 보내 시간 차이도 없앰
 exports.forgotPassword = handle(async (req, res) => {
     if (!rateLimit.hit(`forgot:${req.ip}`, 5, HOUR)) return res.status(429).json({ error: 'Too many requests' });
+    res.json({ ok: true });
     const raw = req.body?.email;
     const email = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
-    if (!EMAIL_RULE.test(email) || email.length > 150) return res.json({ ok: true });
+    if (!EMAIL_RULE.test(email) || email.length > 150) return;
 
     // 운영에서 사이트 주소가 없으면 잘못된 링크가 나가지 않도록 보내지 않음
     const site = process.env.SHOP_SITE_URL || (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3002');
     if (!site) {
         console.error('member reset mail skipped: SHOP_SITE_URL missing');
-        return res.json({ ok: true });
+        return;
     }
 
-    const token = crypto.randomBytes(32).toString('hex');
-    const target = await Member.setResetToken(email, sha256(token));
-    res.json({ ok: true });
-    if (!target) return;
+    // 로그에는 수신자가 섞일 수 있는 메시지 대신 코드만
     try {
+        const token = crypto.randomBytes(32).toString('hex');
+        const target = await Member.setResetToken(email, sha256(token));
+        if (!target) return;
         await mailer.sendMail({
-            to: email,
+            to: target.email, // 입력값이 아니라 DB 값
             subject: '[링크비] 비밀번호 재설정 안내',
             text: `${target.name}님, 안녕하세요.\n\n아래 링크에서 1시간 안에 새 비밀번호를 설정해 주세요.\n${site.replace(/\/+$/, '')}/password/reset?token=${token}\n\n비밀번호 재설정을 요청하지 않으셨다면 이 메일은 무시하셔도 됩니다.\n\n링크비`,
         });
     } catch (error) {
-        console.error('member reset mail failed:', error.message);
+        console.error('member reset mail failed:', error.code || error.name);
     }
 });
 

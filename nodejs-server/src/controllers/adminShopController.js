@@ -28,7 +28,6 @@ exports.listMembers = handle(async (req, res) => {
             loginId: r.login_id,
             name: r.name,
             email: r.email,
-            phone: r.phone,
             status: r.status,
             createdAt: r.created_at,
             lastLoginAt: r.last_login_at,
@@ -46,7 +45,7 @@ exports.leaveMember = handle(async (req, res) => {
     if (!member || member.status !== 'active' || !(await Member.leave(id))) return res.status(404).json({ error: 'Member not found' });
     res.json({ ok: true });
     try {
-        await slack.sendSlackMessage(process.env.SLACK_SHOP_CHANNEL || '#결제', `[회원탈퇴] 관리자 처리: ${escapeSlack(member.name)}님`);
+        await slack.sendSlackMessage(process.env.SLACK_SHOP_CHANNEL || '#결제', `[회원탈퇴] 관리자 처리: ${escapeSlack(member.name)}님 (처리: 직원 #${req.userId})`);
     } catch (error) {
         console.error('admin shop slack notice failed:', error.message);
     }

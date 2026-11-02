@@ -61,11 +61,16 @@ const all = () => calls.map(c => c.sql).join('\n');
     // 정보 수정
     await Member.updateProfile(3, { name: 'n', email: 'e', phone: 'p' });
     assert.ok(/UPDATE hp_member SET name = \?, email = \?, phone = \? WHERE id = \? AND status = 'active'/.test(last().sql));
+    assert.ok(!/reset_token_hash/.test(last().sql), '이메일 그대로면 재설정 토큰 유지');
+    await Member.updateProfile(3, { name: 'n', email: 'e2', phone: null }, true);
+    assert.ok(/reset_token_hash = NULL, reset_expires_at = NULL WHERE id = \? AND status = 'active'/.test(last().sql), '이메일 변경 시 토큰 비움');
+    assert.deepStrictEqual(last().params, ['n', 'e2', null, 3]);
 
     // 재설정 토큰: UPDATE 1건일 때만 대상 반환
     calls = [];
-    pool.query = async (sql, params) => (calls.push({ sql, params }), /^UPDATE/.test(sql) ? [{ affectedRows: 1 }] : [[{ id: 5, name: '홍' }]]);
-    assert.deepStrictEqual(await Member.setResetToken('a@b.c', 'th'), { id: 5, name: '홍' });
+    pool.query = async (sql, params) => (calls.push({ sql, params }), /^UPDATE/.test(sql) ? [{ affectedRows: 1 }] : [[{ id: 5, name: '홍', email: 'a@b.c' }]]);
+    assert.deepStrictEqual(await Member.setResetToken('a@b.c', 'th'), { id: 5, name: '홍', email: 'a@b.c' });
+    assert.ok(/SELECT id, name, email FROM/.test(calls[1].sql), '메일 수신자는 DB 값');
     assert.ok(/WHERE email = \? AND status = 'active'/.test(calls[0].sql));
     assert.deepStrictEqual(calls[0].params, ['th', 'a@b.c']);
     assert.ok(/reset_expires_at = DATE_ADD\(NOW\(\), INTERVAL 1 HOUR\)/.test(calls[0].sql), '만료는 DB 시계로 1시간');
@@ -99,7 +104,7 @@ const all = () => calls.map(c => c.sql).join('\n');
     const ls = calls.find(c => !/COUNT\(\*\) AS n/.test(c.sql));
     assert.ok(/login_id LIKE \? OR m\.name LIKE \? OR m\.email LIKE \?/.test(ls.sql) && /order_count/.test(ls.sql) && /ORDER BY m\.id DESC LIMIT \? OFFSET \?/.test(ls.sql));
     assert.deepStrictEqual(ls.params, ['%a\\%b%', '%a\\%b%', '%a\\%b%', 20, 20]);
-    assert.ok(!/password_hash/.test(ls.sql));
+    assert.ok(!/password_hash/.test(ls.sql) && !/m\.phone/.test(ls.sql), '화면에서 안 쓰는 해시·연락처 제외');
     calls = [];
     await Member.listForAdmin({ q: 'a_b\\c', page: 1, size: 20 });
     assert.strictEqual(calls[0].params[0], '%a\\_b\\\\c%');

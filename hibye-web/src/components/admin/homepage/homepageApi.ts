@@ -106,7 +106,6 @@ export type Customer = {
     loginId: string | null;
     name: string;
     email: string | null;
-    phone: string | null;
     status: 'active' | 'left';
     createdAt: string;
     lastLoginAt: string | null;

@@ -1,6 +1,7 @@
 // 고객 회원 가입·정보 수정 검증 — 공개 양식이라 서버에서 최종 확인
 const LOGIN_RULE = /^[a-z0-9]{4,20}$/;
-const EMAIL_RULE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+// ASCII만 — DB 정렬 규칙이 악센트를 무시해 비슷한 주소가 다른 계정과 일치할 수 있음
+const EMAIL_RULE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 const PHONE_RULE = /^[0-9-]{9,13}$/;
 
 const text = v => (typeof v === 'string' ? v.trim() : '');
@@ -31,4 +32,4 @@ const validateRegister = input => {
     return { value: { loginId, password: body.password, ...profile.value } };
 };
 
-module.exports = { validateRegister, validateProfile, validateNewPassword };
+module.exports = { validateRegister, validateProfile, validateNewPassword, EMAIL_RULE };

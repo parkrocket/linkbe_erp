@@ -1,7 +1,7 @@
 // 회원 공통 도구 점검 — node scripts/checkMemberUtils.js (DB·네트워크 사용 안 함)
 const assert = require('assert');
 const { hashPassword, verifyPassword } = require('../src/utils/memberPassword');
-const { validateRegister, validateProfile, validateNewPassword } = require('../src/utils/memberValidation');
+const { validateRegister, validateProfile, validateNewPassword, EMAIL_RULE } = require('../src/utils/memberValidation');
 const rateLimit = require('../src/utils/rateLimit');
 
 (async () => {
@@ -29,6 +29,9 @@ const rateLimit = require('../src/utils/rateLimit');
     err({ name: '' }, 'Invalid name');
     err({ name: 'a'.repeat(31) }, 'Invalid name');
     err({ email: 'x@y' }, 'Invalid email');
+    // 악센트·특수문자 이메일 거부(DB 정렬 규칙이 악센트를 무시해 다른 계정과 일치할 수 있음)
+    for (const email of ['victim@exämple.com', 'a,b@x.co', 'a<b@x.co']) err({ email }, 'Invalid email');
+    assert.ok(EMAIL_RULE.test('a.b+c_d%e-f@x-y.co.kr'));
     err({ phone: '12' }, 'Invalid phone');
     err({ agree: '' }, 'Agreement required');
 
@@ -65,6 +68,22 @@ const rateLimit = require('../src/utils/rateLimit');
     assert.strictEqual(rateLimit.hit('w', 1, 5), false);
     await new Promise(r => setTimeout(r, 20));
     assert.strictEqual(rateLimit.hit('w', 1, 5), true);
+
+    // 정리: 마지막 정리 후 60초 지났을 때만, 키별 창 기준(1시간보다 긴 창도 유지)
+    rateLimit.reset();
+    const realNow = Date.now;
+    let now = realNow() + 10 * 60000; // 직전 실제 정리 시각보다 뒤
+    Date.now = () => now;
+    rateLimit.hit('short', 5, 1000);
+    rateLimit.hit('long', 1, 2 * 3600000);
+    now += 2000;
+    rateLimit.hit('x', 5, 1000);
+    assert.strictEqual(rateLimit.size(), 3, '60초 전에는 정리 안 함');
+    now += 90 * 60000;
+    rateLimit.hit('x', 5, 1000);
+    assert.strictEqual(rateLimit.size(), 2, '만료된 short만 정리');
+    assert.strictEqual(rateLimit.hit('long', 1, 2 * 3600000), false, '2시간 창은 90분 뒤에도 유지');
+    Date.now = realNow;
 
     console.log('checkMemberUtils OK');
 })().catch(e => { console.error(e); process.exit(1); });

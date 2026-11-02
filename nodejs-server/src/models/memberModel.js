@@ -51,8 +51,10 @@ Member.markLogin = async (id, newHash) => {
     await pool.query('UPDATE hp_member SET last_login_at = NOW() WHERE id = ?', [id]);
 };
 
-Member.updateProfile = async (id, { name, email, phone }) => {
-    await pool.query("UPDATE hp_member SET name = ?, email = ?, phone = ? WHERE id = ? AND status = 'active'", [name, email, phone, id]);
+// 이메일이 바뀌면(emailChanged) 예전 주소로 보낸 재설정 링크도 무효
+Member.updateProfile = async (id, { name, email, phone }, emailChanged = false) => {
+    const clear = emailChanged ? ', reset_token_hash = NULL, reset_expires_at = NULL' : '';
+    await pool.query(`UPDATE hp_member SET name = ?, email = ?, phone = ?${clear} WHERE id = ? AND status = 'active'`, [name, email, phone, id]);
 };
 
 Member.updatePassword = async (id, hash) => {
@@ -62,14 +64,14 @@ Member.updatePassword = async (id, hash) => {
     );
 };
 
-// email은 호출부가 소문자·trim. 만료(1시간)는 DB 시계로. active이고 일치할 때만 토큰 저장 후 { id, name } 반환
+// email은 호출부가 소문자·trim. 만료(1시간)는 DB 시계로. active이고 일치할 때만 토큰 저장 후 { id, name, email } 반환(메일은 DB의 email로)
 Member.setResetToken = async (email, tokenHash) => {
     const [result] = await pool.query(
         "UPDATE hp_member SET reset_token_hash = ?, reset_expires_at = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE email = ? AND status = 'active'",
         [tokenHash, email],
     );
     if (result.affectedRows !== 1) return undefined;
-    const [rows] = await pool.query("SELECT id, name FROM hp_member WHERE email = ? AND status = 'active'", [email]);
+    const [rows] = await pool.query("SELECT id, name, email FROM hp_member WHERE email = ? AND status = 'active'", [email]);
     return rows[0];
 };
 
@@ -100,7 +102,7 @@ Member.listForAdmin = async ({ q, page = 1, size = 20 } = {}) => {
         params.push(like, like, like);
     }
     const [rows] = await pool.query(
-        `SELECT m.id, m.login_id, m.name, m.email, m.phone, m.status, m.created_at, m.last_login_at, (SELECT COUNT(*) FROM hp_order o WHERE o.member_id = m.id) AS order_count FROM hp_member m${where} ORDER BY m.id DESC LIMIT ? OFFSET ?`,
+        `SELECT m.id, m.login_id, m.name, m.email, m.status, m.created_at, m.last_login_at, (SELECT COUNT(*) FROM hp_order o WHERE o.member_id = m.id) AS order_count FROM hp_member m${where} ORDER BY m.id DESC LIMIT ? OFFSET ?`,
         [...params, size, (page - 1) * size],
     );
     const [[{ n }]] = await pool.query(`SELECT COUNT(*) AS n FROM hp_member m${where}`, params);

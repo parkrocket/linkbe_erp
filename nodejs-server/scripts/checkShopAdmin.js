@@ -36,9 +36,9 @@ const call = async (fn, req) => {
 
     let res = await call(ctrl.listMembers, { query: { q: '  김  ', page: '2', size: '999' } });
     assert.deepStrictEqual(listArgs, { q: '김', page: 2, size: 50 });
-    assert.deepStrictEqual(Object.keys(res.body.members[0]), ['id', 'loginId', 'name', 'email', 'phone', 'status', 'createdAt', 'lastLoginAt', 'orderCount']);
+    assert.deepStrictEqual(Object.keys(res.body.members[0]), ['id', 'loginId', 'name', 'email', 'status', 'createdAt', 'lastLoginAt', 'orderCount']);
     assert.strictEqual(res.body.members[0].orderCount, 3);
-    assert.ok(!JSON.stringify(res.body).includes('password'));
+    assert.ok(!JSON.stringify(res.body).includes('password') && !JSON.stringify(res.body).includes('010'));
     assert.deepStrictEqual([res.body.total, res.body.page, res.body.size], [1, 2, 50]);
     await call(ctrl.listMembers, { query: { page: '-1', size: 'x', q: 'a'.repeat(150) } });
     assert.deepStrictEqual([listArgs.page, listArgs.size, listArgs.q.length], [1, 20, 100]);
@@ -50,10 +50,10 @@ const call = async (fn, req) => {
     assert.deepStrictEqual(left, [], '없거나 이미 탈퇴면 leave 호출 안 함');
     assert.strictEqual(notices.length, 0);
 
-    res = await call(ctrl.leaveMember, { params: { id: '5' } });
+    res = await call(ctrl.leaveMember, { params: { id: '5' }, userId: 7 });
     assert.deepStrictEqual(res.body, { ok: true });
     assert.strictEqual(notices.length, 1);
-    assert.strictEqual(notices[0].text, '[회원탈퇴] 관리자 처리: &lt;b&gt;홍&lt;/b&gt;&amp;님');
+    assert.strictEqual(notices[0].text, '[회원탈퇴] 관리자 처리: &lt;b&gt;홍&lt;/b&gt;&amp;님 (처리: 직원 #7)');
 
     console.log('checkShopAdmin OK');
 })().catch(error => {
