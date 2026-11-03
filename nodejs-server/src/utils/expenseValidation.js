@@ -31,4 +31,4 @@ const parseMonth = (value, now = new Date()) => {
     return typeof value === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(value) ? value : null;
 };
 
-module.exports = { EXPENSE_CATEGORIES, EXPENSE_STATUSES, STATUS_NAME, validateExpense, parseMonth };
+module.exports = { EXPENSE_CATEGORIES, EXPENSE_STATUSES, STATUS_NAME, validateExpense, parseMonth, isRealDate };
