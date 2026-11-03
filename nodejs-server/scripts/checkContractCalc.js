@@ -21,6 +21,7 @@ assert.strictEqual(receivable({ total: 1000000, paidAmount: 500000 }), 600000);
 assert.strictEqual(receivable({ total: 1000000, paidAmount: 500000, isHold: true }), 0);
 assert.strictEqual(receivable({ total: 1000000, paidAmount: 500000, isCancelled: true }), 0);
 assert.strictEqual(receivable({ total: 1000000, paidAmount: 1100000 }), 0);
+assert.strictEqual(receivable({ total: 1000000, paidAmount: 1200000 }), -100000);
 const open = { total: 1000000, paidAmount: 500000 };
 assert.strictEqual(contractStatus({ ...open, isCancelled: true, isHold: true }), 'cancelled');
 assert.strictEqual(contractStatus({ ...open, isHold: true, isPaidFull: true }), 'hold');

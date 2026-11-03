@@ -7,9 +7,9 @@ const itemAmount = ({ unitPrice, qty, period }) => unitPrice * (qty || 1) * (per
 
 const itemsTotal = items => items.reduce((sum, item) => sum + itemAmount(item), 0);
 
-// 미수: 보류·취소는 0, 과입금도 0
+// 미수: 보류·취소는 0, 초과 입금은 음수 (RECEIVABLE_SQL과 같은 값)
 const receivable = ({ total, paidAmount, isHold, isCancelled }) =>
-    isHold || isCancelled ? 0 : Math.max(0, total + vat(total) - paidAmount);
+    isHold || isCancelled ? 0 : total + vat(total) - paidAmount;
 
 // 상태 우선순위: 취소 → 보류 → 완납 → 미수 → 진행
 const contractStatus = c => {
