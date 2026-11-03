@@ -25,6 +25,7 @@ export type OrderRow = {
     paidAt: string | null;
     cancelledAt: string | null;
     createdAt: string;
+    legacy: boolean;
     buyerEmail?: string | null;
     buyerPhone?: string | null;
     buyerMemo?: string | null;
@@ -66,10 +67,13 @@ export function validateProductForm(f: ProductForm): Partial<Record<'title' | 'p
 }
 
 // KCP로 취소되는 수단 — 그 밖(무통장·예전 가상계좌)은 직접 환불
-export const isKcpCancel = (m: PayMethod) => m === 'card' || m === 'bank';
+// 예전 사이트에서 옮긴 주문(legacy)은 수단과 상관없이 KCP를 부르지 않음
+export const isKcpCancel = (m: PayMethod, legacy = false) => !legacy && (m === 'card' || m === 'bank');
 
 // 취소 확인 창 문구 — 카드·계좌이체는 KCP까지 취소, 무통장·가상계좌는 직접 환불
-export const cancelConfirmText = (m: PayMethod) =>
-    !isKcpCancel(m)
+export const cancelConfirmText = (m: PayMethod, legacy = false) =>
+    legacy
+        ? '정말 취소할까요? 예전 사이트 주문이라 KCP 결제는 취소되지 않아요. 환불은 직접 처리해 주세요.'
+        : !isKcpCancel(m)
         ? '정말 취소할까요? 입금된 주문이면 계좌로 직접 환불해야 해요.'
         : '정말 취소할까요? 카드·계좌이체는 KCP 결제까지 취소되고 되돌릴 수 없어요.';

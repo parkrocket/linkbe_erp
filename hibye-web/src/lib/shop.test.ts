@@ -19,5 +19,6 @@ describe('shop', () => {
         expect(cancelConfirmText('deposit')).toContain('직접 환불');
         expect(cancelConfirmText('vbank')).toContain('직접 환불');
         expect(cancelConfirmText('card')).toContain('KCP');
+        expect(cancelConfirmText('card', true)).toContain('예전 사이트 주문이라 KCP 결제는 취소되지 않아요');
     });
 });

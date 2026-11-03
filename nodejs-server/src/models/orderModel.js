@@ -3,7 +3,7 @@ const pool = require('../config/dbPromise');
 // 개인결제 주문(hp_order) — 모든 값은 바인딩, 명시 컬럼만
 const Order = {};
 
-const COLUMNS = 'id, order_no, member_id, product_id, product_title, amount, buyer_name, buyer_email, buyer_phone, pay_method, status, kcp_tno, kcp_app_no, vbank_bank, vbank_account, vbank_holder, vbank_due, deposit_name, buyer_memo, admin_memo, history, paid_at, cancelled_at, created_at, updated_at';
+const COLUMNS = 'id, order_no, member_id, product_id, product_title, amount, buyer_name, buyer_email, buyer_phone, pay_method, status, kcp_tno, kcp_app_no, vbank_bank, vbank_account, vbank_holder, vbank_due, deposit_name, buyer_memo, admin_memo, history, legacy_od_id, paid_at, cancelled_at, created_at, updated_at';
 
 // 고객에게 내보내는 칸 — 관리자 메모·변경 기록·KCP 거래 정보는 제외
 const MEMBER_COLUMNS = 'order_no, product_id, product_title, amount, pay_method, status, buyer_name, buyer_email, buyer_phone, buyer_memo, deposit_name, paid_at, cancelled_at, created_at';

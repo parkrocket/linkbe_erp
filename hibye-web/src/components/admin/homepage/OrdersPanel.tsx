@@ -228,7 +228,7 @@ function OrderDetail({
     const doCancel = () => {
         const text = reason.trim();
         if (!text || text.length > 200) return setNotice({ tone: 'error', text: '취소 사유를 1~200자로 입력해 주세요.' });
-        if (!window.confirm(cancelConfirmText(order.payMethod))) return;
+        if (!window.confirm(cancelConfirmText(order.payMethod, order.legacy))) return;
         run(async () => {
             const r = await cancelOrder(order.id, text);
             onNotice({ tone: 'ok', text: r.refundManually ? '취소했어요. 계좌로 직접 환불해 주세요.' : '취소했어요.' });
@@ -238,12 +238,13 @@ function OrderDetail({
 
     // KCP 결제(카드·계좌이체)는 결제 완료 후에만, 무통장·예전 가상계좌는 입금 대기에서도 취소 가능
     const paid = order.status === 'paid' || order.status === 'completed';
-    const canCancel = isKcpCancel(order.payMethod) ? paid : paid || order.status === 'awaiting_deposit';
+    const canCancel = isKcpCancel(order.payMethod, order.legacy) ? paid : paid || order.status === 'awaiting_deposit';
 
     const rows: [string, React.ReactNode][] = [
         ['상품', order.productTitle],
         ['금액', formatWon(order.amount)],
         ['수단', PAY_METHOD_LABEL[order.payMethod] ?? order.payMethod],
+        ['구분', order.legacy ? <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800">예전 사이트 주문</span> : null],
         ['상태', ORDER_STATUS_LABEL[order.status]],
         ['주문일', new Date(order.createdAt).toLocaleString('ko-KR')],
         ['주문자', order.buyerName],

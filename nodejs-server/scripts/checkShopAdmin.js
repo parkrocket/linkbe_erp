@@ -110,10 +110,10 @@ const call = async (fn, req) => {
     assert.deepStrictEqual((await call(ctrl.deleteProduct, { params: { id: '3' } })).body, { ok: true });
 
     // ── 주문 ──
-    const mk = (id, payMethod, status) => ({ id, order_no: `LB${id}`, product_title: '<상품>', amount: 5000, pay_method: payMethod, status, kcp_tno: '123', history: 'h', admin_memo: 'm', buyer_email: 'e', buyer_phone: 'p' });
+    const mk = (id, payMethod, status, legacy) => ({ legacy_od_id: legacy ? 'L1' : null, id, order_no: `LB${id}`, product_title: '<상품>', amount: 5000, pay_method: payMethod, status, kcp_tno: '123', history: 'h', admin_memo: 'm', buyer_email: 'e', buyer_phone: 'p' });
     const orders = {};
-    [[1, 'deposit', 'awaiting_deposit'], [2, 'deposit', 'paid'], [3, 'deposit', 'completed'], [4, 'card', 'paid'], [5, 'bank', 'completed'], [6, 'card', 'pending'], [7, 'card', 'cancelled'], [8, 'card', 'awaiting_deposit'], [9, 'deposit', 'pending'], [10, 'vbank', 'awaiting_deposit'], [11, 'vbank', 'paid']]
-        .forEach(([id, m, s]) => (orders[id] = mk(id, m, s)));
+    [[1, 'deposit', 'awaiting_deposit'], [2, 'deposit', 'paid'], [3, 'deposit', 'completed'], [4, 'card', 'paid'], [5, 'bank', 'completed'], [6, 'card', 'pending'], [7, 'card', 'cancelled'], [8, 'card', 'awaiting_deposit'], [9, 'deposit', 'pending'], [10, 'vbank', 'awaiting_deposit'], [11, 'vbank', 'paid'], [12, 'card', 'paid', true], [13, 'bank', 'completed', true]]
+        .forEach(([id, m, s, l]) => (orders[id] = mk(id, m, s, l)));
     Order.findById = async id => orders[id];
     const trans = [];
     let transResult = true;
@@ -182,6 +182,16 @@ const call = async (fn, req) => {
     assert.deepStrictEqual((await act(ctrl.cancelOrder, 10, { reason: 'r' })).body, { ok: true, refundManually: false });
     assert.deepStrictEqual((await act(ctrl.cancelOrder, 11, { reason: 'r' })).body, { ok: true, refundManually: true });
     assert.strictEqual(kcpCalls.length, 0);
+    // 예전 사이트 주문 → 카드여도 KCP 호출 0, 상태만 취소 + 직접 환불
+    res = await act(ctrl.cancelOrder, 12, { reason: 'r' });
+    assert.deepStrictEqual(res.body, { ok: true, refundManually: true });
+    assert.strictEqual(kcpCalls.length, 0);
+    assert.deepStrictEqual(trans.at(-1).slice(0, 3), ['LB12', ['paid', 'completed'], 'cancelled']);
+    assert.ok(trans.at(-1)[4].includes('KCP 취소 안 함') && notices.at(-1).text.includes('KCP 취소 안 함'));
+    assert.strictEqual((await act(ctrl.cancelOrder, 13, { reason: 'r' })).body.refundManually, true);
+    assert.strictEqual(kcpCalls.length, 0);
+    assert.strictEqual((await call(ctrl.getOrder, { params: { id: '12' } })).body.order.legacy, true);
+    assert.strictEqual((await call(ctrl.getOrder, { params: { id: '4' } })).body.order.legacy, false);
     // 카드·계좌이체 → KCP 취소(ASCII 사유 고정)
     res = await act(ctrl.cancelOrder, 4, { reason: '한글 사유 <b>' });
     assert.deepStrictEqual(res.body, { ok: true, refundManually: false });
