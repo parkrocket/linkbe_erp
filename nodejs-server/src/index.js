@@ -26,6 +26,7 @@ app.use(cors()); // CORS 미들웨어 사용
 if (process.env.NODE_ENV === 'production') {
     require('./controllers/userCron.js');
     require('./controllers/homepageCron.js'); // 홈페이지 문의 3년 보관 후 삭제
+    require('./controllers/shopCron.js'); // 개인결제 주문 5년 보관·결제 대기 7일 후 삭제
 }
 
 app.use(requestIp.mw());

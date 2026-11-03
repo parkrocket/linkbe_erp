@@ -134,4 +134,35 @@ Order.appendHistory = async (orderNo, line) => {
     return result.affectedRows === 1;
 };
 
+// 보관 기간(년) 지난 주문 삭제 — 상태 무관, 삭제 건수 반환
+Order.purgeOlderThan = async years => {
+    const [result] = await pool.query('DELETE FROM hp_order WHERE created_at < NOW() - INTERVAL ? YEAR', [years]);
+    return result.affectedRows;
+};
+
+// 결제 대기로 days일 지난 주문 삭제. 변경 기록에 '확인 필요'·'직접 취소 필요'가 있으면(KCP 승인 결과를 모름 — 실제 승인됐을 수 있음) 남김
+Order.purgeStalePending = async days => {
+    const conn = await pool.getConnection();
+    try {
+        await conn.beginTransaction();
+        const [rows] = await conn.query(
+            "SELECT id FROM hp_order WHERE status = 'pending' AND created_at < NOW() - INTERVAL ? DAY AND history NOT LIKE '%확인 필요%' AND history NOT LIKE '%직접 취소 필요%' FOR UPDATE",
+            [days],
+        );
+        const ids = rows.map(r => r.id);
+        if (ids.length) await conn.query('DELETE FROM hp_order WHERE id IN (?)', [ids]);
+        const [[{ n }]] = await conn.query(
+            "SELECT COUNT(*) AS n FROM hp_order WHERE status = 'pending' AND created_at < NOW() - INTERVAL ? DAY AND (history LIKE '%확인 필요%' OR history LIKE '%직접 취소 필요%')",
+            [days],
+        );
+        await conn.commit();
+        return { deleted: ids.length, kept: Number(n) };
+    } catch (error) {
+        await conn.rollback();
+        throw error;
+    } finally {
+        conn.release();
+    }
+};
+
 module.exports = Order;
