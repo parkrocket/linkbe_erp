@@ -26,6 +26,9 @@ const TRANSITIONS = {
 const STATUS_ACTION = { approved: '승인', rejected: '거절', inactive: '비활성화' };
 const ROLE_ACTION = { admin: '관리자로 지정', member: '관리자 해제' };
 
+// 직원별로 켜고 끌 수 있는 권한 칸 → Slack 기록용 이름
+const PERMISSIONS = { homepage_access: '홈페이지 관리자', work_doc_access: '업무 문서 권한자', expense_approver: '경비 승인 권한자' };
+
 const fail = (res, code, error) => res.status(code).json({ error });
 
 // URL의 직원 번호 — 양의 정수가 아니면 null
@@ -91,14 +94,14 @@ exports.changeStatus = handle(async (req, res) => {
     res.json({ ok: true });
 });
 
-// 홈페이지 관리 권한 부여·해제 (hibye 관리자만 — requireAdmin)
-exports.changeHomepageAccess = handle(async (req, res) => {
+// 직원별 권한(홈페이지·업무 문서·경비 승인) 부여·해제 (hibye 관리자만 — requireAdmin)
+exports.changePermission = handle(async (req, res) => {
     const target = await loadTarget(req, res);
     if (!target) return;
-    const { access } = req.body;
-    if (typeof access !== 'boolean') return fail(res, 400, 'Invalid access');
-    await Admin.updateHomepageAccess(target.mb_no, access ? 1 : 0);
-    await record(req, target, access ? '홈페이지 관리자로 지정' : '홈페이지 관리자에서 해제');
+    const { name, on } = req.body;
+    if (!Object.hasOwn(PERMISSIONS, name) || typeof on !== 'boolean') return fail(res, 400, 'Invalid permission');
+    await Admin.updatePermission(target.mb_no, name, on ? 1 : 0);
+    await record(req, target, `${PERMISSIONS[name]}${on ? '로 지정' : '에서 해제'}`);
     res.json({ ok: true });
 });
 

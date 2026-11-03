@@ -57,6 +57,10 @@ function requireAuth(req, res, next) {
         req.userRole = account.user_role;
         req.userCpId = account.cp_id;
         req.userHomepage = Number(account.homepage_access) === 1; // 홈페이지 관리 권한 (requireHomepage)
+        // 업무 문서·경비 승인 권한 — 관리자는 둘 다 가짐
+        const isAdmin = account.user_role === 'admin';
+        req.workDoc = isAdmin || Number(account.work_doc_access) === 1;
+        req.expenseApprover = isAdmin || Number(account.expense_approver) === 1;
         next();
     });
 }

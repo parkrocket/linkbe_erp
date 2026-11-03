@@ -147,13 +147,13 @@ const post = { title: '공지', bodyHtml: '<p>본문</p>', isVisible: true };
     // ── 직원에게 홈페이지 권한 (hibye 관리자 API) ──
     let grant;
     Admin.findByMbNo = async (cpId, mbNo) => (mbNo === 3 ? { mb_no: 3, user_id: 'kim@x', user_name: '김직원' } : undefined);
-    Admin.updateHomepageAccess = async (mbNo, access) => (grant = [mbNo, access]);
+    Admin.updatePermission = async (mbNo, column, value) => (grant = [mbNo, column, value]);
     const slack = require('../src/utils/slack');
     slack.sendSlackMessage = async () => {};
     const admin = require('../src/controllers/adminController');
-    res = await call(admin.changeHomepageAccess, { userRole: 'admin', params: { mbNo: '3' }, body: { access: true } });
-    assert.deepStrictEqual([res.body, grant], [{ ok: true }, [3, 1]]);
-    res = await call(admin.changeHomepageAccess, { userRole: 'admin', params: { mbNo: '3' }, body: { access: 'yes' } });
+    res = await call(admin.changePermission, { userRole: 'admin', params: { mbNo: '3' }, body: { name: 'homepage_access', on: true } });
+    assert.deepStrictEqual([res.body, grant], [{ ok: true }, [3, 'homepage_access', 1]]);
+    res = await call(admin.changePermission, { userRole: 'admin', params: { mbNo: '3' }, body: { name: 'homepage_access', on: 'yes' } });
     assert.strictEqual(res.code, 400);
 
     fs.rmSync(process.env.UPLOAD_ROOT, { recursive: true, force: true });

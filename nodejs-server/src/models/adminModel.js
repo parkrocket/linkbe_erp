@@ -4,7 +4,7 @@ const pool = require('../config/dbPromise');
 const Admin = {};
 
 // dept_id·position_id: 조직 탭 소속 명단용 (개인정보 아님)
-const SAFE_COLUMNS = 'mb_no, user_id, user_name, user_phone, user_role, user_status, user_datetime, dept_id, position_id, homepage_access';
+const SAFE_COLUMNS = 'mb_no, user_id, user_name, user_phone, user_role, user_status, user_datetime, dept_id, position_id, homepage_access, work_doc_access, expense_approver';
 
 Admin.listUsers = async (cpId, status) => {
     const [rows] = status
@@ -66,7 +66,12 @@ Admin.listLeaves = async (cpId, from, to) => {
 };
 
 Admin.updateStatus = (mbNo, status) => pool.query('UPDATE lk_user SET user_status = ? WHERE mb_no = ?', [status, mbNo]);
-Admin.updateHomepageAccess = (mbNo, access) => pool.query('UPDATE lk_user SET homepage_access = ? WHERE mb_no = ?', [access, mbNo]);
+// 권한 칸 값 변경 — column은 컨트롤러 허용 목록에서만 오며, 여기서도 한 번 더 막음(SQL에 칸 이름을 직접 넣기 때문)
+const PERMISSION_COLUMNS = ['homepage_access', 'work_doc_access', 'expense_approver'];
+Admin.updatePermission = (mbNo, column, value) => {
+    if (!PERMISSION_COLUMNS.includes(column)) throw new Error('Invalid column');
+    return pool.query(`UPDATE lk_user SET ${column} = ? WHERE mb_no = ?`, [value, mbNo]);
+};
 Admin.updateRole = (mbNo, role) => pool.query('UPDATE lk_user SET user_role = ? WHERE mb_no = ?', [role, mbNo]);
 
 module.exports = Admin;

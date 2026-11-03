@@ -27,7 +27,7 @@ User.findByEmail = (userId, callback) => {
 
 // 요청마다 계정 상태 확인용 (requireAuth) — 필요한 컬럼만
 User.findStatusById = async userId => {
-    const [rows] = await pool.query('SELECT user_status, user_role, cp_id, homepage_access FROM lk_user WHERE user_id = ?', [userId]);
+    const [rows] = await pool.query('SELECT user_status, user_role, cp_id, homepage_access, work_doc_access, expense_approver FROM lk_user WHERE user_id = ?', [userId]);
     return rows[0];
 };
 
