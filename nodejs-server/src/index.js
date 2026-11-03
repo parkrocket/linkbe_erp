@@ -85,6 +85,9 @@ app.use('/api/public/shop', require('./routes/publicShop'));
 app.use('/api/admin/homepage', require('./middlewares/requireHomepage').requireHomepage, require('./routes/adminHomepage'));
 app.use('/api/admin/shop', require('./middlewares/requireHomepage').requireHomepage, require('./routes/adminShop'));
 
+// 직원 업무 도구(경비 등) — requireAuth 뒤, 권한은 컨트롤러에서 확인
+app.use('/api/work', require('./routes/work'));
+
 // 관리자 API — requireAuth(위 /api 전체) + 관리자 권한
 app.use('/api/admin', requireAdmin, require('./routes/admin'));
 
