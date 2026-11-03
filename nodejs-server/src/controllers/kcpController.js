@@ -109,7 +109,9 @@ async function handleReturn(req, res, no, result) {
             (/^95\d\d$/.test(str(ap.resCd)) ||
                 !/^[0-9A-Z]{4}$/.test(str(ap.resCd)));
         if (unknown) {
-            await addFailHistory(order, `KCP 승인 결과 모름(${ap.resCd}) — 확인 필요`);
+            // '확인 필요'·'직접 취소 필요' 문구는 결제 대기 7일 삭제(shopCron → Order.purgeStalePending)가 남겨 둘 주문을 고르는 기준 — 바꾸면 거기도 같이.
+            // 줄 수 제한(addFailHistory) 없이 항상 기록 — 기록이 빠지면 실제 승인됐을 수 있는 주문이 7일 뒤 지워짐
+            await addHistory(order.order_no, `KCP 승인 결과 모름(${ap.resCd}) — 확인 필요`);
             await notify(
                 `⚠️ [결제 확인 필요] 주문번호 ${no} — KCP 승인 결과를 받지 못했어요. KCP 상점관리자에서 승인 여부를 확인해 주세요.`,
             );
@@ -124,7 +126,7 @@ async function handleReturn(req, res, no, result) {
 
     // 승인됐는데 거래번호가 없으면 자동 취소 불가 — 사람이 직접
     if (!ap.tno) {
-        await addFailHistory(order, 'KCP 승인됐으나 거래번호 없음 — 직접 취소 필요');
+        await addHistory(order.order_no, 'KCP 승인됐으나 거래번호 없음 — 직접 취소 필요'); // 위와 같은 이유로 항상 기록
         await notify(
             `⚠️ [결제 확인 필요] 주문번호 ${no} — KCP 거래번호를 받지 못해 자동 취소할 수 없어요 — 상점관리자에서 주문번호로 찾아 직접 취소해 주세요`,
         );
