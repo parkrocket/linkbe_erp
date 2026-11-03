@@ -18,7 +18,7 @@ const NAV = [
 const WORK_LABEL = '건 승인 대기';
 
 const isActive = (pathname: string, href: string) =>
-    href === '/' ? pathname === '/' : pathname.startsWith(href);
+    href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(href + '/');
 
 type Props = { userName: string | null; canManage?: boolean; pendingCount?: number; workBadge?: number };
 

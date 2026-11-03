@@ -22,8 +22,9 @@ const nextConfig: NextConfig = {
     // 브라우저는 항상 같은 출처 /node/api/* 호출 → 로그인 쿠키 자동 전송
     // 운영은 nginx가 /node/를 먼저 처리하므로 이 규칙은 로컬 개발에서만 쓰임
     // 기존 앱에만 있던 화면(출퇴근 기록 등, 미사용) → 홈. 예전 Slack 메시지의 출근 링크 포함 (2026-11-02 전환)
+    // 단, /work는 이제 '업무' 메뉴(경비)라 목록에서 뺐다
     async redirects() {
-        return ['/gtw', '/geo', '/work', '/workHistory', '/sent'].map(source => ({ source, destination: '/', permanent: false }));
+        return ['/gtw', '/geo', '/workHistory', '/sent'].map(source => ({ source, destination: '/', permanent: false }));
     },
     async rewrites() {
         return [{ source: '/node/:path*', destination: `${API_INTERNAL_URL}/:path*` }];
