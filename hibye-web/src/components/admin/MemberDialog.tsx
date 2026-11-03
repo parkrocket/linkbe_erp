@@ -24,7 +24,7 @@ import {
     type ProfileErrors,
     type ProfileForm,
 } from '@/lib/profile';
-import { changeHomepageAccess, joinedAt, saveBalances, saveProfile, STATUS_LABEL, STATUS_TONE, type OrgItem, type OrgLists } from './adminApi';
+import { changePermission, joinedAt, saveBalances, saveProfile, STATUS_LABEL, STATUS_TONE, type OrgItem, type OrgLists } from './adminApi';
 
 type Tab = 'profile' | 'balance';
 type Notice = { tab: Tab; tone: 'ok' | 'error'; text: string } | null;
@@ -218,7 +218,9 @@ function ProfileFields({
                     연차 {days(user.user_stip)} · 휴가 {days(user.user_vaca)}
                 </dd>
             </dl>
-            <HomepageAccess user={user} />
+            <PermissionToggle user={user} name="homepage_access" label="홈페이지 관리 권한" hint="linkbe.kr 공지·포트폴리오·문의를 관리할 수 있어요 (바로 적용)" />
+            <PermissionToggle user={user} name="work_doc_access" label="업무 문서 권한" hint="견적·계약서·매출/매입·거래처 작업정보를 보고 쓸 수 있어요 (바로 적용)" />
+            <PermissionToggle user={user} name="expense_approver" label="경비 승인 권한" hint="모든 직원의 경비를 보고 승인·입금완료 처리하며 기안 알림을 받아요 (바로 적용)" />
 
             <div className="grid gap-4 sm:grid-cols-2">
                 <TextField
@@ -404,9 +406,11 @@ function SelectField({
     );
 }
 
-// 홈페이지 관리 권한 — 체크하면 바로 저장 (관리자는 권한 없이도 항상 가능)
-function HomepageAccess({ user }: { user: MemberDetail }) {
-    const [on, setOn] = useState(Number(user.homepage_access) === 1);
+// 직원별 권한 — 체크하면 바로 저장 (관리자는 권한 없이도 항상 가능)
+type PermissionName = 'homepage_access' | 'work_doc_access' | 'expense_approver';
+
+function PermissionToggle({ user, name, label, hint }: { user: MemberDetail; name: PermissionName; label: string; hint: string }) {
+    const [on, setOn] = useState(Number(user[name]) === 1);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
     if (user.user_role === 'admin') return null;
@@ -415,7 +419,7 @@ function HomepageAccess({ user }: { user: MemberDetail }) {
         setSaving(true);
         setError('');
         try {
-            await changeHomepageAccess(user.mb_no, next);
+            await changePermission(user.mb_no, name, next);
             setOn(next);
         } catch {
             setError('권한을 바꾸지 못했어요. 잠시 후 다시 시도해 주세요.');
@@ -428,9 +432,9 @@ function HomepageAccess({ user }: { user: MemberDetail }) {
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-line px-3 py-2.5 text-sm">
             <label className="flex items-center gap-2 font-medium">
                 <input type="checkbox" checked={on} disabled={saving} onChange={e => toggle(e.target.checked)} className="size-4 accent-primary" />
-                홈페이지 관리 권한
+                {label}
             </label>
-            <span className="text-xs text-muted">linkbe.kr 공지·포트폴리오·문의를 관리할 수 있어요 (바로 적용)</span>
+            <span className="text-xs text-muted">{hint}</span>
             {error && <span className="w-full text-xs text-rejected-fg">{error}</span>}
         </div>
     );

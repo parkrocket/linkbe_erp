@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
-import { getAdminPendingCount, getCurrentUser, getShopAwaitingCount } from '@/lib/auth';
+import { getAdminPendingCount, getCurrentUser, getShopAwaitingCount, getWorkPendingCount } from '@/lib/auth';
 import { canManageHomepage } from '@/lib/homepage';
+import { canApproveExpense } from '@/lib/work';
 import { HeaderView, Logo } from './HeaderView';
 
 // 쿠키를 읽는 부분만 Suspense로 감싸 정적 셸을 먼저 보냄 (cacheComponents)
@@ -20,8 +21,14 @@ async function HeaderWithUser() {
     // '관리' 메뉴: 관리자 + 홈페이지 권한자(홈페이지 탭만)
     const canManage = !!user && canManageHomepage({ user_role: user.user_role ?? 'member', homepage_access: user.homepage_access });
     // 배지 = 가입 대기(관리자만) + 입금 대기 주문(홈페이지 권한자)
-    const [pending, awaiting] = await Promise.all([isAdmin ? getAdminPendingCount() : 0, canManage ? getShopAwaitingCount() : 0]);
-    return <HeaderView userName={user?.user_name ?? null} canManage={canManage} pendingCount={pending + awaiting} />;
+    // '업무' 메뉴 배지 = 대기 경비 수(경비 승인 권한자)
+    const canApprove = !!user && canApproveExpense({ user_role: user.user_role ?? 'member', expense_approver: user.expense_approver });
+    const [pending, awaiting, workPending] = await Promise.all([
+        isAdmin ? getAdminPendingCount() : 0,
+        canManage ? getShopAwaitingCount() : 0,
+        canApprove ? getWorkPendingCount() : 0,
+    ]);
+    return <HeaderView userName={user?.user_name ?? null} canManage={canManage} pendingCount={pending + awaiting} workBadge={workPending} />;
 }
 
 function HeaderFallback() {

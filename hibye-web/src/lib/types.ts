@@ -10,6 +10,8 @@ export type User = {
     user_role?: 'member' | 'admin';
     user_status?: 'pending' | 'approved' | 'rejected' | 'inactive';
     homepage_access?: number; // 1이면 홈페이지 관리 권한
+    work_doc_access?: number; // 1이면 업무 문서 권한
+    expense_approver?: number; // 1이면 경비 승인 권한
     [key: string]: unknown;
 };
 
