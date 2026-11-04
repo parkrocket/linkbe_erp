@@ -6,6 +6,7 @@ import { ErrorState } from '@/components/ui/ErrorState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import type { Category, DocTemplateSummary } from '@/lib/contract';
 import { SETTINGS_API } from './settingsApi';
+import { AccountsPanel } from './AccountsPanel';
 import { CategoriesPanel } from './CategoriesPanel';
 import { DocTemplatesPanel } from './DocTemplatesPanel';
 import { ItemTemplatesPanel } from './ItemTemplatesPanel';
@@ -16,6 +17,7 @@ const TABS = [
     ['categories', '분류'],
     ['items', '품목 문구'],
     ['docs', '양식'],
+    ['accounts', '계정과목'],
 ] as const;
 
 // 업무 설정 — 분류·품목 문구·양식 세 탭 (분류 목록은 세 탭이 같이 씀)
@@ -42,9 +44,15 @@ export function SettingsPage() {
                     </button>
                 ))}
             </div>
-            {state.status === 'loading' && <Skeleton className="h-64 w-full" />}
-            {state.status === 'error' && <ErrorState onRetry={reload} />}
-            {state.status === 'ok' && (
+            {/* 계정과목은 자기 API(/api/work/accounts)를 따로 불러옴 */}
+            {tab === 'accounts' && (
+                <div role="tabpanel">
+                    <AccountsPanel />
+                </div>
+            )}
+            {tab !== 'accounts' && state.status === 'loading' && <Skeleton className="h-64 w-full" />}
+            {tab !== 'accounts' && state.status === 'error' && <ErrorState onRetry={reload} />}
+            {tab !== 'accounts' && state.status === 'ok' && (
                 <div role="tabpanel">
                     {tab === 'categories' && <CategoriesPanel categories={state.data.categories} refresh={refresh} />}
                     {tab === 'items' && <ItemTemplatesPanel categories={state.data.categories} />}
