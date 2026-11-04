@@ -32,6 +32,7 @@ async function call(path, { method = 'POST', cookie, headers = {}, body = '{}' }
     assert.strictEqual((await call('/api/admin/balances', { method: 'GET' })).status, 401, 'admin/balances 열려 있음');
     assert.strictEqual((await call('/api/admin/users/1', { method: 'GET' })).status, 401, 'admin 직원 상세 열려 있음');
     assert.strictEqual((await call('/api/admin/org', { method: 'GET' })).status, 401, 'admin/org 열려 있음');
+    assert.strictEqual((await call('/api/admin/client-secret-key/reveal', { body: '{"password":"x"}' })).status, 401, '암호화 키 확인 API 열려 있음');
     assert.strictEqual((await call('/api/admin/homepage/inquiries', { method: 'GET' })).status, 401, '홈페이지 관리 API 열려 있음');
     assert.strictEqual((await call('/api/admin/shop/members', { method: 'GET' })).status, 401, '고객 회원 관리 API 열려 있음');
     for (const p of ['orders', 'products']) assert.strictEqual((await call(`/api/admin/shop/${p}`, { method: 'GET' })).status, 401, `쇼핑 관리 ${p} API 열려 있음`);

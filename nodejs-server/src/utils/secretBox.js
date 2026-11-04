@@ -26,6 +26,11 @@ function requireKey() {
 
 const isKeyReady = () => readKey() !== null;
 
+// 형식 검사를 통과한 원래 base64 문자열(백업 확인용) — 없거나 형식 오류면 null
+function readKeyString() {
+    return readKey() ? process.env.CLIENT_SECRET_KEY.trim() : null;
+}
+
 // null → null, 문자열 → 암호화 (같은 값도 매번 다른 결과)
 function encrypt(plain) {
     if (plain === null || plain === undefined) return null;
@@ -48,4 +53,4 @@ function decrypt(stored) {
     return Buffer.concat([decipher.update(raw.subarray(IV_LENGTH + TAG_LENGTH)), decipher.final()]).toString('utf8');
 }
 
-module.exports = { encrypt, decrypt, isKeyReady };
+module.exports = { encrypt, decrypt, isKeyReady, readKeyString };

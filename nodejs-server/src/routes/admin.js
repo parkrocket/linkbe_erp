@@ -1,5 +1,6 @@
 const express = require('express');
 const admin = require('../controllers/adminController');
+const secretKey = require('../controllers/adminSecretKeyController');
 const router = express.Router();
 
 // /api/admin/* — index.js에서 requireAuth(/api 전체) 뒤에 requireAdmin과 함께 연결
@@ -20,5 +21,6 @@ router.post('/org/:kind', admin.orgCreate);
 router.post('/org/:kind/:id', admin.orgRename);
 router.post('/org/:kind/:id/move', admin.orgMove);
 router.delete('/org/:kind/:id', admin.orgDelete);
+router.post('/client-secret-key/reveal', secretKey.reveal);
 
 module.exports = router;

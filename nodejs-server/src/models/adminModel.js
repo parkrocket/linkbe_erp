@@ -28,6 +28,12 @@ Admin.findByUserId = async (cpId, userId) => {
     return rows[0];
 };
 
+// 비밀번호 재확인 전용 — 해시는 이 함수 밖으로 내보내지 않음
+Admin.findPasswordHash = async (cpId, userId) => {
+    const [rows] = await pool.query('SELECT user_password FROM lk_user WHERE cp_id = ? AND user_id = ?', [cpId, userId]);
+    return rows[0] ? rows[0].user_password : null;
+};
+
 Admin.countApprovedAdmins = async cpId => {
     const [[row]] = await pool.query(
         "SELECT COUNT(*) AS n FROM lk_user WHERE cp_id = ? AND user_role = 'admin' AND user_status = 'approved'",
