@@ -151,4 +151,4 @@ const validateDocTemplate = input => {
     return { ok: true, value };
 };
 
-module.exports = { validateContract, validateCategory, validateItemTemplate, validateDocTemplate };
+module.exports = { validateContract, validateCategory, validateItemTemplate, validateDocTemplate, str, date, isMoney, isId, isNil, MAX_AMOUNT };
