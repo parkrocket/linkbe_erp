@@ -44,7 +44,7 @@ export function ClientList() {
             <p className="mb-4 text-xs text-muted">비밀번호·메모를 보거나 복사하면 누가 언제 봤는지 기록이 남아요.</p>
 
             <form onSubmit={submit} className="flex flex-wrap items-center gap-2" role="search" aria-label="업체 검색">
-                <input type="search" aria-label="업체 이름" placeholder="업체 이름" maxLength={100} className={`${SELECT_CLASS} w-56`} value={q} onChange={e => setQ(e.target.value)} />
+                <input type="search" aria-label="검색어 (업체·항목 이름·주소·아이디·메모·첨부)" placeholder="업체·아이디·주소·메모 검색" maxLength={100} className={`${SELECT_CLASS} w-64`} value={q} onChange={e => setQ(e.target.value)} />
                 <select aria-label="구분" className={SELECT_CLASS} value={kind} onChange={e => setKind(e.target.value)}>
                     <option value="">전체 구분</option>
                     {(Object.keys(CLIENT_KIND_LABEL) as ClientKind[]).map(k => (

@@ -49,6 +49,7 @@ CredentialLog.insert = async (db, entry) => {
 };
 CredentialLog.recent = rec('recent', [{ action: 'view', target: 'secret', credential_label: '메인', actor_name: '홍길동', created_at: '2026-11-04 10:00:00' }]);
 Client.list = rec('list', [{ id: 5, kind: 'client', name: '테스트업체', credential_count: 2, file_count: 1, has_legacy_memo: 1, updated_at: '2026-11-04 10:00:00', legacy_memo_enc: `v1:${LEGACY}` }]);
+Credential.memosOf = rec('memosOf', [{ client_id: 5, memo_enc: 'v1:FTP 포트 2121' }, { client_id: 6, memo_enc: 'v1:깨짐' }, { client_id: 7, memo_enc: 'v1:ftp 백업' }]);
 const clientRow = { id: 5, kind: 'client', name: '테스트업체', legacy_memo_enc: `v1:${LEGACY}` };
 let clientFind = clientRow;
 Client.find = rec('find', (cp, id) => (cp === 1 && id === 5 ? clientFind : undefined));
@@ -97,10 +98,17 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
     // ---- 목록 ----
     let res = await call(ctrl.list, { query: { q: ' 테스 ', kind: 'client' } });
     assert.deepStrictEqual(res.body, { clients: [{ id: 5, kind: 'client', name: '테스트업체', credentialCount: 2, fileCount: 1, hasLegacyMemo: true, updatedAt: '2026-11-04 10:00:00' }] });
-    assert.deepStrictEqual(calls.list, [1, { q: '테스', kind: 'client' }]);
+    assert.deepStrictEqual(calls.list, [1, { q: '테스', kind: 'client', memoIds: [] }]);
+    // 항목 메모 검색: 풀어서 대소문자 무시, 못 읽는 메모는 건너뜀
+    unreadable = new Set(['v1:깨짐']);
+    await call(ctrl.list, { query: { q: 'Ftp' } });
+    assert.deepStrictEqual(calls.list, [1, { q: 'Ftp', kind: null, memoIds: [5, 7] }]);
+    unreadable = new Set();
+    calls.memosOf = undefined;
     noPlain(res.body, '목록');
     await call(ctrl.list, {});
-    assert.deepStrictEqual(calls.list, [1, { q: '', kind: null }]);
+    assert.deepStrictEqual(calls.list, [1, { q: '', kind: null, memoIds: [] }]);
+    assert.strictEqual(calls.memosOf, undefined, '검색어 없을 때 메모를 풀면 안 됨');
     expect(await call(ctrl.list, { query: { kind: 'x' } }), 400, 'Invalid kind');
 
     // ---- 상세: 칸 이름 정확히, 평문 없음 ----

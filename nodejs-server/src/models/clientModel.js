@@ -51,11 +51,19 @@ const withClient = async (cpId, clientId, fn) => {
 
 // ---- 업체 ----
 
-Client.list = async (cpId, { q, kind } = {}) => {
+// q: 업체명·항목 이름·주소·아이디·첨부 이름(평문 칸), memoIds: 항목 메모(암호문)가 맞은 업체 id — 컨트롤러가 풀어서 찾음
+Client.list = async (cpId, { q, kind, memoIds = [] } = {}) => {
     const conds = ['c.cp_id = ?'];
     const params = [cpId];
     if (kind) (conds.push('c.kind = ?'), params.push(kind));
-    if (q) (conds.push('c.name LIKE ?'), params.push(`%${escapeLike(q)}%`));
+    if (q) {
+        const like = `%${escapeLike(q)}%`;
+        conds.push(`(c.name LIKE ?
+            OR EXISTS (SELECT 1 FROM wk_client_credential cr WHERE cr.client_id = c.id AND (cr.label LIKE ? OR cr.url LIKE ? OR cr.login_id LIKE ?))
+            OR EXISTS (SELECT 1 FROM wk_file f WHERE f.cp_id = c.cp_id AND f.owner_type = 'client' AND f.owner_id = c.id AND f.original_name LIKE ?)${memoIds.length ? ' OR c.id IN (?)' : ''})`);
+        params.push(like, like, like, like, like);
+        if (memoIds.length) params.push(memoIds);
+    }
     const [rows] = await pool.query(
         `SELECT c.id, c.kind, c.name, c.legacy_memo_enc IS NOT NULL AS has_legacy_memo, ${KST('c.updated_at')} AS updated_at,
          (SELECT COUNT(*) FROM wk_client_credential cr WHERE cr.client_id = c.id) AS credential_count,
@@ -116,6 +124,12 @@ Credential.list = async (cpId, clientId) => {
          ${KST('cr.updated_at')} AS updated_at ${CRED_JOIN} WHERE cr.client_id = ? ORDER BY cr.sort, cr.id`,
         [cpId, clientId],
     );
+    return rows;
+};
+
+// 목록 검색용 — 회사 전체 항목 메모 암호문(평문은 컨트롤러 메모리에서만)
+Credential.memosOf = async cpId => {
+    const [rows] = await pool.query(`SELECT cr.client_id, cr.memo_enc ${CRED_JOIN} WHERE cr.memo_enc IS NOT NULL`, [cpId]);
     return rows;
 };
 

@@ -67,11 +67,23 @@ const discard = storedName => {
 
 // ---- 업체 ----
 
+// 항목 메모는 상세에 바로 보이는 값(11-04 결정)이라 검색 대상. 예전 메모·비밀번호는 열람 기록이 필요해 검색하지 않음
+// ponytail: 검색마다 회사 전체 메모를 풀어 봄(수백 개 기준) — 수만 개가 되면 검색용 색인을 따로 고민
+const memoMatches = async (cpId, q) => {
+    const needle = q.toLowerCase();
+    const ids = new Set();
+    for (const r of await Credential.memosOf(cpId)) {
+        const { memo } = memoOf(r.memo_enc);
+        if (memo && memo.toLowerCase().includes(needle)) ids.add(r.client_id);
+    }
+    return [...ids];
+};
+
 exports.list = handle(async (req, res) => {
     const kind = req.query.kind === undefined || req.query.kind === '' ? null : req.query.kind;
     if (kind && !CLIENT_KINDS.includes(kind)) return fail(res, 400, 'Invalid kind');
     const q = typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 100) : '';
-    const rows = await Client.list(req.userCpId, { q, kind });
+    const rows = await Client.list(req.userCpId, { q, kind, memoIds: q ? await memoMatches(req.userCpId, q) : [] });
     res.json({
         clients: rows.map(r => ({
             id: r.id,
