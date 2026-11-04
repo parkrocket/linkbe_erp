@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { WORK_TABS } from '@/lib/workDoc';
 
-// 업무 하위 탭 — 경비는 모두, 견적·계약서·설정은 업무 문서 권한자만
+// 업무 하위 탭 — 경비는 모두, 견적·계약서·매출/매입·설정은 업무 문서 권한자만
 export function WorkTabs({ user }: { user: Parameters<typeof WORK_TABS>[0] }) {
     const pathname = usePathname();
     return (

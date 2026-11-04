@@ -31,14 +31,20 @@ const byCode = (a: Account, b: Account) => (a.code < b.code ? -1 : a.code > b.co
 export const selectableAccounts = (accounts: Account[], side: Side): Account[] =>
     accounts.filter(a => a.side === side && !a.isGroup).sort(byCode);
 
-// 묶음이 있으면 묶음별(코드가 묶음 코드로 시작하는 항목), 없으면 group null 하나
+// 코드 앞부분 비교 — 서버 DB 비교(대소문자 무시)와 같게
+export const codeStartsWith = (code: string, prefix: string): boolean => code.toLowerCase().startsWith(prefix.toLowerCase());
+
+// 묶음이 있으면 묶음별, 없으면 group null 하나
+// 항목은 앞부분이 맞는 묶음 중 가장 긴 하나에만 넣음(묶음이 여러 단계여도 한 번만 표시)
 export function accountGroups(accounts: Account[], side: Side): { group: Account | null; items: Account[] }[] {
     const items = selectableAccounts(accounts, side);
     const groups = accounts.filter(a => a.side === side && a.isGroup).sort(byCode);
     if (!groups.length) return [{ group: null, items }];
-    const result = groups.map(group => ({ group, items: items.filter(i => i.code.startsWith(group.code)) }));
+    const owner = (i: Account) =>
+        groups.filter(g => codeStartsWith(i.code, g.code)).reduce<Account | null>((best, g) => (!best || g.code.length > best.code.length ? g : best), null);
+    const result = groups.map(group => ({ group, items: items.filter(i => owner(i) === group) }));
     // 어느 묶음에도 안 들어간 항목은 맨 끝에 따로(화면에서 사라지지 않도록)
-    const rest = items.filter(i => !groups.some(g => i.code.startsWith(g.code)));
+    const rest = items.filter(i => !owner(i));
     return rest.length ? [...result, { group: null, items: rest }] : result;
 }
 
@@ -46,13 +52,13 @@ export function accountGroups(accounts: Account[], side: Side): { group: Account
 export const nextTax = (prev: { supply: number; tax: number; taxEdited: boolean }, supply: number): number =>
     prev.taxEdited ? prev.tax : vat(supply);
 
-// 계정별 합계 — 항목은 자기 합계, 묶음은 하위 항목 합계 (키 = 계정 id)
+// 계정별 합계 — 항목은 자기 합계, 묶음은 그 아래 전체(여러 단계 포함) 항목 합계 (키 = 계정 id)
 export function groupTotals(accounts: Account[], byAccount: { accountId: number; total: number }[]): Record<number, number> {
     const own = new Map(byAccount.map(b => [b.accountId, b.total]));
     const result: Record<number, number> = {};
     for (const a of accounts) {
         result[a.id] = a.isGroup
-            ? accounts.filter(c => !c.isGroup && c.side === a.side && c.code.startsWith(a.code)).reduce((sum, c) => sum + (own.get(c.id) ?? 0), 0)
+            ? accounts.filter(c => !c.isGroup && c.side === a.side && codeStartsWith(c.code, a.code)).reduce((sum, c) => sum + (own.get(c.id) ?? 0), 0)
             : (own.get(a.id) ?? 0);
     }
     return result;

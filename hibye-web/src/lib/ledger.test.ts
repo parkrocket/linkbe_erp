@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { accountGroups, groupTotals, nextTax, selectableAccounts, SIDE_LABEL, type Account } from './ledger';
+import { accountGroups, codeStartsWith, groupTotals, nextTax, selectableAccounts, SIDE_LABEL, type Account } from './ledger';
 
 const acc = (id: number, side: 'sales' | 'purchase', code: string, isGroup: boolean): Account => ({
     id,
@@ -60,5 +60,36 @@ describe('ledger', () => {
         expect(t[4]).toBe(50);
         expect(t[2]).toBe(100);
         expect(t[7]).toBe(0);
+    });
+
+    it('3단계 묶음(1·10·1001·1002·20·2001): 항목은 한 번만, 합계 이중 계산 없음', () => {
+        const a = [
+            acc(1, 'purchase', '1', true),
+            acc(2, 'purchase', '10', true),
+            acc(3, 'purchase', '1001', false),
+            acc(4, 'purchase', '1002', false),
+            acc(5, 'purchase', '20', true),
+            acc(6, 'purchase', '2001', false),
+        ];
+        const g = accountGroups(a, 'purchase');
+        expect(g.map(x => [x.group?.id, x.items.map(i => i.id)])).toEqual([
+            [1, []],
+            [2, [3, 4]],
+            [5, [6]],
+        ]);
+        expect(g.flatMap(x => x.items).length).toBe(3);
+        const t = groupTotals(a, [
+            { accountId: 3, total: 100 },
+            { accountId: 4, total: 20 },
+            { accountId: 6, total: 5 },
+        ]);
+        expect(t[1]).toBe(120);
+        expect(t[2]).toBe(120);
+        expect(t[5]).toBe(5);
+    });
+
+    it('codeStartsWith: 대소문자 무시', () => {
+        expect(codeStartsWith('p101', 'P1')).toBe(true);
+        expect(codeStartsWith('p101', 'P2')).toBe(false);
     });
 });

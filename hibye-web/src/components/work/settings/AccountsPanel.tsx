@@ -8,7 +8,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { apiFetch, ApiError } from '@/lib/api';
-import { accountGroups, SIDE_LABEL, type Account, type Side } from '@/lib/ledger';
+import { accountGroups, codeStartsWith, SIDE_LABEL, type Account, type Side } from '@/lib/ledger';
 import type { Notice } from './settingsApi';
 
 const ACCOUNTS_API = '/api/work/accounts';
@@ -91,13 +91,13 @@ export function AccountsPanel() {
     const accounts = state.data.accounts;
 
     // 하위 여부 — 같은 구분에서 코드 앞부분이 같은 다른 계정이 있는지
-    const hasChild = (a: Account) => accounts.some(o => o.id !== a.id && o.side === a.side && o.code.startsWith(a.code));
+    const hasChild = (a: Account) => accounts.some(o => o.id !== a.id && o.side === a.side && codeStartsWith(o.code, a.code));
 
     const row = (a: Account, indent: boolean) => {
         if (editId === a.id) {
             return (
                 <li key={a.id} className="py-2">
-                    <FormFields value={edit} onChange={setEdit} idPrefix={`edit-${a.id}`} />
+                    <FormFields value={edit} onChange={setEdit} idPrefix={`edit-${a.id}`} sideLocked={a.used > 0} />
                     <div className="mt-2 flex gap-2">
                         <Button disabled={busy} onClick={() => save(a.id)}>
                             저장
@@ -170,12 +170,12 @@ export function AccountsPanel() {
 }
 
 // 구분·코드·번호·이름 입력 줄 (추가·고치기 공용)
-function FormFields({ value, onChange, idPrefix }: { value: Form; onChange: (f: Form) => void; idPrefix: string }) {
+function FormFields({ value, onChange, idPrefix, sideLocked = false }: { value: Form; onChange: (f: Form) => void; idPrefix: string; sideLocked?: boolean }) {
     const set = (patch: Partial<Form>) => onChange({ ...value, ...patch });
     const helpId = `${idPrefix}-code-help`;
     return (
         <div className="flex flex-wrap gap-2">
-            <select aria-label="구분" value={value.side} onChange={e => set({ side: e.target.value as Side })} className={INPUT}>
+            <select aria-label="구분" value={value.side} onChange={e => set({ side: e.target.value as Side })} disabled={sideLocked} className={INPUT}>
                 <option value="sales">{SIDE_LABEL.sales}</option>
                 <option value="purchase">{SIDE_LABEL.purchase}</option>
             </select>
@@ -185,6 +185,7 @@ function FormFields({ value, onChange, idPrefix }: { value: Form; onChange: (f: 
             <p id={helpId} className="w-full text-xs text-muted">
                 {CODE_HELP}
             </p>
+            {sideLocked && <p className="w-full text-xs text-muted">장부가 있는 계정은 구분을 바꿀 수 없어요</p>}
         </div>
     );
 }

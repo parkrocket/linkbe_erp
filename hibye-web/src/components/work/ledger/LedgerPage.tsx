@@ -154,6 +154,7 @@ export function LedgerPage() {
                             </div>
                         ))}
                     </dl>
+                    {applied.q.trim() && <p className="mt-2 text-xs text-muted">요약은 검색어와 관계없이 기간·구분·계정과목 기준이에요</p>}
 
                     <ByAccount accounts={accounts} byAccount={data.summary.byAccount} side={applied.side} />
 

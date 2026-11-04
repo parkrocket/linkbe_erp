@@ -20,7 +20,7 @@ const TABS = [
     ['accounts', '계정과목'],
 ] as const;
 
-// 업무 설정 — 분류·품목 문구·양식 세 탭 (분류 목록은 세 탭이 같이 씀)
+// 업무 설정 — 분류·품목 문구·양식·계정과목 네 탭 (분류 목록은 여러 탭이 같이 씀)
 export function SettingsPage() {
     const { state, reload, refresh } = useApiData<Overview>(SETTINGS_API, undefined, 'GET');
     const [tab, setTab] = useState<(typeof TABS)[number][0]>('categories');

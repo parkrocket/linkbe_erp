@@ -31,7 +31,7 @@ const baseConds = (cpId, { year, month, side, accountId }) => {
     return { conds, params };
 };
 
-const LIST_COLUMNS = `id, side, DATE_FORMAT(entry_date, ${DATE_F}) AS entry_date, account_id, (SELECT name FROM wk_account WHERE id = wk_ledger.account_id AND cp_id = wk_ledger.cp_id) AS account_name, title, memo, supply, tax, total, ${KST('created_at')} AS created_at`;
+const LIST_COLUMNS = `id, side, DATE_FORMAT(entry_date, ${DATE_F}) AS entry_date, account_id, title, memo, supply, tax, total, ${KST('created_at')} AS created_at`;
 
 Ledger.list = async (cpId, { page = 1, size = 50, q, ...filter } = {}) => {
     const { conds, params } = baseConds(cpId, filter);
