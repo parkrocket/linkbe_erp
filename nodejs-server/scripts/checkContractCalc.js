@@ -9,6 +9,7 @@ assert.strictEqual(vat(0), 0);
 assert.strictEqual(vat(15), 1);
 assert.strictEqual(vat(19999), 1999);
 assert.strictEqual(vat(-15), -1);
+assert.strictEqual(vat(-5), 0); // -0 아님
 const a = { unitPrice: 100000, qty: 0, period: 0 };
 const b = { unitPrice: 50000, qty: 2, period: 3 };
 const c = { unitPrice: -30000, qty: 1, period: 0 };

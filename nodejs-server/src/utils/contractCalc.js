@@ -1,6 +1,6 @@
 // 견적·계약서 금액 계산 — 화면 hibye-web lib/contract.ts와 같은 규칙·같은 테스트 값
-// 부가세: 0 쪽으로 내림 (음수는 -vat(-n))
-const vat = n => (n >= 0 ? Math.floor(n * 0.1) : -Math.floor(-n * 0.1));
+// 부가세: 0 쪽으로 내림 (음수는 -vat(-n)). `|| 0`은 -0을 0으로
+const vat = n => (n >= 0 ? Math.floor(n * 0.1) : -Math.floor(-n * 0.1) || 0);
 
 // 품목 금액: 수량·기간 0은 1로 셈(예전 규칙)
 const itemAmount = ({ unitPrice, qty, period }) => unitPrice * (qty || 1) * (period || 1);

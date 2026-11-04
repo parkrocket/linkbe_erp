@@ -100,6 +100,23 @@ const call = async (fn, req) => {
     const other = await call(admin.changePermission, { params: { mbNo: '99' }, body: { name: 'expense_approver', on: true } });
     assert.deepStrictEqual([other.code, granted.length], [404, 0]);
 
+    // ── 실제 라우터: 업무 문서 권한이 없는 직원(경비만)은 계약·업체·설정 403, 경비 API는 그대로 ──
+    const express = require('express');
+    const app = express();
+    let flags = { workDoc: false };
+    app.use((r, _res, next) => Object.assign(r, { userId: 'hong@example.com', userCpId: 1, expenseApprover: false }, flags) && next());
+    app.use('/api/work', require('../src/routes/work'));
+    const server = app.listen(0);
+    const port = server.address().port;
+    const status = async (method, p) => (await fetch(`http://127.0.0.1:${port}/api/work${p}`, { method, headers: { 'content-type': 'application/json' }, body: method === 'GET' ? undefined : '{}' })).status;
+    for (const [method, p] of [['GET', '/contracts'], ['GET', '/contracts/companies?q=a'], ['GET', '/contracts/1'], ['POST', '/contracts'], ['DELETE', '/contracts/1'], ['GET', '/doc-settings'], ['GET', '/doc-settings/doc-templates/1'], ['POST', '/doc-settings/doc-templates'], ['POST', '/doc-settings/categories']]) {
+        assert.strictEqual(await status(method, p), 403, `${method} ${p} 권한 없는 직원에게 열려 있음`);
+    }
+    assert.strictEqual(await status('GET', '/summary'), 200, '경비 API가 막힘');
+    flags = { workDoc: true };
+    assert.notStrictEqual(await status('GET', '/doc-settings/item-templates'), 403, '권한자가 막힘'); // 권한 통과 후 입력 오류(400)
+    server.close();
+
     console.log('checkWorkAuth ✅');
     process.exit(0);
 })().catch(err => {

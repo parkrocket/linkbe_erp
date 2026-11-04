@@ -44,6 +44,11 @@ async function call(path, { method = 'POST', cookie, headers = {}, body = '{}' }
         assert.strictEqual((await call(p, { method })).status, 401, `${p} 업무 API 열려 있음`);
     }
 
+    // 견적·계약서·양식 설정 API: 로그인 없으면 401
+    for (const [method, p] of [['GET', '/api/work/contracts'], ['GET', '/api/work/contracts/companies?q=a'], ['POST', '/api/work/contracts'], ['GET', '/api/work/doc-settings'], ['POST', '/api/work/doc-settings/doc-templates']]) {
+        assert.strictEqual((await call(p, { method })).status, 401, `${p} 계약 API 열려 있음`);
+    }
+
     // 2) 공개 API는 그대로 열림
     // 본문 크기: 관리자 글(최대 500KB HTML)이 들어가도록 JSON 한도 1MB (기본 100KB면 413)
     assert.notStrictEqual((await call('/api/test', { body: JSON.stringify({ x: 'a'.repeat(300 * 1024) }) })).status, 413, 'JSON 본문 한도가 너무 작음');
