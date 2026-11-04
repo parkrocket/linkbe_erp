@@ -3,11 +3,11 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { todayString } from '@/components/dashboard/useApiData';
 import { Button } from '@/components/ui/Button';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { apiFetch, ApiError } from '@/lib/api';
+import { kstDate } from '@/lib/schedule';
 import {
     buildPrintDocument,
     buildPrintValues,
@@ -100,7 +100,9 @@ export function PrintView({ id, kind, templateId }: { id: string; kind: DocKind;
 
     // 고른 양식 본문
     const [body, setBody] = useState<{ id: number; tpl: DocTemplate } | null>(null);
-    const [bodyError, setBodyError] = useState(false);
+    // 실패한 요청의 '양식:시도' 표식 — 양식을 바꾸거나 다시 시도하면 표식이 달라져 이전 오류가 저절로 사라짐
+    const [failedKey, setFailedKey] = useState('');
+    const bodyError = failedKey === `${picked?.id ?? ''}:${tryNo}`;
     const pickedId = picked?.id ?? null;
     useEffect(() => {
         if (pickedId == null) return;
@@ -108,20 +110,21 @@ export function PrintView({ id, kind, templateId }: { id: string; kind: DocKind;
         apiFetch<{ docTemplate: DocTemplate }>(`/api/work/doc-settings/doc-templates/${pickedId}`)
             .then(r => {
                 if (!alive) return;
-                setBodyError(false);
                 setBody({ id: pickedId, tpl: r.docTemplate });
             })
-            .catch(() => alive && setBodyError(true));
+            .catch(() => alive && setFailedKey(`${pickedId}:${tryNo}`));
         return () => {
             alive = false;
         };
     }, [pickedId, tryNo]);
 
+    // 화면을 연 시점의 한국 날짜
+    const [today] = useState(() => kstDate(Date.now()));
     const html = useMemo(() => {
         if (!contract || !body || body.id !== pickedId) return '';
-        const filled = fillTemplate(body.tpl.bodyHtml, buildPrintValues(contract, todayString()), renderItemTable(contract.items));
+        const filled = fillTemplate(body.tpl.bodyHtml, buildPrintValues(contract, today), renderItemTable(contract.items));
         return buildPrintDocument(body.tpl.css, filled, `${contract.docNo} ${body.tpl.name}`);
-    }, [contract, body, pickedId]);
+    }, [contract, body, pickedId, today]);
 
     const kindLabel = kind === 'estimate' ? '견적서' : '계약서';
     // 양식을 바꾸면 주소만 바꿈(새로 불러오지 않고 쿼리로 다시 그림)
