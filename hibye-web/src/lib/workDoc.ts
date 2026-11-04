@@ -10,6 +10,7 @@ export const WORK_TABS = (user: Pick<User, 'user_role' | 'work_doc_access'>): { 
     ...(canWorkDoc(user)
         ? [
               { href: '/work/contracts', label: '견적·계약서' },
+              { href: '/work/ledger', label: '매출/매입' },
               { href: '/work/settings', label: '설정' },
           ]
         : []),
