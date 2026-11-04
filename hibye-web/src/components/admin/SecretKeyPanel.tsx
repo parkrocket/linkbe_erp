@@ -19,6 +19,7 @@ export function SecretKeyPanel() {
     const [notice, setNotice] = useState('');
     const timer = useRef<number | undefined>(undefined);
     const mounted = useRef(true);
+    const gen = useRef(0); // 요청 세대 — 팝업을 닫으면 올려서 늦은 응답을 버림
 
     // 키·비밀번호·타이머 모두 지움
     const clearAll = useCallback(() => {
@@ -36,6 +37,7 @@ export function SecretKeyPanel() {
     }, []);
 
     const close = () => {
+        gen.current += 1;
         clearAll();
         setError('');
         setOpen(false);
@@ -44,21 +46,24 @@ export function SecretKeyPanel() {
     const submit = async (event: React.FormEvent) => {
         event.preventDefault();
         if (busy || !password) return;
+        const mine = gen.current;
         setBusy(true);
         setError('');
         setNotice('');
         try {
             const res = await apiFetch<{ key: string }>('/api/admin/client-secret-key/reveal', { method: 'POST', body: { password } });
             // 응답이 오기 전에 화면을 떠났거나 탭이 숨겨졌으면 키를 두지 않음
-            if (!mounted.current || document.visibilityState === 'hidden') return;
+            if (!mounted.current || mine !== gen.current || document.visibilityState === 'hidden') return;
             window.clearTimeout(timer.current);
             setSecretKey(res.key);
             timer.current = window.setTimeout(clearAll, REVEAL_MS);
         } catch (e) {
-            setError(keyViewErrorText(e));
+            if (mine === gen.current) setError(keyViewErrorText(e));
         } finally {
-            setPassword('');
-            setBusy(false);
+            if (mine === gen.current) {
+                setPassword('');
+                setBusy(false);
+            }
         }
     };
 

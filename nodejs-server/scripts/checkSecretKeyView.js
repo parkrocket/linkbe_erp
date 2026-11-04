@@ -17,6 +17,7 @@ slack.sendSlackMessage = async (channel, text) => {
     notices.push({ channel, text });
 };
 
+const User = require('../src/models/userModel');
 const Admin = require('../src/models/adminModel');
 const { CredentialLog } = require('../src/models/clientModel');
 const hash = bcrypt.hashSync(PASSWORD, 4);
@@ -56,6 +57,7 @@ const call = async (body, req) => {
     // 입력 검사
     for (const body of [undefined, {}, { password: 1 }, { password: '' }, { password: 'a'.repeat(201) }]) assert.strictEqual((await call(body)).code, 400);
     assert.strictEqual(logs.length, 0);
+    rateLimit.reset(); // 입력 오류도 시도로 셈
 
     // 틀림 5번 → 403, 6번째 429 (맞는 비밀번호여도 막힘)
     for (let i = 0; i < 5; i++) {
@@ -73,6 +75,17 @@ const call = async (body, req) => {
     assert.strictEqual(res.headers['cache-control'], 'no-store');
     assert.deepStrictEqual(logs, [{ cpId: 1, clientId: 0, credentialId: null, target: 'key', action: 'view', actor: { no: 7, name: '홍<길동>' } }]);
     assert.deepStrictEqual(notices, [{ channel: '#hibye-관리', text: '홍&lt;길동&gt;님이 거래처 접속정보 암호화 키를 확인했어요' }]);
+
+    // 동시 10개 → bcrypt 비교 5번 이하, 나머지 429
+    rateLimit.reset();
+    const realCompare = User.comparePassword;
+    let compares = 0;
+    User.comparePassword = (...a) => (compares++, realCompare(...a));
+    const burst = await Promise.all(Array.from({ length: 10 }, () => call({ password: 'nope' })));
+    User.comparePassword = realCompare;
+    assert.ok(compares <= 5, `bcrypt ${compares}번`);
+    assert.deepStrictEqual([burst.filter(x => x.code === 403).length, burst.filter(x => x.code === 429).length], [5, 5]);
+    rateLimit.reset();
 
     // 성공하면 실패 횟수 초기화
     for (let i = 0; i < 4; i++) await call({ password: 'nope' });

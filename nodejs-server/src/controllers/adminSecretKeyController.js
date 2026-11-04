@@ -17,13 +17,15 @@ const same = (password, hash) => new Promise((resolve, reject) => User.comparePa
 exports.reveal = async (req, res) => {
     try {
         const limitKey = `keyview:${req.userId}`;
-        if (rateLimit.isBlocked(limitKey, MAX_FAIL, WINDOW_MS)) return fail(res, 429, 'Too many attempts');
+        // 시도 전에 먼저 셈 — 동시 요청이 한도를 넘어 비밀번호를 시험하지 못하게 (성공하면 clear)
+        if (!rateLimit.hit(limitKey, MAX_FAIL, WINDOW_MS)) return fail(res, 429, 'Too many attempts');
         const { password } = req.body || {};
         if (typeof password !== 'string' || password.length < 1 || password.length > 200) return fail(res, 400, 'Invalid password');
 
         const hash = await Admin.findPasswordHash(req.userCpId, req.userId);
-        if (!hash || !(await same(password, hash))) {
-            rateLimit.hit(limitKey, MAX_FAIL, WINDOW_MS);
+        // bcrypt 오류는 틀림으로 처리
+        const ok = hash ? await same(password, hash).catch(() => false) : false;
+        if (!ok) {
             return fail(res, 403, 'Wrong password');
         }
         const key = box.readKeyString();
