@@ -18,5 +18,10 @@ export const WORK_TABS = (user: Pick<User, 'user_role' | 'work_doc_access' | 'cl
           ]
         : []),
     ...(canClientSecret(user) ? [{ href: '/work/clients', label: '거래처 접속정보' }] : []),
-    ...(canWorkDoc(user) ? [{ href: '/work/settings', label: '설정' }] : []),
+    ...(canWorkDoc(user)
+        ? [
+              { href: '/work/viral', label: '바이럴' },
+              { href: '/work/settings', label: '설정' },
+          ]
+        : []),
 ];

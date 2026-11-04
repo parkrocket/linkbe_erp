@@ -7,6 +7,7 @@ const DOCS = [
     { href: '/work/contracts', label: '견적·계약서' },
     { href: '/work/ledger', label: '매출/매입' },
 ];
+const VIRAL = { href: '/work/viral', label: '바이럴' };
 const SETTINGS = { href: '/work/settings', label: '설정' };
 
 describe('workDoc', () => {
@@ -15,8 +16,8 @@ describe('workDoc', () => {
         expect(canWorkDoc({ user_role: 'member', work_doc_access: 1 })).toBe(true);
         expect(canWorkDoc({ user_role: 'member', work_doc_access: 0 })).toBe(false);
         expect(canWorkDoc({})).toBe(false);
-        expect(WORK_TABS({ user_role: 'admin' })).toEqual([EXPENSE, ...DOCS, CLIENTS, SETTINGS]);
-        expect(WORK_TABS({ user_role: 'member', work_doc_access: 1 })).toEqual([EXPENSE, ...DOCS, SETTINGS]);
+        expect(WORK_TABS({ user_role: 'admin' })).toEqual([EXPENSE, ...DOCS, CLIENTS, VIRAL, SETTINGS]);
+        expect(WORK_TABS({ user_role: 'member', work_doc_access: 1 })).toEqual([EXPENSE, ...DOCS, VIRAL, SETTINGS]);
         expect(WORK_TABS({ user_role: 'member', client_secret_access: 1 })).toEqual([EXPENSE, CLIENTS]);
         expect(WORK_TABS({ user_role: 'member' })).toEqual([EXPENSE]);
     });
