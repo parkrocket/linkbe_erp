@@ -29,6 +29,7 @@ type Comment = {
 // 바이럴 글 보기 — 본문·댓글·수정·삭제
 export function BoardView({ id }: { id: string }) {
     const router = useRouter();
+    const loginUrl = `/login?redirect=/work/viral/${encodeURIComponent(id)}`;
     const [post, setPost] = useState<Post | null>(null);
     const [comments, setComments] = useState<Comment[]>([]);
     const [loadState, setLoadState] = useState<
@@ -41,47 +42,75 @@ export function BoardView({ id }: { id: string }) {
     const [message, setMessage] = useState('');
 
     // 처음 불러오기 실패만 화면 상태를 바꿈 (다시 불러오기 실패가 내용을 지우지 않게)
-    const load = useCallback(async (): Promise<boolean> => {
-        try {
-            const r = await apiFetch<{ post: Post; comments: Comment[] }>(
-                `/api/work/boards/viral/${encodeURIComponent(id)}`,
-            );
-            setPost(r.post);
-            setComments(r.comments);
-            setLoadState('ok');
-            setFormKey(k => k + 1);
-            return true;
-        } catch (e) {
-            if (e instanceof ApiError && e.status === 401)
-                router.replace('/login?redirect=/');
-            else
-                setLoadState(prev =>
-                    prev === 'ok'
-                        ? prev
-                        : e instanceof ApiError && e.status === 404
-                          ? 'notFound'
-                          : 'error',
+    const load = useCallback(
+        async (isStale?: () => boolean): Promise<boolean> => {
+            try {
+                const r = await apiFetch<{ post: Post; comments: Comment[] }>(
+                    `/api/work/boards/viral/${encodeURIComponent(id)}`,
                 );
-            return false;
-        }
-    }, [id, router]);
+                if (isStale?.()) return false; // 글이 바뀐 뒤 늦게 온 응답은 무시
+                setPost(r.post);
+                setComments(r.comments);
+                setLoadState('ok');
+                setFormKey(k => k + 1);
+                return true;
+            } catch (e) {
+                if (isStale?.()) return false;
+                if (e instanceof ApiError && e.status === 401)
+                    router.replace(loginUrl);
+                else
+                    setLoadState(prev =>
+                        prev === 'ok'
+                            ? prev
+                            : e instanceof ApiError && e.status === 404
+                              ? 'notFound'
+                              : 'error',
+                    );
+                return false;
+            }
+        },
+        [id, router, loginUrl],
+    );
 
     useEffect(() => {
-        // 마운트 때 글 불러오기 (상태 갱신은 응답 뒤)
-        void load();
+        // 마운트 때 글 불러오기 (상태 갱신은 응답 뒤). 글이 바뀌거나 떠나면 늦은 응답은 무시
+        let cancelled = false;
+        void load(() => cancelled);
+        return () => {
+            cancelled = true;
+        };
     }, [load]);
 
-    // 삭제·댓글 공통: 실패 문구만 다름
-    const run = async (fn: () => Promise<void>, failText: string) => {
+    // 성공한 작업 뒤 다시 불러오기 — 실패해도 작업은 된 것이니 안내(중복 등록 방지)
+    const reload = async () => {
+        if (!(await load()))
+            setMessage(
+                '저장됐지만 목록을 새로 불러오지 못했어요. 새로고침해 주세요.',
+            );
+    };
+
+    // 삭제·댓글 공통: 실패 문구만 다름 (onNotFound: 404일 때 추가 동작)
+    const run = async (
+        fn: () => Promise<void>,
+        failText: string,
+        onNotFound?: () => void,
+    ) => {
         setBusy(true);
         setMessage('');
         try {
             await fn();
         } catch (e) {
-            if (e instanceof ApiError && e.status === 404)
-                setMessage('이미 삭제됐어요. 새로고침해 주세요.');
-            else if (e instanceof ApiError && e.status === 403)
-                setMessage('내가 쓴 것만 지울 수 있어요.');
+            if (e instanceof ApiError && e.status === 401)
+                router.replace(loginUrl);
+            else if (e instanceof ApiError && e.status === 404) {
+                if (onNotFound) onNotFound();
+                else setMessage('이미 삭제됐어요. 새로고침해 주세요.');
+            } else if (e instanceof ApiError && e.status === 403)
+                setMessage(
+                    e.reason === 'Work doc only'
+                        ? '업무 문서 권한이 없어요.'
+                        : '내가 쓴 글만 고칠 수 있어요.',
+                );
             else setMessage(failText);
         } finally {
             setBusy(false);
@@ -96,12 +125,16 @@ export function BoardView({ id }: { id: string }) {
             )
         )
             return;
-        void run(async () => {
-            await apiFetch(`/api/work/boards/viral/${post.id}`, {
-                method: 'DELETE',
-            });
-            router.push('/work/viral');
-        }, '삭제하지 못했어요. 잠시 뒤 다시 시도해 주세요.');
+        void run(
+            async () => {
+                await apiFetch(`/api/work/boards/viral/${post.id}`, {
+                    method: 'DELETE',
+                });
+                router.push('/work/viral');
+            },
+            '삭제하지 못했어요. 잠시 뒤 다시 시도해 주세요.',
+            () => router.push('/work/viral'),
+        ); // 이미 지워졌으면 목록으로
     };
 
     const removeComment = (cid: number) => {
@@ -111,7 +144,7 @@ export function BoardView({ id }: { id: string }) {
                 `/api/work/boards/viral/${encodeURIComponent(id)}/comments/${cid}`,
                 { method: 'DELETE' },
             );
-            await load();
+            await reload();
         }, '댓글을 지우지 못했어요.');
     };
 
@@ -124,7 +157,7 @@ export function BoardView({ id }: { id: string }) {
                 { method: 'POST', body: { body: newComment.trim() } },
             );
             setNewComment('');
-            await load();
+            await reload();
         }, '댓글을 등록하지 못했어요. (2,000자 이내)');
     };
 
@@ -163,10 +196,8 @@ export function BoardView({ id }: { id: string }) {
                                 initial={post}
                                 onCancel={() => setEditing(false)}
                                 onSaved={async () => {
-                                    if (!(await load()))
-                                        setMessage(
-                                            '저장은 됐지만 최신 내용을 불러오지 못했어요. 새로고침해 주세요.',
-                                        );
+                                    setMessage('');
+                                    await reload();
                                     setEditing(false);
                                 }}
                             />

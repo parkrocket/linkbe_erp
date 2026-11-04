@@ -35,7 +35,7 @@ async function ViralPost({ params }: { params: Promise<{ id: string }> }) {
     return (
         <>
             <WorkTabs user={user} />
-            <BoardView id={id} />
+            <BoardView key={id} id={id} />
         </>
     );
 }
