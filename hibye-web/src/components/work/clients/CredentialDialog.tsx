@@ -21,10 +21,10 @@ import {
 const MASK_STYLE = { WebkitTextSecurity: 'disc' } as React.CSSProperties;
 const FIELD_CLASS = 'w-full rounded-lg border border-line bg-white px-3 py-2.5 text-sm text-ink focus-visible:outline-2 focus-visible:outline-primary-soft';
 
-// 접속정보 항목 추가·고치기 — 고칠 때 비밀번호·메모는 현재 값을 불러오지 않음(비워 두면 그대로)
+// 접속정보 항목 추가·고치기 — 고칠 때 비밀번호는 현재 값을 불러오지 않음(비워 두면 그대로), 메모는 보이는 칸이라 현재 값을 채워 둠
 export function CredentialDialog({ clientId, credential, onClose, onChanged }: { clientId: number; credential?: Credential; onClose: () => void; onChanged: () => void }) {
     const [form, setForm] = useState<CredentialForm>(() =>
-        credential ? { ...emptyCredentialForm(), kind: credential.kind, label: credential.label, url: credential.url, loginId: credential.loginId } : emptyCredentialForm(),
+        credential ? { ...emptyCredentialForm(), kind: credential.kind, label: credential.label, url: credential.url, loginId: credential.loginId, memo: credential.memo ?? '' } : emptyCredentialForm(),
     );
     const [errors, setErrors] = useState<CredentialErrors>({});
     const [message, setMessage] = useState('');
@@ -46,7 +46,8 @@ export function CredentialDialog({ clientId, credential, onClose, onChanged }: {
         try {
             await apiFetch(credential ? `/api/work/clients/${clientId}/credentials/${credential.id}` : `/api/work/clients/${clientId}/credentials`, {
                 method: 'POST',
-                body: credentialBody(form),
+                // 지금 메모를 읽을 수 없으면 메모는 보내지 않음(서버: 그대로) — 빈 값으로 덮어써 지워지지 않게
+                body: credential?.memoUnreadable ? { ...credentialBody(form), memo: undefined } : credentialBody(form),
             });
             // 입력한 평문이 화면 상태에 남지 않게 바로 비움
             setForm(emptyCredentialForm());
@@ -110,20 +111,15 @@ export function CredentialDialog({ clientId, credential, onClose, onChanged }: {
                             rows={4}
                             maxLength={5000}
                             autoComplete="off"
-                            disabled={form.clearMemo}
+                            disabled={Boolean(credential?.memoUnreadable)}
                             className={FIELD_CLASS}
                             value={form.memo}
                             onChange={e => set('memo', e.target.value)}
                         />
                         {errors.memo && <span className="text-xs font-normal text-rejected-fg">{errors.memo}</span>}
-                        {credential?.hasMemo && <span className="text-xs font-normal text-muted">비워 두면 지금 값이 그대로예요</span>}
+                        <span className="text-xs font-normal text-muted">메모는 화면에 그대로 보여요 — 비밀번호는 비밀번호 칸에 넣어 주세요</span>
+                        {credential?.memoUnreadable && <span className="text-xs font-normal text-rejected-fg">지금 메모를 읽을 수 없어 고칠 수 없어요(암호화 키 확인 필요)</span>}
                     </label>
-                    {credential?.hasMemo && (
-                        <label className="flex items-center gap-2 text-xs">
-                            <input type="checkbox" className="size-4 accent-primary" checked={form.clearMemo} onChange={e => set('clearMemo', e.target.checked)} />
-                            메모 지우기
-                        </label>
-                    )}
                 </div>
                 <div className="flex justify-end gap-2">
                     <Button variant="secondary" disabled={busy} onClick={() => canClose() && onClose()}>

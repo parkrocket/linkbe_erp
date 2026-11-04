@@ -43,6 +43,16 @@ const isUnreadable = enc => {
     }
 };
 
+// 항목 메모 — 화면에 바로 보이는 칸(11-04 사용자 결정: 비밀번호만 가림). 저장은 그대로 암호화, 못 읽으면 null
+const memoOf = enc => {
+    if (enc === null || enc === undefined) return { memo: null, memoUnreadable: false };
+    try {
+        return { memo: box.decrypt(enc), memoUnreadable: false };
+    } catch {
+        return { memo: null, memoUnreadable: true };
+    }
+};
+
 // 비밀 칸 암호화: undefined = 그대로, null = 지움 (키 없으면 SECRET_KEY_MISSING → 503)
 const encOrKeep = v => (v === undefined ? undefined : v === null ? null : box.encrypt(v));
 
@@ -100,6 +110,7 @@ exports.detail = handle(async (req, res) => {
             loginId: c.login_id,
             hasSecret: Boolean(c.has_secret),
             hasMemo: Boolean(c.has_memo),
+            ...memoOf(c.memo_enc),
             sort: c.sort,
             updatedAt: c.updated_at,
         })),

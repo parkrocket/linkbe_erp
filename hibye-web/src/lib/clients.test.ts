@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from './api';
-import { clientErrorText, credentialBody, emptyCredentialForm, isWebUrl, logText, validateClientName, validateCredentialForm, REVEAL_MS } from './clients';
+import { clientErrorText, credentialBody, emptyCredentialForm, isLongMemo, isWebUrl, logText, validateClientName, validateCredentialForm, REVEAL_MS } from './clients';
 
 describe('clients', () => {
     it('항목 입력 검사', () => {
@@ -17,13 +17,20 @@ describe('clients', () => {
         expect(validateClientName('테스트업체')).toBeUndefined();
     });
 
-    it('비밀번호·메모: 비우면 키 제외, 지우기면 빈 문자열', () => {
+    it('비밀번호: 비우면 키 제외·지우기면 빈 문자열, 메모: 항상 그대로 보냄', () => {
         const f = { ...emptyCredentialForm(), label: ' 가 ' };
         const keep = credentialBody(f);
         expect(JSON.parse(JSON.stringify(keep))).not.toHaveProperty('secret');
-        expect(JSON.parse(JSON.stringify(keep))).not.toHaveProperty('memo');
-        expect(credentialBody({ ...f, secret: 'pw', clearMemo: true })).toMatchObject({ label: '가', secret: 'pw', memo: '' });
+        expect(keep.memo).toBe('');
+        expect(credentialBody({ ...f, secret: 'pw', memo: '메모' })).toMatchObject({ label: '가', secret: 'pw', memo: '메모' });
         expect(credentialBody({ ...f, secret: 'pw', clearSecret: true }).secret).toBe('');
+    });
+
+    it('긴 메모 접기 기준', () => {
+        expect(isLongMemo('짧은 메모')).toBe(false);
+        expect(isLongMemo('x'.repeat(201))).toBe(true);
+        expect(isLongMemo('1\n2\n3\n4')).toBe(false);
+        expect(isLongMemo('1\n2\n3\n4\n5')).toBe(true);
     });
 
     it('링크·기록·오류 문구', () => {

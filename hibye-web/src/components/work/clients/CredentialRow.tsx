@@ -4,9 +4,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { apiFetch } from '@/lib/api';
 import { useClearOnHide } from '@/lib/clearOnHide';
-import { clientErrorText, CREDENTIAL_KIND_LABEL, isWebUrl, maskedLabel, REVEAL_MS, type Credential } from '@/lib/clients';
+import { clientErrorText, CREDENTIAL_KIND_LABEL, isLongMemo, isWebUrl, maskedLabel, REVEAL_MS, type Credential } from '@/lib/clients';
 
-type Field = 'secret' | 'memo';
+type Field = 'secret'; // 가리는 칸은 비밀번호뿐 — 메모는 화면에 바로 보임(11-04)
 type Action = 'view' | 'copy';
 const UNREADABLE = '저장된 값을 읽을 수 없어요. 암호화 키를 확인해 주세요.';
 
@@ -148,25 +148,33 @@ export function CredentialRow({ clientId, credential: c, onEdit, onDelete }: { c
                 {c.hasMemo && (
                     <>
                         <dt className="text-xs text-muted">메모</dt>
-                        <dd className="flex flex-wrap items-start gap-2">
-                            {plain.memo !== undefined ? <pre className="max-w-full whitespace-pre-wrap break-words font-sans">{plain.memo}</pre> : <Masked />}
-                            <Button variant="ghost" className="px-2 py-1 text-xs" disabled={busy} aria-label={plain.memo === undefined ? '메모 보기' : '메모 가리기'} onClick={() => (plain.memo === undefined ? view('memo') : hide('memo'))}>
-                                {plain.memo === undefined ? '보기' : '가리기'}
-                            </Button>
-                            <Button variant="ghost" className="px-2 py-1 text-xs" disabled={busy} aria-label="메모 복사" onClick={() => copy('memo')}>
-                                복사
-                            </Button>
-                        </dd>
+                        <dd className="min-w-0">{c.memoUnreadable ? <span className="text-rejected-fg">{UNREADABLE}</span> : <MemoText memo={c.memo ?? ''} />}</dd>
                     </>
                 )}
             </dl>
-            {(plain.secret !== undefined || plain.memo !== undefined) && <p className="mt-1.5 text-xs text-muted">{REVEAL_MS / 1000}초 뒤 다시 가려져요</p>}
+            {plain.secret !== undefined && <p className="mt-1.5 text-xs text-muted">{REVEAL_MS / 1000}초 뒤 다시 가려져요</p>}
             {notice && (
                 <p role="status" className="mt-1.5 text-xs text-primary">
                     {notice}
                 </p>
             )}
         </li>
+    );
+}
+
+// 메모 — 그대로 보여 주고, 길면 4줄로 접었다가 펼치기
+function MemoText({ memo }: { memo: string }) {
+    const [open, setOpen] = useState(false);
+    const long = isLongMemo(memo);
+    return (
+        <div className="flex flex-col items-start gap-1">
+            <p className={`max-w-full whitespace-pre-wrap break-words ${long && !open ? 'line-clamp-4' : ''}`}>{memo}</p>
+            {long && (
+                <button type="button" aria-expanded={open} onClick={() => setOpen(v => !v)} className="rounded text-xs font-medium text-primary hover:underline focus-visible:outline-2 focus-visible:outline-primary">
+                    {open ? '접기' : '펼치기'}
+                </button>
+            )}
+        </div>
     );
 }
 

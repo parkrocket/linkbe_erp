@@ -112,7 +112,7 @@ const CRED_JOIN = 'FROM wk_client_credential cr JOIN wk_client c ON c.id = cr.cl
 
 Credential.list = async (cpId, clientId) => {
     const [rows] = await pool.query(
-        `SELECT cr.id, cr.kind, cr.label, cr.url, cr.login_id, cr.secret_enc IS NOT NULL AS has_secret, cr.memo_enc IS NOT NULL AS has_memo, cr.sort,
+        `SELECT cr.id, cr.kind, cr.label, cr.url, cr.login_id, cr.secret_enc IS NOT NULL AS has_secret, cr.memo_enc IS NOT NULL AS has_memo, cr.memo_enc, cr.sort,
          ${KST('cr.updated_at')} AS updated_at ${CRED_JOIN} WHERE cr.client_id = ? ORDER BY cr.sort, cr.id`,
         [cpId, clientId],
     );

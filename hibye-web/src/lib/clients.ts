@@ -37,6 +37,8 @@ export type Credential = {
     loginId: string;
     hasSecret: boolean;
     hasMemo: boolean;
+    memo: string | null; // 항목 메모는 화면에 바로 보이는 칸(비밀번호만 가림)
+    memoUnreadable: boolean;
     sort: number;
     updatedAt: string;
 };
@@ -91,7 +93,6 @@ export type CredentialForm = {
     secret: string;
     memo: string;
     clearSecret: boolean;
-    clearMemo: boolean;
 };
 
 export const emptyCredentialForm = (): CredentialForm => ({
@@ -102,7 +103,6 @@ export const emptyCredentialForm = (): CredentialForm => ({
     secret: '',
     memo: '',
     clearSecret: false,
-    clearMemo: false,
 });
 
 const URL_RE = /^(https?|ftps?|sftp):\/\//i;
@@ -124,7 +124,8 @@ export function validateCredentialForm(f: CredentialForm): CredentialErrors {
     return e;
 }
 
-// 요청 본문 — 비밀번호·메모는 비워 두면 키를 빼서(서버: 그대로), '지우기'면 ''(서버: 지움)
+// 요청 본문 — 비밀번호는 비워 두면 키를 빼서(서버: 그대로), '지우기'면 ''(서버: 지움).
+// 메모는 보이는 칸이라 고칠 때 현재 값을 채워 두고 항상 보냄('' = 지움)
 export function credentialBody(f: CredentialForm) {
     return {
         kind: f.kind,
@@ -132,9 +133,14 @@ export function credentialBody(f: CredentialForm) {
         url: f.url.trim(),
         loginId: f.loginId.trim(),
         secret: f.clearSecret ? '' : f.secret === '' ? undefined : f.secret,
-        memo: f.clearMemo ? '' : f.memo === '' ? undefined : f.memo,
+        memo: f.memo,
     };
 }
+
+// 메모가 이보다 길거나 줄이 많으면 접어서 보여 줌
+export const MEMO_FOLD_CHARS = 200;
+export const MEMO_FOLD_LINES = 4;
+export const isLongMemo = (memo: string) => memo.length > MEMO_FOLD_CHARS || memo.split('\n').length > MEMO_FOLD_LINES;
 
 export function validateClientName(name: string): string | undefined {
     const n = name.trim();

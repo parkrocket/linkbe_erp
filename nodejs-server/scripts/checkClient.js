@@ -58,7 +58,7 @@ let clientUpdate = true;
 Client.update = rec('update', () => clientUpdate);
 let clientRemove = [];
 Client.remove = rec('remove', () => clientRemove);
-const credRow = { id: 3, kind: 'ftp', label: '메인', url: 'ftp://example.com', login_id: 'user', has_secret: 1, has_memo: 0, sort: 0, updated_at: '2026-11-04 10:00:00', secret_enc: `v1:${PLAIN}`, memo_enc: `v1:${MEMO}` };
+const credRow = { id: 3, kind: 'ftp', label: '메인', url: 'ftp://example.com', login_id: 'user', has_secret: 1, has_memo: 1, sort: 0, updated_at: '2026-11-04 10:00:00', secret_enc: `v1:${PLAIN}`, memo_enc: `v1:${MEMO}` };
 Credential.list = rec('credList', [credRow]);
 let credEnc = { id: 3, label: '메인', secret_enc: `v1:${PLAIN}`, memo_enc: `v1:${MEMO}` };
 Credential.findEnc = rec('findEnc', (cp, cid, id) => (cp === 1 && cid === 5 && id === 3 ? credEnc : undefined));
@@ -87,9 +87,9 @@ const call = async (fn, req) => {
     return res;
 };
 const expect = (res, code, error) => assert.deepStrictEqual([res.code, res.body && res.body.error], [code, error]);
-const noPlain = (obj, what) => {
+const noPlain = (obj, what, allowMemo = false) => {
     const s = JSON.stringify(obj);
-    for (const p of [PLAIN, MEMO, LEGACY]) assert.ok(!s.includes(p), `${what}에 평문`);
+    for (const p of allowMemo ? [PLAIN, LEGACY] : [PLAIN, MEMO, LEGACY]) assert.ok(!s.includes(p), `${what}에 평문`);
 };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
@@ -107,10 +107,10 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
     res = await call(ctrl.detail, { params: { id: '5' } });
     assert.deepStrictEqual(Object.keys(res.body), ['client', 'credentials', 'files', 'logs']);
     assert.deepStrictEqual(res.body.client, { id: 5, kind: 'client', name: '테스트업체', hasLegacyMemo: true, legacyMemoUnreadable: false });
-    assert.deepStrictEqual(res.body.credentials, [{ id: 3, kind: 'ftp', label: '메인', url: 'ftp://example.com', loginId: 'user', hasSecret: true, hasMemo: false, sort: 0, updatedAt: '2026-11-04 10:00:00' }]);
+    assert.deepStrictEqual(res.body.credentials, [{ id: 3, kind: 'ftp', label: '메인', url: 'ftp://example.com', loginId: 'user', hasSecret: true, hasMemo: true, memo: MEMO, memoUnreadable: false, sort: 0, updatedAt: '2026-11-04 10:00:00' }]);
     assert.deepStrictEqual(res.body.files, [{ id: 8, originalName: '견적.pdf', size: 10, createdAt: '2026-11-04 10:00:00' }]);
     assert.deepStrictEqual(res.body.logs, [{ action: 'view', target: 'secret', credentialLabel: '메인', actorName: '홍길동', createdAt: '2026-11-04 10:00:00' }]);
-    noPlain(res.body, '상세');
+    noPlain(res.body, '상세', true); // 항목 메모는 보이는 칸, 비밀번호·예전 메모는 없어야 함
     // 예전 메모를 못 읽으면(키 틀림·변조) 그 칸만 unreadable — 상세는 동작
     unreadable = new Set([`v1:${LEGACY}`]);
     res = await call(ctrl.detail, { params: { id: '5' } });

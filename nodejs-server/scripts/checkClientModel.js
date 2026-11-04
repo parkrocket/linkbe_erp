@@ -84,7 +84,7 @@ const lockedThenLogged = (cp, id, log) => {
     reset();
     await Credential.list(1, 5);
     assert.ok(/JOIN wk_client c ON c\.id = cr\.client_id AND c\.cp_id = \?/.test(calls[0].sql));
-    assert.ok(!/(secret_enc|memo_enc)(?! IS NOT NULL)/.test(calls[0].sql), '항목 목록에 암호 칸 SELECT');
+    assert.ok(!/secret_enc(?! IS NOT NULL)/.test(calls[0].sql), '항목 목록에 비밀번호 암호 칸 SELECT'); // 항목 메모는 화면에 보이는 칸(11-04)
     assert.deepStrictEqual(calls[0].params, [1, 5]);
     reset();
     await Credential.findEnc(1, 5, 3);
