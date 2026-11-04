@@ -124,6 +124,21 @@ const call = async (fn, req) => {
     assert.strictEqual(await status('GET', '/summary'), 200, '경비 API가 막힘');
     flags = { workDoc: true };
     assert.notStrictEqual(await status('GET', '/doc-settings/item-templates'), 403, '권한자가 막힘'); // 권한 통과 후 입력 오류(400)
+
+    // ── 거래처 접속정보: 업무 문서 권한만·경비 승인만 있는 직원은 전 경로 403(첨부 받기·내려받기 포함) ──
+    const clientPaths = [
+        ['GET', '/clients'], ['POST', '/clients'], ['GET', '/clients/1'], ['POST', '/clients/1'], ['DELETE', '/clients/1'],
+        ['POST', '/clients/1/credentials'], ['POST', '/clients/1/credentials/2'], ['DELETE', '/clients/1/credentials/2'],
+        ['POST', '/clients/1/credentials/2/reveal'], ['POST', '/clients/1/legacy-memo/reveal'],
+        ['POST', '/clients/1/files'], ['GET', '/clients/1/files/2'], ['DELETE', '/clients/1/files/2'],
+    ];
+    for (const f of [{ workDoc: true, clientSecret: false }, { workDoc: false, expenseApprover: true }, { workDoc: false }]) {
+        flags = f;
+        for (const [method, p] of clientPaths) assert.strictEqual(await status(method, p), 403, `${method} ${p} 접속정보 권한 없는 직원에게 열려 있음 ${JSON.stringify(f)}`);
+    }
+    flags = { workDoc: false, clientSecret: true };
+    assert.strictEqual(await status('POST', '/clients'), 400, '접속정보 권한자가 막힘'); // 권한 통과 후 입력 오류
+    assert.strictEqual(await status('GET', '/contracts'), 403, '접속정보 권한이 업무 문서 권한을 엶');
     server.close();
 
     console.log('checkWorkAuth ✅');

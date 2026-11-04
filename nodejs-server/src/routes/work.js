@@ -1,9 +1,12 @@
 const express = require('express');
+const multer = require('multer');
 const work = require('../controllers/workExpenseController');
 const contract = require('../controllers/workContractController');
 const docSetting = require('../controllers/workDocSettingController');
 const ledger = require('../controllers/workLedgerController');
+const client = require('../controllers/workClientController');
 const { requireWorkDoc } = require('../middlewares/requireWorkDoc');
+const { requireClientSecret } = require('../middlewares/requireClientSecret');
 const router = express.Router();
 
 // /api/work/* — index.js에서 requireAuth(/api 전체) 뒤에 연결. 경비 권한은 컨트롤러에서 확인
@@ -50,5 +53,30 @@ router.post('/doc-settings/doc-templates', docSetting.createDocTemplate);
 router.get('/doc-settings/doc-templates/:id', docSetting.docTemplateDetail);
 router.post('/doc-settings/doc-templates/:id', docSetting.updateDocTemplate);
 router.delete('/doc-settings/doc-templates/:id', docSetting.removeDocTemplate);
+
+// 거래처 접속정보 — 접속정보 권한자만(업무 문서 권한과 별개). 권한 확인이 첨부 받기(multer)보다 먼저
+router.use('/clients', requireClientSecret);
+// defParamCharset: 한글 파일 이름을 UTF-8로 읽음(기본 latin1이면 깨짐)
+const upload = multer({ storage: multer.memoryStorage(), defParamCharset: 'utf8', limits: { fileSize: 50 * 1024 * 1024, files: 1 } });
+const oneFile = (req, res, next) =>
+    upload.single('file')(req, res, error => {
+        if (!error) return next();
+        if (error.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: 'File too large' });
+        res.status(400).json({ error: 'Invalid file' });
+    });
+
+router.get('/clients', client.list);
+router.post('/clients', client.create);
+router.get('/clients/:id', client.detail);
+router.post('/clients/:id', client.update);
+router.delete('/clients/:id', client.remove);
+router.post('/clients/:id/credentials', client.createCredential);
+router.post('/clients/:id/credentials/:cid', client.updateCredential);
+router.delete('/clients/:id/credentials/:cid', client.removeCredential);
+router.post('/clients/:id/credentials/:cid/reveal', client.revealCredential);
+router.post('/clients/:id/legacy-memo/reveal', client.revealLegacy);
+router.post('/clients/:id/files', oneFile, client.uploadFile);
+router.get('/clients/:id/files/:fid', client.downloadFile);
+router.delete('/clients/:id/files/:fid', client.removeFile);
 
 module.exports = router;

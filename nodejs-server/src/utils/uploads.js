@@ -56,4 +56,4 @@ const removeUpload = (storedName, visibility) => {
     if (isStoredName(storedName)) fs.rmSync(path.join(uploadDir(visibility), storedName), { force: true });
 };
 
-module.exports = { UPLOAD_ROOT, uploadDir, isStoredName, publicFileUrl, sniffAllowed, saveUpload, removeUpload, extOf, ATTACHMENT_EXTS, IMAGE_EXTS };
+module.exports = { UPLOAD_ROOT, uploadDir, isStoredName, publicFileUrl, sniffAllowed, saveUpload, removeUpload, extOf, ATTACHMENT_EXTS, IMAGE_EXTS, SIGNATURES };
