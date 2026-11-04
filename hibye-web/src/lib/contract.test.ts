@@ -182,3 +182,26 @@ describe('buildPrintDocument', () => {
         expect(PRINT_SANDBOX).not.toContain('allow-scripts');
     });
 });
+
+describe('화면 입력 도우미', () => {
+    it('금액 입력은 숫자와 앞의 -만, 콤마 표시', async () => {
+        const { formatMoneyInput, parseMoney } = await import('./contract');
+        expect(formatMoneyInput('1234567')).toBe('1,234,567');
+        expect(formatMoneyInput('-1234')).toBe('-1,234');
+        expect(formatMoneyInput('-')).toBe('-');
+        expect(formatMoneyInput('12-3a4')).toBe('1,234');
+        expect(formatMoneyInput('')).toBe('');
+        expect(parseMoney('-1,234')).toBe(-1234);
+        expect(parseMoney('-')).toBe(0);
+        expect(parseMoney('')).toBe(0);
+    });
+    it('납품일 D-day', async () => {
+        const { deliveryDday } = await import('./contract');
+        const r = (deliveryDate: string | null, status: 'active' | 'paid' = 'active') => ({ deliveryDate, status });
+        expect(deliveryDday(r('2026-11-07'), '2026-11-04')).toBe('D-3');
+        expect(deliveryDday(r('2026-11-04'), '2026-11-04')).toBe('D-day');
+        expect(deliveryDday(r('2026-11-03'), '2026-11-04')).toBe('지남');
+        expect(deliveryDday(r(null), '2026-11-04')).toBe('');
+        expect(deliveryDday(r('2026-11-07', 'paid'), '2026-11-04')).toBe('');
+    });
+});

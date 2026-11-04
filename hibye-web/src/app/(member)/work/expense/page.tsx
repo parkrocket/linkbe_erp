@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { ExpensePage } from '@/components/work/ExpensePage';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { WorkTabs } from '@/components/work/WorkTabs';
 import { getCurrentUser } from '@/lib/auth';
 import { canApproveExpense } from '@/lib/work';
 
@@ -21,7 +22,12 @@ async function Expense() {
     // proxy는 쿠키 유무만 보므로, 만료 토큰이면 여기서 로그인으로
     const user = await getCurrentUser();
     if (!user) redirect('/login?redirect=/work/expense');
-    return <ExpensePage canApprove={canApproveExpense(user)} />;
+    return (
+        <>
+            <WorkTabs user={user} />
+            <ExpensePage canApprove={canApproveExpense(user)} />
+        </>
+    );
 }
 
 function ExpenseFallback() {

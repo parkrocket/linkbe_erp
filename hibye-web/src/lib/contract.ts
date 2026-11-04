@@ -310,3 +310,22 @@ export function buildPrintDocument(css: string, body: string, title: string): st
         `<title>${safeTitle}</title><style>@page{size:A4;margin:10mm}${safeCss}</style></head><body>${body}</body></html>`
     );
 }
+
+// ---- 화면 입력 도우미 ----
+// 금액 입력: 숫자와 맨 앞 '-'만 남기고 천 단위 콤마 (음수 허용)
+export function formatMoneyInput(v: string): string {
+    const neg = v.trimStart().startsWith('-');
+    const digits = v.replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+    if (!digits) return neg ? '-' : '';
+    return (neg ? '-' : '') + Number(digits).toLocaleString('ko-KR');
+}
+
+// 입력 문자열 → 정수 ('' · '-'는 0)
+export const parseMoney = (v: string): number => Number(v.replace(/[^\d-]/g, '').replace(/(?!^)-/g, '')) || 0;
+
+// 납품일까지 남은 날: 오늘 기준 'D-3'·'D-day'·'지남', 납품일 없거나 완납·취소면 ''
+export function deliveryDday(row: Pick<ContractRow, 'deliveryDate' | 'status'>, today: string): string {
+    if (!row.deliveryDate || row.status === 'paid' || row.status === 'cancelled') return '';
+    const days = Math.round((Date.parse(row.deliveryDate) - Date.parse(today)) / 86400000);
+    return days < 0 ? '지남' : days === 0 ? 'D-day' : `D-${days}`;
+}
