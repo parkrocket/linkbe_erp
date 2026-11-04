@@ -119,7 +119,7 @@ const detail = (p: Partial<ContractDetail> = {}): ContractDetail => ({
     companyEmail: '', projectName: '', contractDate: '2026-11-05', deliveryDate: null, workPeriod: '', memo: '', link1: '', link2: '',
     total: 1000000, deposit: 500000, balance: 500000, paidAmount: 0, isHold: false, isCancelled: false, isPaidFull: false,
     invoiceIssued: false, opsServer1: '', opsServer2: '', opsSpend: '', opsSite: '', createdAt: '2026-11-04 09:00:00',
-    updatedAt: '2026-11-04 09:00:00', items: [], managers: [], ...p,
+    updatedAt: '2026-11-04 09:00:00', updatedAtKst: '2026-11-04 09:00:00', items: [], managers: [], ...p,
 });
 
 describe('buildPrintValues', () => {

@@ -7,7 +7,9 @@ const Expense = {};
 // KST 현재 시각 문자열(SQL 안에서 계산 — 서버·DB 시간대가 다름)
 const NOW_KST = "DATE_FORMAT(CONVERT_TZ(NOW(), @@session.time_zone, '+09:00'), '%Y-%m-%d %H:%i')";
 // 본문·history 제외 목록 칸. spent_on은 문자열로
-const LIST_COLUMNS = "id, writer_no, writer_name, DATE_FORMAT(spent_on, '%Y-%m-%d') AS spent_on, category, amount, title, status, created_at";
+// 표시용 KST 문자열
+const KST_CREATED = "DATE_FORMAT(CONVERT_TZ(created_at, @@session.time_zone, '+09:00'), '%Y-%m-%d %H:%i:%s') AS created_at";
+const LIST_COLUMNS = "id, writer_no, writer_name, DATE_FORMAT(spent_on, '%Y-%m-%d') AS spent_on, category, amount, title, status, " + KST_CREATED;
 
 Expense.list = async (cpId, { month, status = null, writerNo = null }) => {
     const start = `${month}-01`;
@@ -37,7 +39,7 @@ Expense.summary = async (cpId, { month, writerNo = null }) => {
 // 전체 칸 + 기안자 이메일(lk_user.user_id) — writer_email은 응답에 내보내지 않음(Slack DM용)
 Expense.findById = async (cpId, id) => {
     const [rows] = await pool.query(
-        "SELECT e.id, e.cp_id, e.writer_no, e.writer_name, DATE_FORMAT(e.spent_on, '%Y-%m-%d') AS spent_on, e.category, e.amount, e.title, e.body, e.status, e.history, e.created_at, e.updated_at, u.user_id AS writer_email FROM wk_expense e LEFT JOIN lk_user u ON u.mb_no = e.writer_no WHERE e.cp_id = ? AND e.id = ?",
+        "SELECT e.id, e.cp_id, e.writer_no, e.writer_name, DATE_FORMAT(e.spent_on, '%Y-%m-%d') AS spent_on, e.category, e.amount, e.title, e.body, e.status, e.history, DATE_FORMAT(CONVERT_TZ(e.created_at, @@session.time_zone, '+09:00'), '%Y-%m-%d %H:%i:%s') AS created_at, e.updated_at, u.user_id AS writer_email FROM wk_expense e LEFT JOIN lk_user u ON u.mb_no = e.writer_no WHERE e.cp_id = ? AND e.id = ?",
         [cpId, id],
     );
     return rows[0];

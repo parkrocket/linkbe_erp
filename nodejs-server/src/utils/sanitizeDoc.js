@@ -22,11 +22,11 @@ const OPTIONS = {
         img: ['src', 'alt', 'class', 'style', 'width', 'height'],
     },
     allowedStyles,
-    allowedSchemes: ['https', 'data'],
-    allowedSchemesByTag: { img: ['https', 'data'] },
+    allowedSchemes: ['data'],
+    allowedSchemesByTag: { img: ['data'] },
     allowProtocolRelative: false,
-    // 이미지는 https 또는 png·jpeg base64만 (svg 등 data 이미지 제외) — 아니면 통째로 제거
-    exclusiveFilter: frame => frame.tag === 'img' && !/^(https:\/\/|data:image\/(png|jpeg);base64,)/i.test(frame.attribs.src || ''),
+    // 이미지는 png·jpeg base64만 (https 제외 — 편집기의 외부 요청 방지, 인쇄 CSP와 같은 규칙) — 아니면 통째로 제거
+    exclusiveFilter: frame => frame.tag === 'img' && !/^data:image\/(png|jpeg);base64,/i.test(frame.attribs.src || ''),
 };
 
 exports.sanitizeDocTemplate = html => sanitize(String(html ?? ''), OPTIONS);

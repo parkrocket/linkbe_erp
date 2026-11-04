@@ -74,6 +74,7 @@ export type ContractDetail = {
     opsSite: string;
     createdAt: string;
     updatedAt: string; // 동시 수정 검사용(저장 때 그대로 되돌려 보냄)
+    updatedAtKst: string; // 표시용 KST
     items: ContractItem[];
     managers: ContractManager[];
 };

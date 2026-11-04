@@ -187,7 +187,7 @@ function Detail({ c, busy, onEdit, onRemove }: { c: ContractDetail; busy: boolea
                 <Row label="링크 2" value={c.link2} link />
                 <Row label="메모" value={c.memo} wide pre />
                 <Row label="작성" value={c.createdAt} />
-                <Row label="마지막 수정" value={c.updatedAt} />
+                <Row label="마지막 수정" value={c.updatedAtKst} />
             </Group>
         </div>
     );

@@ -97,6 +97,8 @@ assert.strictEqual(validateItemTemplate({ ...it, qty: -1 }).error, 'Invalid item
 const dt = { kind: 'estimate', name: '기본', categoryId: null, bodyHtml: '<p>x</p>', css: '', isDefault: false };
 assert.ok(validateDocTemplate(dt).ok);
 assert.ok(validateDocTemplate({ ...dt, kind: 'contract', categoryId: 2, updatedAt: 'x' }).ok);
+assert.strictEqual(validateDocTemplate({ ...dt, bodyHtml: 'a'.repeat(900001) }).error, 'Invalid bodyHtml');
+assert.ok(validateDocTemplate({ ...dt, bodyHtml: 'a'.repeat(900000) }).ok);
 assert.strictEqual(validateDocTemplate({ ...dt, kind: 'etc' }).error, 'Invalid kind');
 assert.strictEqual(validateDocTemplate({ ...dt, name: '' }).error, 'Invalid name');
 assert.strictEqual(validateDocTemplate({ ...dt, categoryId: -1 }).error, 'Invalid categoryId');

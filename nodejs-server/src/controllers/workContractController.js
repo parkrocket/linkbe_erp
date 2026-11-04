@@ -74,6 +74,7 @@ const toDetail = (r, categoryName) => ({
     opsSite: r.ops_site,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
+    updatedAtKst: r.updated_at_kst,
     items: r.items.map(i => ({
         id: i.id, sort: i.sort, groupName: i.group_name, content: i.content, unitPrice: i.unit_price, qty: i.qty, period: i.period, note: i.note, kind: i.kind,
     })),

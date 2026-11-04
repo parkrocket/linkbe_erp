@@ -136,7 +136,8 @@ const validateDocTemplate = input => {
     const name = str(b.name, 100);
     if (!name) return fail('Invalid name');
     if (!isNil(b.categoryId) && !isId(b.categoryId)) return fail('Invalid categoryId');
-    const bodyHtml = str(b.bodyHtml, 2000000, { trim: false });
+    // express json 한도(1MB) 안에서 css 등 나머지 칸 여유를 두려고 900,000자까지만 허용
+    const bodyHtml = str(b.bodyHtml, 900000, { trim: false });
     if (bodyHtml === null) return fail('Invalid bodyHtml');
     const css = str(b.css, 200000, { trim: false });
     if (css === null) return fail('Invalid css');

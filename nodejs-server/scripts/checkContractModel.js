@@ -82,6 +82,7 @@ const value = (patch = {}) => ({
     assert.strictEqual(await Contract.findById(1, 9), undefined);
     assert.strictEqual(calls.length, 1);
     assert.ok(calls[0].sql.includes('cp_id = ? AND id = ?') && calls[0].sql.includes("DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s') AS updated_at"));
+    assert.ok(calls[0].sql.includes("CONVERT_TZ(created_at, @@session.time_zone, '+09:00')") && calls[0].sql.includes('AS updated_at_kst') && calls[0].sql.includes('AS created_at'));
     assert.deepStrictEqual(calls[0].params, [1, 9]);
     reset([[/FROM wk_contract WHERE/, [[{ id: 9, cp_id: 1 }]]], [/wk_contract_item/, [[{ id: 1 }]]], [/wk_contract_manager/, [[{ id: 2 }]]]]);
     assert.deepStrictEqual(await Contract.findById(1, 9), { id: 9, cp_id: 1, items: [{ id: 1 }], managers: [{ id: 2 }] });

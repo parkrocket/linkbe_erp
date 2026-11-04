@@ -43,7 +43,7 @@ const last = () => calls[calls.length - 1];
     let { sql, params } = last();
     assert.ok(sql.includes('cp_id = ?') && sql.includes("DATE_FORMAT(spent_on, '%Y-%m-%d')"));
     assert.ok(sql.includes('spent_on >= ? AND spent_on < DATE_ADD(?, INTERVAL 1 MONTH)'));
-    assert.ok(sql.includes('ORDER BY spent_on DESC, id DESC') && sql.includes('created_at'));
+    assert.ok(sql.includes('ORDER BY spent_on DESC, id DESC') && sql.includes('created_at') && sql.includes('CONVERT_TZ') && sql.includes('DATE_FORMAT'));
     assert.ok(!/body|history/.test(sql.split(' FROM ')[0]), '컬럼 목록에 본문·history 없음');
     assert.ok(!sql.includes('writer_no = ?') && !sql.includes('status = ?'));
     assert.deepStrictEqual(params, [1, '2026-11-01', '2026-11-01']);

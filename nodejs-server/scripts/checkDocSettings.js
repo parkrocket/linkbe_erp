@@ -8,7 +8,9 @@ for (const bad of ['<script>x</script>', '<img src=x onerror=alert(1)>', '<a hre
     const out = html(bad);
     assert.ok(!/script|onerror|onclick|javascript|iframe|svg|http:|text\/html|image-set|e\.x/i.test(out), `제거 안 됨: ${bad} -> ${out}`);
 }
-const keep = '<div class="a"><table class="item_table"><colgroup><col width="10" /></colgroup><tr><td colspan="2" rowspan="1" align="center" style="text-align:center;border-bottom:1px solid #000">{업체명} {품목표}</td></tr></table><img src="https://a.b/x.png" /><img src="data:image/png;base64,AAAA" /><h1>t</h1><sup>1</sup></div>';
+const keep = '<div class="a"><table class="item_table"><colgroup><col width="10" /></colgroup><tr><td colspan="2" rowspan="1" align="center" style="text-align:center;border-bottom:1px solid #000">{업체명} {품목표}</td></tr></table><img src="data:image/png;base64,AAAA" /><h1>t</h1><sup>1</sup></div>';
+assert.ok(!/img/.test(html('<img src="https://a.b/x.png">')), 'https 이미지 제거');
+assert.ok(/data:image\/jpeg/.test(html('<img src="data:image/jpeg;base64,AAAA">')));
 assert.strictEqual(html(keep).replace(/&quot;/g, '"'), keep);
 assert.ok(!/url\(/i.test(html('<p style="background:url(javascript:1);color:red">a</p>')));
 assert.ok(/color:red/.test(html('<p style="background:url(javascript:1);color:red">a</p>')));

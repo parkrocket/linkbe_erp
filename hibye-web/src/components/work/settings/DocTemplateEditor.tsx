@@ -54,6 +54,7 @@ const SAMPLE_CONTRACT: ContractDetail = {
     opsSite: 'example.com',
     createdAt: '2000-01-01 09:00:00',
     updatedAt: '',
+    updatedAtKst: '',
     items: [
         { groupName: '개발', content: '샘플 기능 개발', unitPrice: 1_000_000, qty: 1, period: 1, note: '', kind: 'normal' },
         { groupName: '유지보수', content: '샘플 유지보수', unitPrice: 100_000, qty: 1, period: 6, note: '월 단위', kind: 'normal' },

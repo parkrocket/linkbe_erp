@@ -10,6 +10,8 @@ const escapeLike = q => q.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_
 
 const DATE_F = "'%Y-%m-%d'";
 const DATETIME_F = "'%Y-%m-%d %H:%i:%s'";
+// 표시용 KST 문자열(세션 시간대 → +09:00). 동시 수정 검사용 updated_at과는 별개
+const KST = col => `DATE_FORMAT(CONVERT_TZ(${col}, @@session.time_zone, '+09:00'), ${DATETIME_F})`;
 // KST 현재 시각 기준 문서번호 앞부분 (서버·DB 시간대가 달라 SQL 안에서 계산)
 const DOC_NO_BASE_SQL = "DATE_FORMAT(CONVERT_TZ(NOW(), @@session.time_zone, '+09:00'), '%Y%m%d-%H%i')";
 
@@ -33,7 +35,7 @@ const FIELDS = [
 ];
 const fieldValues = value => FIELDS.map(([, key]) => (typeof value[key] === 'boolean' ? Number(value[key]) : value[key]));
 
-const LIST_COLUMNS = `id, doc_no, category_id, (SELECT name FROM wk_doc_category WHERE id = wk_contract.category_id AND cp_id = wk_contract.cp_id) AS category_name, company_name, project_name, DATE_FORMAT(contract_date, ${DATE_F}) AS contract_date, DATE_FORMAT(delivery_date, ${DATE_F}) AS delivery_date, total, paid_amount, ${RECEIVABLE_SQL} AS receivable, is_hold, is_cancelled, is_paid_full, invoice_issued, created_at`;
+const LIST_COLUMNS = `id, doc_no, category_id, (SELECT name FROM wk_doc_category WHERE id = wk_contract.category_id AND cp_id = wk_contract.cp_id) AS category_name, company_name, project_name, DATE_FORMAT(contract_date, ${DATE_F}) AS contract_date, DATE_FORMAT(delivery_date, ${DATE_F}) AS delivery_date, total, paid_amount, ${RECEIVABLE_SQL} AS receivable, is_hold, is_cancelled, is_paid_full, invoice_issued, ${KST('created_at')} AS created_at`;
 
 // 업체명 LIKE 조건 (list·companyTotals 공통)
 const companyLike = (conds, params, q) => {
@@ -72,7 +74,7 @@ Contract.companyTotals = async (cpId, q) => {
 
 Contract.findById = async (cpId, id) => {
     const [rows] = await pool.query(
-        `SELECT id, cp_id, doc_no, category_id, company_name, biz_no, ceo_name, company_email, project_name, DATE_FORMAT(contract_date, ${DATE_F}) AS contract_date, DATE_FORMAT(delivery_date, ${DATE_F}) AS delivery_date, work_period, memo, link1, link2, total, deposit, balance, paid_amount, is_hold, is_cancelled, is_paid_full, invoice_issued, ops_server1, ops_server2, ops_spend, ops_site, created_by, created_at, DATE_FORMAT(updated_at, ${DATETIME_F}) AS updated_at FROM wk_contract WHERE cp_id = ? AND id = ?`,
+        `SELECT id, cp_id, doc_no, category_id, company_name, biz_no, ceo_name, company_email, project_name, DATE_FORMAT(contract_date, ${DATE_F}) AS contract_date, DATE_FORMAT(delivery_date, ${DATE_F}) AS delivery_date, work_period, memo, link1, link2, total, deposit, balance, paid_amount, is_hold, is_cancelled, is_paid_full, invoice_issued, ops_server1, ops_server2, ops_spend, ops_site, created_by, ${KST('created_at')} AS created_at, DATE_FORMAT(updated_at, ${DATETIME_F}) AS updated_at, ${KST('updated_at')} AS updated_at_kst FROM wk_contract WHERE cp_id = ? AND id = ?`,
         [cpId, id],
     );
     const contract = rows[0];
