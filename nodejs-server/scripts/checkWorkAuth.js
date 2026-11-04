@@ -109,7 +109,7 @@ const call = async (fn, req) => {
     const server = app.listen(0);
     const port = server.address().port;
     const status = async (method, p) => (await fetch(`http://127.0.0.1:${port}/api/work${p}`, { method, headers: { 'content-type': 'application/json' }, body: method === 'GET' ? undefined : '{}' })).status;
-    for (const [method, p] of [['GET', '/contracts'], ['GET', '/contracts/companies?q=a'], ['GET', '/contracts/1'], ['POST', '/contracts'], ['DELETE', '/contracts/1'], ['GET', '/doc-settings'], ['GET', '/doc-settings/doc-templates/1'], ['POST', '/doc-settings/doc-templates'], ['POST', '/doc-settings/categories']]) {
+    for (const [method, p] of [['GET', '/contracts'], ['GET', '/contracts/companies?q=a'], ['GET', '/contracts/1'], ['POST', '/contracts'], ['DELETE', '/contracts/1'], ['GET', '/doc-settings'], ['GET', '/doc-settings/doc-templates/1'], ['POST', '/doc-settings/doc-templates'], ['POST', '/doc-settings/categories'], ['GET', '/ledger'], ['GET', '/ledger/1'], ['POST', '/ledger'], ['POST', '/ledger/1'], ['DELETE', '/ledger/1'], ['GET', '/accounts'], ['POST', '/accounts'], ['POST', '/accounts/1'], ['DELETE', '/accounts/1']]) {
         assert.strictEqual(await status(method, p), 403, `${method} ${p} 권한 없는 직원에게 열려 있음`);
     }
     assert.strictEqual(await status('GET', '/summary'), 200, '경비 API가 막힘');

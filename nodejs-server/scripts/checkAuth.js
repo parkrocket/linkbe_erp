@@ -45,7 +45,7 @@ async function call(path, { method = 'POST', cookie, headers = {}, body = '{}' }
     }
 
     // 견적·계약서·양식 설정 API: 로그인 없으면 401
-    for (const [method, p] of [['GET', '/api/work/contracts'], ['GET', '/api/work/contracts/companies?q=a'], ['POST', '/api/work/contracts'], ['GET', '/api/work/doc-settings'], ['POST', '/api/work/doc-settings/doc-templates']]) {
+    for (const [method, p] of [['GET', '/api/work/contracts'], ['GET', '/api/work/contracts/companies?q=a'], ['POST', '/api/work/contracts'], ['GET', '/api/work/doc-settings'], ['POST', '/api/work/doc-settings/doc-templates'], ['GET', '/api/work/ledger'], ['POST', '/api/work/ledger'], ['GET', '/api/work/accounts'], ['POST', '/api/work/accounts']]) {
         assert.strictEqual((await call(p, { method })).status, 401, `${p} 계약 API 열려 있음`);
     }
 
