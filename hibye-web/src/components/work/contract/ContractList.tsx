@@ -8,7 +8,7 @@ import { Button, buttonClass } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { CONTRACT_STATUS_LABEL, deliveryDday, type Category, type ContractRow, type ContractStatus } from '@/lib/contract';
+import { CONTRACT_STATUS_LABEL, deliveryDday, type Category, type ContractRow, type ContractStatus, vat } from '@/lib/contract';
 import { kstDate } from '@/lib/schedule';
 import { formatWon } from '@/lib/shop';
 
@@ -54,7 +54,7 @@ export function ContractList() {
     const set = (key: keyof Filters, value: string) => setDraft(prev => ({ ...prev, [key]: value }));
 
     return (
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                 <h1 className="text-2xl font-bold">견적·계약서</h1>
                 <Link href="/work/contracts/new" className={buttonClass('primary')}>
@@ -114,7 +114,7 @@ export function ContractList() {
                                 <caption className="sr-only">견적·계약서 목록</caption>
                                 <thead className="bg-surface text-xs text-muted">
                                     <tr>
-                                        {['문서번호', '분류', '업체명', '프로젝트명', '계약일', '합계', '입금', '미수', '상태', '계산서', '납품'].map(h => (
+                                        {['문서번호', '분류', '업체명', '프로젝트명', '계약일', '총액(VAT 포함)', '입금', '미수', '상태', '계산서', '납품'].map(h => (
                                             <th key={h} scope="col" className="whitespace-nowrap px-3 py-2 font-semibold">
                                                 {h}
                                             </th>
@@ -129,17 +129,17 @@ export function ContractList() {
                                                     {r.docNo}
                                                 </Link>
                                             </td>
-                                            <td className="px-3 py-2.5 text-muted">{r.categoryName || '-'}</td>
-                                            <td className="px-3 py-2.5 font-semibold">{r.companyName}</td>
-                                            <td className="max-w-48 truncate px-3 py-2.5">{r.projectName}</td>
+                                            <td className="max-w-36 truncate whitespace-nowrap px-3 py-2.5 text-muted" title={r.categoryName || undefined}>{r.categoryName || '-'}</td>
+                                            <td className="max-w-48 truncate whitespace-nowrap px-3 py-2.5 font-semibold" title={r.companyName}>{r.companyName}</td>
+                                            <td className="max-w-64 truncate whitespace-nowrap px-3 py-2.5" title={r.projectName}>{r.projectName}</td>
                                             <td className="whitespace-nowrap px-3 py-2.5 tabular-nums">{r.contractDate || '-'}</td>
-                                            <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums">{formatWon(r.total)}</td>
+                                            <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums">{formatWon(r.total + vat(r.total))}</td>
                                             <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums">{formatWon(r.paidAmount)}</td>
                                             <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums">{formatWon(r.receivable)}</td>
-                                            <td className="px-3 py-2.5">
+                                            <td className="whitespace-nowrap px-3 py-2.5">
                                                 <Badge tone={STATUS_TONE[r.status]}>{CONTRACT_STATUS_LABEL[r.status]}</Badge>
                                             </td>
-                                            <td className="px-3 py-2.5">{r.invoiceIssued ? '발행' : '-'}</td>
+                                            <td className="whitespace-nowrap px-3 py-2.5">{r.invoiceIssued ? '발행' : '-'}</td>
                                             <td className="whitespace-nowrap px-3 py-2.5 tabular-nums">{deliveryDday(r, today)}</td>
                                         </tr>
                                     ))}
