@@ -24,7 +24,7 @@ slack.sendSlackMessage = async (channel, text) => sent.push([channel, text]);
 const token = jwt.sign({ userId: 'hong@example.com' }, process.env.JWT_SECRET_KEY);
 let account;
 User.findStatusById = async () => account;
-const base = { user_status: 'approved', user_role: 'member', cp_id: 1, homepage_access: 0, work_doc_access: 0, expense_approver: 0 };
+const base = { user_status: 'approved', user_role: 'member', cp_id: 1, homepage_access: 0, work_doc_access: 0, expense_approver: 0, client_secret_access: 0 };
 
 const mw = () => new Promise(resolve => {
     const req = { path: '/work/expenses', headers: { cookie: `x_auth=${token}` } };
@@ -54,10 +54,17 @@ const call = async (fn, req) => {
     account = { ...base, user_role: 'admin' };
     req = await mw();
     assert.deepStrictEqual([req.workDoc, req.expenseApprover], [true, true]);
+    assert.strictEqual(req.clientSecret, true); // 관리자
+    account = { ...base, client_secret_access: 1 };
+    req = await mw();
+    assert.deepStrictEqual([req.clientSecret, req.workDoc], [true, false]); // 업무 문서 권한과 별개
+    account = { ...base, work_doc_access: 1, expense_approver: 1 };
+    req = await mw();
+    assert.strictEqual(req.clientSecret, false);
 
     // ── findStatusById SQL ──
     await realFind('x');
-    assert.ok(/work_doc_access/.test(lastSql) && /expense_approver/.test(lastSql));
+    assert.ok(/work_doc_access/.test(lastSql) && /expense_approver/.test(lastSql) && /client_secret_access/.test(lastSql));
 
     // 모델 안전장치: 허용 목록 밖 칸은 throw (SQL 안 나감)
     lastSql = '';
@@ -78,6 +85,8 @@ const call = async (fn, req) => {
         [{ name: 'expense_approver', on: false }, 0, '경비 승인 권한자에서 해제'],
         [{ name: 'work_doc_access', on: true }, 1, '업무 문서 권한자로 지정'],
         [{ name: 'work_doc_access', on: false }, 0, '업무 문서 권한자에서 해제'],
+        [{ name: 'client_secret_access', on: true }, 1, '거래처 접속정보 권한자로 지정'],
+        [{ name: 'client_secret_access', on: false }, 0, '거래처 접속정보 권한자에서 해제'],
         [{ name: 'homepage_access', on: true }, 1, '홈페이지 관리자로 지정'],
         [{ name: 'homepage_access', on: false }, 0, '홈페이지 관리자에서 해제'],
     ];

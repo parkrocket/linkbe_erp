@@ -61,6 +61,7 @@ function requireAuth(req, res, next) {
         const isAdmin = account.user_role === 'admin';
         req.workDoc = isAdmin || Number(account.work_doc_access) === 1;
         req.expenseApprover = isAdmin || Number(account.expense_approver) === 1;
+        req.clientSecret = isAdmin || Number(account.client_secret_access) === 1; // 거래처 접속정보 권한 (requireClientSecret)
         next();
     });
 }

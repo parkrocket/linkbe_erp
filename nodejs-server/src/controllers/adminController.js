@@ -27,7 +27,7 @@ const STATUS_ACTION = { approved: '승인', rejected: '거절', inactive: '비�
 const ROLE_ACTION = { admin: '관리자로 지정', member: '관리자 해제' };
 
 // 직원별로 켜고 끌 수 있는 권한 칸 → Slack 기록용 이름
-const PERMISSIONS = { homepage_access: '홈페이지 관리자', work_doc_access: '업무 문서 권한자', expense_approver: '경비 승인 권한자' };
+const PERMISSIONS = { homepage_access: '홈페이지 관리자', work_doc_access: '업무 문서 권한자', expense_approver: '경비 승인 권한자', client_secret_access: '거래처 접속정보 권한자' };
 
 const fail = (res, code, error) => res.status(code).json({ error });
 
