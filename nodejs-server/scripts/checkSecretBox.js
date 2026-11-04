@@ -29,6 +29,23 @@ raw[raw.length - 1] ^= 1;
 assert.throws(() => decrypt('v1:' + raw.toString('base64')));
 assert.throws(() => decrypt('v2:abc'));
 assert.throws(() => decrypt('v1:'));
+// 태그 바이트 변조, 27바이트(iv 12 + 태그 16보다 짧음) 값
+const tagged = Buffer.from(good.slice(3), 'base64');
+tagged[12] ^= 1;
+assert.throws(() => decrypt('v1:' + tagged.toString('base64')));
+assert.throws(() => decrypt('v1:' + Buffer.alloc(27).toString('base64')), /Invalid secret format/);
+
+// 키 문자열: 앞뒤 공백은 trim, base64 표준 형식(43자 + '=')이 아니면 키 없음과 같음
+process.env.CLIENT_SECRET_KEY = `  ${keyA}
+`;
+assert.strictEqual(isKeyReady(), true);
+assert.strictEqual(decrypt(good), '비밀번호');
+const urlSafe = crypto.randomBytes(32).toString('base64url') + '=';
+for (const bad of [urlSafe.replace(/^./, '-'), keyA.slice(0, 43), keyA.replace(/=$/, 'A='), `${keyA.slice(0, 20)} ${keyA.slice(21)}`]) {
+    process.env.CLIENT_SECRET_KEY = bad;
+    assert.strictEqual(isKeyReady(), false, '형식 틀린 키가 통과');
+}
+process.env.CLIENT_SECRET_KEY = keyA;
 
 // 다른 키로 만든 값, 키 없을 때 복호
 process.env.CLIENT_SECRET_KEY = keyB;
