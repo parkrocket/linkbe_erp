@@ -4,7 +4,8 @@ const ctrl = require('../controllers/adminHomepageController');
 const router = express.Router();
 
 // /api/admin/homepage/* — index.js에서 requireAuth + requireHomepage 뒤에 연결
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024, files: 1 } });
+// defParamCharset: 한글 파일 이름을 UTF-8로 읽음(기본 latin1이면 깨짐)
+const upload = multer({ storage: multer.memoryStorage(), defParamCharset: 'utf8', limits: { fileSize: 5 * 1024 * 1024, files: 1 } });
 const image = (req, res, next) => upload.single('file')(req, res, error => (error ? res.status(400).json({ error: 'Invalid file' }) : next()));
 
 router.get('/posts/:board', ctrl.listPosts);
