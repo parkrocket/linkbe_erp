@@ -2,13 +2,12 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { useApiData } from '@/components/dashboard/useApiData';
+import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { apiFetch } from '@/lib/api';
+import { ApiError, apiFetch } from '@/lib/api';
 import { clientErrorText, CLIENT_KIND_LABEL, logText, REVEAL_MS, type ClientDetailData, type Credential } from '@/lib/clients';
 import { ClientFiles } from './ClientFiles';
 import { ClientFormDialog } from './ClientList';
@@ -20,24 +19,47 @@ export function ClientDetail({ id }: { id: string }) {
     const router = useRouter();
     const valid = /^[1-9]\d{0,14}$/.test(id);
     const clientId = Number(id);
-    // 잘못된 주소는 0번으로 요청(404)하고 화면은 아래에서 안내
-    const detail = useApiData<ClientDetailData>(`/api/work/clients/${valid ? clientId : 0}`, undefined, 'GET');
+    // 잘못된 주소는 요청하지 않음. 404는 '찾을 수 없음' 화면(useApiData는 404를 일반 오류로 뭉뚱그려 직접 조회)
+    const [state, setState] = useState<{ status: 'loading' } | { status: 'error' } | { status: 'missing' } | { status: 'ok'; data: ClientDetailData }>({ status: 'loading' });
+    const load = useCallback(async (): Promise<typeof state | null> => {
+        try {
+            return { status: 'ok', data: await apiFetch<ClientDetailData>(`/api/work/clients/${clientId}`) };
+        } catch (e) {
+            if (e instanceof ApiError && e.status === 401) {
+                router.replace('/login?redirect=/work/clients');
+                return null;
+            }
+            return { status: e instanceof ApiError && e.status === 404 ? 'missing' : 'error' };
+        }
+    }, [clientId, router]);
+    useEffect(() => {
+        if (!valid) return;
+        let active = true; // 화면을 떠난 뒤 도착한 응답은 무시
+        load().then(next => active && next && setState(next));
+        return () => {
+            active = false;
+        };
+    }, [valid, load]);
+    const refresh = () => void load().then(next => next && setState(next));
+    const reload = () => {
+        setState({ status: 'loading' });
+        refresh();
+    };
     const [dialog, setDialog] = useState<'new' | Credential | 'client' | null>(null);
     const [message, setMessage] = useState('');
     const [legacy, setLegacy] = useState<string | null>(null); // 예전 메모 평문 — state에만, 접기·화면 이동 시 사라짐
     const [legacyBusy, setLegacyBusy] = useState(false);
 
-    if (!valid) return <Missing />;
-    if (detail.state.status === 'loading') return <Skeleton className="mx-auto mt-10 h-96 w-full max-w-5xl" />;
-    if (detail.state.status === 'error')
+    if (!valid || state.status === 'missing') return <Missing />;
+    if (state.status === 'loading') return <Skeleton className="mx-auto mt-10 h-96 w-full max-w-5xl" />;
+    if (state.status === 'error')
         return (
             <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
-                <ErrorState onRetry={detail.reload} />
+                <ErrorState onRetry={reload} />
             </main>
         );
 
-    const { client, credentials, files, logs } = detail.state.data;
-    const refresh = detail.refresh;
+    const { client, credentials, files, logs } = state.data;
 
     const showLegacy = async () => {
         setLegacyBusy(true);
@@ -170,7 +192,7 @@ export function ClientDetail({ id }: { id: string }) {
 function Missing() {
     return (
         <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
-            <EmptyState message="찾을 수 없는 업체예요." />
+            <EmptyState message="업체를 찾을 수 없어요." />
             <Link href="/work/clients" className="block text-center text-sm text-primary hover:underline">
                 업체 목록으로
             </Link>

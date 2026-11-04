@@ -17,6 +17,8 @@ import {
     type CredentialKind,
 } from '@/lib/clients';
 
+// 비밀번호 칸은 type=password 대신 글자만 가림 — 브라우저가 다른 회사 비밀번호를 저장하자고 제안하지 않게 (미지원 브라우저는 그대로 보임)
+const MASK_STYLE = { WebkitTextSecurity: 'disc' } as React.CSSProperties;
 const FIELD_CLASS = 'w-full rounded-lg border border-line bg-white px-3 py-2.5 text-sm text-ink focus-visible:outline-2 focus-visible:outline-primary-soft';
 
 // 접속정보 항목 추가·고치기 — 고칠 때 비밀번호·메모는 현재 값을 불러오지 않음(비워 두면 그대로)
@@ -76,13 +78,17 @@ export function CredentialDialog({ clientId, credential, onClose, onChanged }: {
                 </label>
                 <TextField label="이름" name="credLabel" maxLength={100} value={form.label} error={errors.label} onChange={e => set('label', e.target.value)} />
                 <TextField label="주소" name="credUrl" maxLength={500} placeholder="https://" value={form.url} error={errors.url} onChange={e => set('url', e.target.value)} />
-                <TextField label="아이디" name="credLogin" maxLength={200} autoComplete="off" value={form.loginId} error={errors.loginId} onChange={e => set('loginId', e.target.value)} />
+                <TextField label="아이디" name="credLogin" maxLength={200} autoComplete="off" data-1p-ignore data-lpignore="true" value={form.loginId} error={errors.loginId} onChange={e => set('loginId', e.target.value)} />
                 <div className="flex flex-col gap-1.5">
                     <TextField
                         label="비밀번호"
                         name="credSecret"
-                        type="password"
-                        autoComplete="new-password"
+                        type="text"
+                        autoComplete="off"
+                        spellCheck={false}
+                        data-1p-ignore
+                        data-lpignore="true"
+                        style={MASK_STYLE}
                         maxLength={500}
                         disabled={form.clearSecret}
                         value={form.secret}
