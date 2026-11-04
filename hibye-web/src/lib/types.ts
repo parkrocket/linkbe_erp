@@ -12,6 +12,7 @@ export type User = {
     homepage_access?: number; // 1이면 홈페이지 관리 권한
     work_doc_access?: number; // 1이면 업무 문서 권한
     expense_approver?: number; // 1이면 경비 승인 권한
+    client_secret_access?: number; // 1이면 거래처 접속정보 권한
     [key: string]: unknown;
 };
 

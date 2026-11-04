@@ -219,8 +219,9 @@ function ProfileFields({
                 </dd>
             </dl>
             <PermissionToggle user={user} name="homepage_access" label="홈페이지 관리 권한" hint="linkbe.kr 공지·포트폴리오·문의를 관리할 수 있어요 (바로 적용)" />
-            <PermissionToggle user={user} name="work_doc_access" label="업무 문서 권한" hint="견적·계약서·매출/매입·거래처 작업정보를 보고 쓸 수 있어요 (바로 적용)" />
+            <PermissionToggle user={user} name="work_doc_access" label="업무 문서 권한" hint="견적·계약서·매출/매입을 보고 쓸 수 있어요 (바로 적용)" />
             <PermissionToggle user={user} name="expense_approver" label="경비 승인 권한" hint="모든 직원의 경비를 보고 승인·입금완료 처리하며 기안 알림을 받아요 (바로 적용)" />
+            <PermissionToggle user={user} name="client_secret_access" label="거래처 접속정보 권한" hint="업체별 FTP·관리자 계정 등 접속정보를 보고 고칠 수 있어요 (바로 적용)" />
 
             <div className="grid gap-4 sm:grid-cols-2">
                 <TextField
@@ -407,7 +408,7 @@ function SelectField({
 }
 
 // 직원별 권한 — 체크하면 바로 저장 (관리자는 권한 없이도 항상 가능)
-type PermissionName = 'homepage_access' | 'work_doc_access' | 'expense_approver';
+type PermissionName = 'homepage_access' | 'work_doc_access' | 'expense_approver' | 'client_secret_access';
 
 function PermissionToggle({ user, name, label, hint }: { user: MemberDetail; name: PermissionName; label: string; hint: string }) {
     const [on, setOn] = useState(Number(user[name]) === 1);

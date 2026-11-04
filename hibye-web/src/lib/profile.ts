@@ -27,6 +27,7 @@ export type MemberDetail = {
     homepage_access?: number; // 1이면 홈페이지 관리 권한
     work_doc_access?: number;
     expense_approver?: number;
+    client_secret_access?: number;
 };
 
 // 폼 값은 모두 문자열, 빈 문자열 = 선택 안 함

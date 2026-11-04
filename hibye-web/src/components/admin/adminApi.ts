@@ -36,7 +36,7 @@ export const changeStatus = (mbNo: number, status: AdminUser['user_status']) =>
     apiFetch(`/api/admin/users/${mbNo}/status`, { method: 'POST', body: { status } });
 
 // 직원별 권한 부여·해제 (hibye 관리자만)
-export const changePermission = (mbNo: number, name: 'homepage_access' | 'work_doc_access' | 'expense_approver', on: boolean) =>
+export const changePermission = (mbNo: number, name: 'homepage_access' | 'work_doc_access' | 'expense_approver' | 'client_secret_access', on: boolean) =>
     apiFetch(`/api/admin/users/${mbNo}/permission`, { method: 'POST', body: { name, on } });
 
 export const changeRole = (mbNo: number, role: AdminUser['user_role']) =>
