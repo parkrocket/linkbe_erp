@@ -48,6 +48,8 @@ const body = { companyName: '테스트업체', categoryId: 2, total: 1000, items
     assert.deepStrictEqual(calls.list[1], { categoryId: 2, status: 'paid', from: '2026-01-01', to: '2026-12-31', q: '테스트', page: 1, size: 100 });
     res = await call(ctrl.list, { query: { size: 'abc', page: 'x' } });
     assert.deepStrictEqual([res.body.page, res.body.size], [1, 20]);
+    res = await call(ctrl.list, { query: { page: '', size: '' } });
+    assert.deepStrictEqual([res.body.page, res.body.size], [1, 20]);
     for (const query of [{ status: 'x' }, { categoryId: 'a' }, { from: '2026-02-30' }, { to: 'zz' }]) assert.strictEqual((await call(ctrl.list, { query })).code, 400);
     assert.strictEqual((await call(ctrl.list, { query: { status: 'x' } })).body.error, 'Invalid status');
 

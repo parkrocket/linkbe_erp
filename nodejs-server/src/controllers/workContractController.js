@@ -82,6 +82,7 @@ const toDetail = (r, categoryName) => ({
 
 // 범위 안의 정수 쿼리 값 (잘못되면 기본값에서 가까운 쪽으로)
 const clampInt = (v, def, min, max) => {
+    if (v === undefined || v === '') return def; // Number('')은 0이라 따로 처리
     const n = Number(v);
     return Number.isInteger(n) ? Math.min(max, Math.max(min, n)) : def;
 };

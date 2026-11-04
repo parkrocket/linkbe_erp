@@ -4,9 +4,9 @@ const { sanitizeDocTemplate: html, sanitizeDocCss: css } = require('../src/utils
 const DocSetting = require('../src/models/docSettingModel');
 
 // ── HTML 정제 ──
-for (const bad of ['<script>x</script>', '<img src=x onerror=alert(1)>', '<a href="javascript:1">a</a>', '<iframe src="https://a.b"></iframe>', '<p onclick="1">a</p>', '<img src="javascript:1">', '<img src="data:image/svg+xml;base64,AAAA">', '<img src="http://a.b/x.png">']) {
+for (const bad of ['<script>x</script>', '<img src=x onerror=alert(1)>', '<a href="javascript:1">a</a>', '<iframe src="https://a.b"></iframe>', '<p onclick="1">a</p>', '<img src="javascript:1">', '<img src="data:image/svg+xml;base64,AAAA">', '<img src="http://a.b/x.png">', '<img src="data:text/html;base64,PHNjcmlwdD4=">', '<p style="background-image:IMAGE-set(\'https://e.x/a.png\' 1x)">a</p>', '<p style="cursor:-webkit-Image-Set(\'https://e.x/a.png\' 1x)">a</p>']) {
     const out = html(bad);
-    assert.ok(!/script|onerror|onclick|javascript|iframe|svg|http:/i.test(out), `제거 안 됨: ${bad} -> ${out}`);
+    assert.ok(!/script|onerror|onclick|javascript|iframe|svg|http:|text\/html|image-set|e\.x/i.test(out), `제거 안 됨: ${bad} -> ${out}`);
 }
 const keep = '<div class="a"><table class="item_table"><colgroup><col width="10" /></colgroup><tr><td colspan="2" rowspan="1" align="center" style="text-align:center;border-bottom:1px solid #000">{업체명} {품목표}</td></tr></table><img src="https://a.b/x.png" /><img src="data:image/png;base64,AAAA" /><h1>t</h1><sup>1</sup></div>';
 assert.strictEqual(html(keep).replace(/&quot;/g, '"'), keep);
@@ -15,9 +15,9 @@ assert.ok(/color:red/.test(html('<p style="background:url(javascript:1);color:re
 assert.ok(!/foo|behavior/.test(html('<p style="behavior:x;foo:bar">a</p>')));
 
 // ── CSS 정제 ──
-for (const bad of ['@import url(x);', 'a{background:url(javascript:1)}', 'a{width:expression(alert(1))}', 'a{behavior:url(x.htc)}', 'a{-moz-binding:url(x)}', 'a{}</style><script>1</script>', 'a{background:ur/**/l(x)}', 'a{background:u\\72l(x)}']) {
+for (const bad of ['@import url(x);', 'a{background:url(javascript:1)}', 'a{width:expression(alert(1))}', 'a{behavior:url(x.htc)}', 'a{-moz-binding:url(x)}', 'a{}</style><script>1</script>', 'a{background:ur/**/l(x)}', 'a{background:u\\72l(x)}', 'a{background-image:image-set("https://e.x/a.png" 1x)}', 'a{cursor:-WebKit-Image-Set("https://e.x/a.png" 1x)}', 'a{background:src("x")}']) {
     const out = css(bad);
-    assert.ok(!/url\s*\(|expression|behavior|-moz-binding|<\/style|@import/i.test(out), `CSS 제거 안 됨: ${bad} -> ${out}`);
+    assert.ok(!/url\s*\(|expression|behavior|-moz-binding|<\/style|@import|image-set|src\s*\(/i.test(out), `CSS 제거 안 됨: ${bad} -> ${out}`);
 }
 assert.strictEqual(css('.b_line{border-bottom:1px solid #000}'), '.b_line{border-bottom:1px solid #000}');
 assert.strictEqual(css('.a > .b{color:red}'), '.a > .b{color:red}');

@@ -12,7 +12,7 @@ const STYLE_PROPS = [
     'page-break-after', 'page-break-inside',
 ];
 // 값에 외부 자원(url)·스크립트성 구문이 있으면 그 스타일은 버림
-const SAFE_VALUE = /^(?!.*(url\s*\(|expression|javascript|behavior|@import|\\)).*$/i;
+const SAFE_VALUE = /^(?!.*(url\s*\(|image-set|src\s*\(|expression|javascript|behavior|@import|\\)).*$/i;
 const allowedStyles = { '*': Object.fromEntries(STYLE_PROPS.map(p => [p, [SAFE_VALUE]])) };
 
 const OPTIONS = {
@@ -44,6 +44,8 @@ exports.sanitizeDocCss = css => {
             .replace(/@import[^;{]*;?/gi, '')
             .replace(/url\s*\([^)]*\)?/gi, '')
             .replace(/url\s*\(/gi, '')
+            .replace(/(?:-webkit-)?image-set\s*\([^)]*\)?/gi, '') // 외부 이미지 로딩(url 없이도 가능)
+            .replace(/src\s*\(/gi, '')
             .replace(/expression\s*\(/gi, '')
             .replace(/-moz-binding\s*:[^;}]*;?/gi, '')
             .replace(/behavior\s*:[^;}]*;?/gi, '')
