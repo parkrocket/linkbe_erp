@@ -74,6 +74,7 @@ Ledger.findById = async (cpId, id) => {
     return rows[0];
 };
 
+// ponytail: 계정 검사와 저장 사이 동시 계정 변경은 막지 않음, 필요하면 FOR UPDATE 또는 회사별 잠금
 // 장부에 연결 가능한 계정인지: 같은 회사·같은 구분의 항목(다른 계정 코드의 앞부분이 아님)
 const accountOk = async (conn, cpId, accountId, side) => {
     const [rows] = await conn.query(
@@ -159,14 +160,17 @@ const codeTaken = async (conn, cpId, side, code, id) => {
     return rows.length > 0;
 };
 
-// 묶음 무결성: 장부가 붙은 계정은 항상 항목이어야 함. 이 코드가 (장부 붙은 다른 계정의 앞부분이거나, 그 계정 코드를 앞부분으로 갖거나),
-// 이 계정에 장부가 있는데 다른 계정 코드가 이 코드로 시작하면 true(= 막아야 함). 코드는 영문·숫자만이라 LIKE 와일드카드 걱정 없음
+// 묶음 무결성: 장부가 붙은 계정은 항상 항목(다른 계정 코드의 앞부분이 아님)이어야 함. 막을 것은 두 가지뿐 —
+// (가) 장부 붙은 다른 계정의 코드가 새 코드의 앞부분(그 계정이 새 계정의 묶음이 되어 버림)
+// (나) 이 계정에 장부가 있는데 다른 계정 코드가 새 코드로 시작(이 계정이 묶음이 됨)
+// 새 코드가 장부 붙은 계정 코드의 앞부분이면 새 코드가 묶음이 될 뿐이라 허용. 코드는 영문·숫자만이라 LIKE 와일드카드 걱정 없음
+// ponytail: 검사와 저장 사이 동시 장부·계정 변경은 막지 않음(내부 도구라 드묾), 필요하면 FOR UPDATE 또는 회사별 잠금
 const breaksGroup = async (conn, cpId, side, id, code, selfHasLedger) => {
     const [rows] = await conn.query(
         `SELECT a.id FROM wk_account a WHERE a.cp_id = ? AND a.side = ? AND a.id <> ?
-         AND ((EXISTS (SELECT 1 FROM wk_ledger l WHERE l.cp_id = a.cp_id AND l.account_id = a.id) AND (a.code LIKE ? OR ? LIKE CONCAT(a.code, '%')))
+         AND ((EXISTS (SELECT 1 FROM wk_ledger l WHERE l.cp_id = a.cp_id AND l.account_id = a.id) AND ? LIKE CONCAT(a.code, '%'))
               OR (? = 1 AND a.code LIKE ?)) LIMIT 1`,
-        [cpId, side, id, `${code}%`, code, selfHasLedger ? 1 : 0, `${code}%`],
+        [cpId, side, id, code, selfHasLedger ? 1 : 0, `${code}%`],
     );
     return rows.length > 0;
 };

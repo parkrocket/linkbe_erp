@@ -11,7 +11,7 @@ const answer = (sql, params, tx) => {
     calls.push({ sql, params, tx });
     if (failOn && failOn.re.test(sql)) throw Object.assign(new Error('fake failure'), failOn.code ? { code: failOn.code } : {});
     const h = handlers.find(([re]) => re.test(sql));
-    if (h) return h[1];
+    if (h) return typeof h[1] === 'function' ? h[1](params) : h[1];
     return sql.includes('COUNT(*) AS n FROM wk_ledger') ? [[{ n: 0 }]] : [[]];
 };
 pool.query = async (sql, params) => answer(sql, params, false);
@@ -152,11 +152,23 @@ const lv = (patch = {}) => ({ side: 'purchase', entryDate: '2026-12-31', account
     failOn = { re: /^INSERT INTO wk_account/, code: 'ER_DUP_ENTRY' };
     assert.strictEqual(await Account.create(1, av()), 'duplicate', '동시 등록 충돌도 duplicate');
     assert.deepStrictEqual(events, ['begin', 'rollback', 'release']);
-    // 새 코드가 장부 붙은 계정의 앞부분 / 장부 붙은 계정 코드가 새 코드의 앞부분 → invalid
-    reset([[/l\.cp_id = a\.cp_id/, [[{ id: 2 }]]]]);
-    assert.strictEqual(await Account.create(1, av({ code: 'p10' })), 'invalid');
+    // 묶음 판정(가짜 DB가 SQL 의미를 흉내: 파라미터 [cp, side, id, code, selfHasLedger, like]) — 장부 붙은 p101이 있을 때
+    const accts = [{ id: 1, code: 'p1' }, { id: 2, code: 'p101', ledger: true }, { id: 3, code: 'p102' }];
+    const guardSim = [/l.cp_id = a.cp_id/, params => [accts.filter(a => a.id !== params[2] && ((a.ledger && params[3].startsWith(a.code)) || (params[4] === 1 && a.code.startsWith(params[3]))))]];
+    reset([guardSim, [/AS next/, [[{ next: 1 }]]], [/^INSERT INTO wk_account/, [{ insertId: 9 }]]]);
+    assert.strictEqual(await Account.create(1, av({ code: 'p10' })), 9, '새 코드가 장부 계정의 앞부분 → 묶음이 될 뿐이라 허용');
+    reset([guardSim]);
+    assert.strictEqual(await Account.create(1, av({ code: 'p1010' })), 'invalid', '장부 붙은 p101이 새 코드의 앞부분 → 막음');
     assert.ok(!calls.some(c => c.sql.startsWith('INSERT')));
     assert.deepStrictEqual(events, ['begin', 'rollback', 'release']);
+    // SQL 조각: (가) 방향은 '? LIKE CONCAT(a.code', 새 코드가 앞부분인 쪽('a.code LIKE ? OR')은 없어야 함
+    const gsql = calls.find(c => c.sql.includes('l.cp_id = a.cp_id')).sql;
+    assert.ok(gsql.includes("? LIKE CONCAT(a.code, '%')") && !gsql.includes('a.code LIKE ? OR') && gsql.includes('a.id <> ?') && gsql.includes('a.cp_id = ?') && gsql.includes('a.side = ?'));
+    // 장부 붙은 계정 항목 판정(accountOk) SQL 조각
+    reset([[/FROM wk_account a/, [[{ id: 3 }]]], [/^INSERT INTO wk_ledger/, [{ insertId: 1 }]]]);
+    await Ledger.create(1, lv(), 7);
+    const okSql = calls[0].sql;
+    assert.ok(okSql.includes('c.id <> a.id') && okSql.includes('c.side = a.side') && okSql.includes('c.cp_id = a.cp_id') && okSql.includes("c.code LIKE CONCAT(a.code, '%')"));
 
     // ---- Account.update ----
     const cur = [/SELECT side, code FROM wk_account/, [[{ side: 'purchase', code: 'p101' }]]];
@@ -175,10 +187,18 @@ const lv = (patch = {}) => ({ side: 'purchase', entryDate: '2026-12-31', account
     reset([cur, [/COUNT\(\*\) AS n FROM wk_ledger/, [[{ n: '2' }]]]]);
     assert.strictEqual(await Account.update(1, 2, av({ side: 'sales' })), 'invalid');
     assert.ok(!calls.some(c => c.sql.startsWith('UPDATE')));
-    // 장부 있는 계정이 코드가 바뀌어 묶음이 됨(또는 다른 장부 계정과 접두 관계) → invalid
-    reset([cur, [/COUNT\(\*\) AS n FROM wk_ledger/, [[{ n: '2' }]], ], [/EXISTS/, [[{ id: 3 }]]]]);
-    assert.strictEqual(await Account.update(1, 2, av({ code: 'p1' })), 'invalid');
+    // 묶음 p1(하위 p101에 장부)을 p10으로 → 통과 (p1 자신은 장부 없음)
+    const curP1 = [/SELECT side, code FROM wk_account/, [[{ side: 'purchase', code: 'p1' }]]];
+    reset([curP1, guardSim, [/^UPDATE wk_account/, [{ affectedRows: 1 }]]]);
+    assert.strictEqual(await Account.update(1, 1, av({ code: 'p10' })), 'ok');
+    // 장부 있는 p101을 p10으로 → 다른 계정 p102가 p10으로 시작해 묶음이 되어 버림 → invalid
+    reset([cur, [/COUNT\(\*\) AS n FROM wk_ledger/, [[{ n: '2' }]]], guardSim]);
+    assert.strictEqual(await Account.update(1, 2, av({ code: 'p10' })), 'invalid');
+    assert.ok(!calls.some(c => c.sql.startsWith('UPDATE')));
     assert.deepStrictEqual(events, ['begin', 'rollback', 'release']);
+    // 장부 있는 p101을 p103으로 → 통과
+    reset([cur, [/COUNT\(\*\) AS n FROM wk_ledger/, [[{ n: '2' }]]], guardSim, [/^UPDATE wk_account/, [{ affectedRows: 1 }]]]);
+    assert.strictEqual(await Account.update(1, 2, av({ code: 'p103' })), 'ok');
     // 코드·구분이 그대로면 묶음 검사 생략(이름만 수정)
     reset([cur, [/^UPDATE wk_account/, [{ affectedRows: 1 }]]]);
     await Account.update(1, 2, av());
