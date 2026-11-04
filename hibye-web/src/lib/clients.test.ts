@@ -8,6 +8,9 @@ describe('clients', () => {
         expect(validateCredentialForm(f)).toEqual({});
         expect(validateCredentialForm({ ...f, url: 'javascript:alert(1)' }).url).toBeTruthy();
         expect(validateCredentialForm({ ...f, url: 'sftp://a.example' }).url).toBeUndefined();
+        expect(validateCredentialForm({ ...f, url: 'ftp://user:pw@a.example' }).url).toBe('주소에 아이디·비밀번호를 넣지 말고 아이디·비밀번호 칸에 넣어 주세요');
+        expect(validateCredentialForm({ ...f, url: 'https://user@a.example/x' }).url).toBeTruthy();
+        expect(validateCredentialForm({ ...f, url: 'https://a.example/x?mail=a@b.kr' }).url).toBeUndefined();
         expect(validateCredentialForm({ ...f, secret: 'x'.repeat(501) }).secret).toBeTruthy();
         expect(validateCredentialForm({ ...f, memo: 'x'.repeat(5001) }).memo).toBeTruthy();
         expect(validateClientName('  ')).toBeTruthy();

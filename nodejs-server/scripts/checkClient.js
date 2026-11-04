@@ -147,6 +147,11 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
     await call(ctrl.createCredential, { params: { id: '5' }, body: { kind: 'etc' } });
     assert.deepStrictEqual([calls.credCreate[2].secretEnc, calls.credCreate[2].memoEnc], [null, null]);
     expect(await call(ctrl.createCredential, { params: { id: '5' }, body: { kind: 'admin', url: 'javascript:alert(1)' } }), 400, 'Invalid url');
+    // 주소 안에 아이디·비밀번호(user:pass@) — 평문으로 남으므로 거절, 경로·쿼리의 @는 허용
+    expect(await call(ctrl.createCredential, { params: { id: '5' }, body: { kind: 'ftp', url: 'ftp://user:pw@example.com' } }), 400, 'Invalid url');
+    expect(await call(ctrl.createCredential, { params: { id: '5' }, body: { kind: 'admin', url: 'https://user@example.com/admin' } }), 400, 'Invalid url');
+    res = await call(ctrl.createCredential, { params: { id: '5' }, body: { kind: 'admin', url: 'https://example.com/a?mail=a@b.kr' } });
+    assert.deepStrictEqual(res.body, { id: 21 });
     credCreate = null;
     expect(await call(ctrl.createCredential, { params: { id: '5' }, body: { kind: 'etc' } }), 404, 'Not found');
     keyReady = false;
@@ -218,7 +223,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
     const app = express();
     app.use(express.json());
     app.use((r, _res, next) => Object.assign(r, { userId: 'a@x.kr', userCpId: 1, clientSecret: true, workDoc: false }) && next());
-    app.use('/api/work', require('../src/routes/work'));
+    const workRoutes = require('../src/routes/work');
+    app.use('/api/work', workRoutes, workRoutes.jsonError); // index.js와 같은 연결
     const server = app.listen(0);
     const base = `http://127.0.0.1:${server.address().port}/api/work/clients`;
     const upload = async (name, buf, p = '/5/files') => {
@@ -239,6 +245,15 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
     assert.deepStrictEqual(calls.fileCreate.slice(0, 2), [1, 5]);
     assert.deepStrictEqual(disk(), [stored.storedName]);
     assert.ok(fs.readFileSync(path.join(ROOT, stored.storedName)).equals(PDF));
+    // 첨부 권한: 폴더 700, 파일 600 (Windows는 권한 개념이 달라 건너뜀)
+    if (process.platform !== 'win32') {
+        assert.strictEqual(fs.statSync(path.join(ROOT, stored.storedName)).mode & 0o777, 0o600, '첨부 파일 권한');
+    }
+
+    // 깨진 JSON → 400 Invalid JSON, 본문·오류 내용을 응답하지 않음
+    const badJson = await fetch(base + '/5/credentials', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{"secret":"PLAIN_IN_BODY' });
+    assert.strictEqual(badJson.status, 400);
+    assert.deepStrictEqual(await badJson.json(), { error: 'Invalid JSON' });
 
     // 확장자·내용 불일치, 허용 밖 확장자, 파일 없음 → 400, 디스크에 안 남김
     for (const [name, buf] of [['a.pdf', Buffer.from('89504e470d0a1a0a', 'hex')], ['a.exe', Buffer.from('MZ\x90\x00')], ['a.png', PDF], ['noext', PDF]]) {

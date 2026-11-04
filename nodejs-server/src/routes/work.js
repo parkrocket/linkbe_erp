@@ -89,4 +89,9 @@ router.post('/clients/:id/files', oneFile, client.uploadFile);
 router.get('/clients/:id/files/:fid', client.downloadFile);
 router.delete('/clients/:id/files/:fid', client.removeFile);
 
+// 깨진 JSON 본문(앞단 express.json 오류) → 400. 기본 처리기는 오류 내용(본문 일부)을 기록·응답하므로 /api/work에서는 아무것도 출력하지 않음
+// 앞단 오류는 라우터 안으로 들어오지 않아 index.js에서 app.use('/api/work', router, router.jsonError)로 붙임
+// eslint-disable-next-line no-unused-vars
+router.jsonError = (err, req, res, next) => (err && err.type === 'entity.parse.failed' ? res.status(400).json({ error: 'Invalid JSON' }) : next(err));
+
 module.exports = router;

@@ -17,6 +17,15 @@ function pick(e) {
     return { summary: e.summary, description: e.description, start: e.start, end: e.end, extendedProperties: { private: { hibyeLegacyId: legacyId } } };
 }
 
+// 실패 원인 — HTTP 상태 숫자 또는 짧은 오류 코드만 (메시지에는 일정 내용이 들어갈 수 있어 쓰지 않음)
+const failReason = e => {
+    const status = e?.response?.status ?? e?.status;
+    if (Number.isInteger(status)) return String(status);
+    const code = e?.code;
+    if (Number.isInteger(code) || (typeof code === 'string' && /^[A-Z0-9_]{1,40}$/i.test(code))) return String(code);
+    return 'UNKNOWN';
+};
+
 async function run({ calendar, calendarId, events, dryRun = false, log = console.log }) {
     if (!calendarId) throw fail('NO_CALENDAR', 'GOOGLE_CALENDAR_ID 없음');
     if (!Array.isArray(events)) throw fail('BAD_JSON', 'events 배열 없음');
@@ -29,6 +38,7 @@ async function run({ calendar, calendarId, events, dryRun = false, log = console
     });
 
     const counts = { added: 0, toAdd: 0, skipped: 0, failed: 0 };
+    const reasons = new Map(); // 실패 원인 코드 → 건수
     for (const resource of resources) {
         try {
             const { data } = await calendar.events.list({ calendarId, privateExtendedProperty: `hibyeLegacyId=${resource.extendedProperties.private.hibyeLegacyId}`, maxResults: 1 });
@@ -38,11 +48,14 @@ async function run({ calendar, calendarId, events, dryRun = false, log = console
                 await calendar.events.insert({ calendarId, resource });
                 counts.added++;
             }
-        } catch {
-            counts.failed++; // 오류 내용은 출력하지 않음 — 다시 실행하면 빠진 것만 추가
+        } catch (e) {
+            counts.failed++; // 오류 내용은 출력하지 않음(코드만 셈) — 다시 실행하면 빠진 것만 추가
+            const reason = failReason(e);
+            reasons.set(reason, (reasons.get(reason) || 0) + 1);
         }
     }
     log(dryRun ? `[dry-run] 추가 예정 ${counts.toAdd} · 이미 있음 ${counts.skipped} · 실패 ${counts.failed}` : `일정 추가 ${counts.added} · 이미 있음 ${counts.skipped} · 실패 ${counts.failed}`);
+    if (reasons.size) log(`실패 원인: ${[...reasons].map(([k, n]) => `${k}×${n}`).join(', ')}`);
     return counts;
 }
 

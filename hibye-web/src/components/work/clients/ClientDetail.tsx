@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ApiError, apiFetch } from '@/lib/api';
+import { useClearOnHide } from '@/lib/clearOnHide';
 import { clientErrorText, CLIENT_KIND_LABEL, logText, REVEAL_MS, type ClientDetailData, type Credential } from '@/lib/clients';
 import { ClientFiles } from './ClientFiles';
 import { ClientFormDialog } from './ClientList';
@@ -47,8 +48,13 @@ export function ClientDetail({ id }: { id: string }) {
     };
     const [dialog, setDialog] = useState<'new' | Credential | 'client' | null>(null);
     const [message, setMessage] = useState('');
-    const [legacy, setLegacy] = useState<string | null>(null); // 예전 메모 평문 — state에만, 접기·화면 이동 시 사라짐
+    const [legacy, setLegacy] = useState<string | null>(null); // 예전 메모 평문 — state에만, 접기·화면 이동·탭 숨김 시 지움
     const [legacyBusy, setLegacyBusy] = useState(false);
+    const clearLegacy = useCallback(() => setLegacy(null), []);
+    useClearOnHide(clearLegacy);
+    // 화면을 떠나면(숨긴 Activity로 보관돼도) 항목 추가·고치기 팝업을 닫아 입력 중인 비밀번호·메모를 버림
+    // 탭 숨김에는 닫지 않음 — 다른 창에서 비밀번호를 복사해 오는 중일 수 있음
+    useEffect(() => () => setDialog(null), []);
 
     if (!valid || state.status === 'missing') return <Missing />;
     if (state.status === 'loading') return <Skeleton className="mx-auto mt-10 h-96 w-full max-w-5xl" />;
@@ -67,7 +73,7 @@ export function ClientDetail({ id }: { id: string }) {
         try {
             const res = await apiFetch<{ value: string | null }>(`/api/work/clients/${clientId}/legacy-memo/reveal`, { method: 'POST', body: { action: 'view' } });
             if (res.value === null) setMessage('예전 메모를 읽을 수 없어요. 암호화 키를 확인해 주세요.');
-            else setLegacy(res.value);
+            else if (document.visibilityState !== 'hidden') setLegacy(res.value); // 응답 전에 탭이 숨겨졌으면 두지 않음
         } catch (e) {
             setMessage(clientErrorText(e));
         }

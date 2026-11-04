@@ -1,15 +1,16 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { apiFetch } from '@/lib/api';
+import { useClearOnHide } from '@/lib/clearOnHide';
 import { clientErrorText, CREDENTIAL_KIND_LABEL, isWebUrl, maskedLabel, REVEAL_MS, type Credential } from '@/lib/clients';
 
 type Field = 'secret' | 'memo';
 type Action = 'view' | 'copy';
 const UNREADABLE = '저장된 값을 읽을 수 없어요. 암호화 키를 확인해 주세요.';
 
-// 항목 한 줄 — 평문은 '보기' 응답만 React state에 두고 30초 뒤·화면을 떠나면 지움 (저장소·주소·콘솔에 남기지 않음)
+// 항목 한 줄 — 평문은 '보기' 응답만 React state에 두고 30초 뒤·화면을 떠나거나 탭이 숨겨지면 지움 (저장소·주소·콘솔에 남기지 않음)
 export function CredentialRow({ clientId, credential: c, onEdit, onDelete }: { clientId: number; credential: Credential; onEdit: () => void; onDelete: () => void }) {
     const [plain, setPlain] = useState<Partial<Record<Field, string>>>({});
     const [busy, setBusy] = useState(false);
@@ -17,13 +18,17 @@ export function CredentialRow({ clientId, credential: c, onEdit, onDelete }: { c
     const timers = useRef<Partial<Record<Field, number>>>({});
     const mounted = useRef(true);
 
-    // 화면을 떠나면 타이머 정리 (state는 컴포넌트와 함께 사라짐)
+    // 화면을 떠나거나(숨긴 Activity로 보관돼도 state는 남으므로) 탭이 숨겨지면 평문·타이머 모두 지움
+    const clearPlain = useCallback(() => {
+        Object.values(timers.current).forEach(id => window.clearTimeout(id));
+        timers.current = {};
+        setPlain({});
+    }, []);
+    useClearOnHide(clearPlain);
     useEffect(() => {
-        const t = timers.current;
         mounted.current = true;
         return () => {
             mounted.current = false;
-            Object.values(t).forEach(id => window.clearTimeout(id));
         };
     }, []);
 
@@ -49,8 +54,8 @@ export function CredentialRow({ clientId, credential: c, onEdit, onDelete }: { c
                 setNotice(UNREADABLE);
                 return;
             }
-            // 응답이 오기 전에 화면을 떠났으면 값도 타이머도 두지 않음
-            if (!mounted.current) return;
+            // 응답이 오기 전에 화면을 떠났거나 탭이 숨겨졌으면 값도 타이머도 두지 않음
+            if (!mounted.current || document.visibilityState === 'hidden') return;
             window.clearTimeout(timers.current[field]);
             setPlain(prev => ({ ...prev, [field]: res.value as string }));
             timers.current[field] = window.setTimeout(() => hide(field), REVEAL_MS);

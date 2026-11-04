@@ -14,8 +14,8 @@ const isAllowedFile = file => Boolean(file && file.buffer) && ATTACHMENT_EXTS.in
 // 검사 통과한 파일 저장 → { storedName, mime, size, originalName }
 const saveWorkFile = file => {
     const storedName = crypto.randomUUID();
-    fs.mkdirSync(WORK_UPLOAD_ROOT(), { recursive: true });
-    fs.writeFileSync(path.join(WORK_UPLOAD_ROOT(), storedName), file.buffer);
+    fs.mkdirSync(WORK_UPLOAD_ROOT(), { recursive: true, mode: 0o700 }); // 폴더·파일은 서버 계정만 읽기
+    fs.writeFileSync(path.join(WORK_UPLOAD_ROOT(), storedName), file.buffer, { mode: 0o600 });
     return { storedName, mime: SIGNATURES[extOf(file.originalname)].mime, size: file.buffer.length, originalName: String(file.originalname).slice(0, 255) };
 };
 

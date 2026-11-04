@@ -26,6 +26,8 @@ const secretField = (v, max) => {
 
 // url: 빈 값 또는 http(s)·ftp(s)·sftp만 — javascript: 등은 화면 링크로 쓰일 수 있어 거절
 const URL_RE = /^(https?|ftps?|sftp):\/\//i;
+// 주소 안의 아이디·비밀번호(user:pass@host)는 거절 — 평문이 암호화되지 않고 목록·기록에 그대로 남음 (화면 lib/clients.ts와 같은 규칙)
+const URL_USERINFO_RE = /^[a-z][a-z0-9+.-]*:\/\/[^/?#]*@/i;
 
 const validateCredential = input => {
     const b = input || {};
@@ -33,7 +35,7 @@ const validateCredential = input => {
     const label = str(b.label, 100);
     if (label === null) return fail('Invalid label');
     const url = str(b.url, 500);
-    if (url === null || (url !== '' && !URL_RE.test(url))) return fail('Invalid url');
+    if (url === null || (url !== '' && (!URL_RE.test(url) || URL_USERINFO_RE.test(url)))) return fail('Invalid url');
     const loginId = str(b.loginId, 200);
     if (loginId === null) return fail('Invalid loginId');
     const secret = secretField(b.secret, 500);

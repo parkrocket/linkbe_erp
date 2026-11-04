@@ -10,7 +10,9 @@ const filesDir = path.join(tmp, 'src');
 process.env.WORK_UPLOAD_ROOT = path.join(tmp, 'work');
 fs.mkdirSync(filesDir);
 fs.writeFileSync(path.join(filesDir, 'a_1.pdf'), Buffer.from('%PDF-1.4 테스트'));
-fs.writeFileSync(path.join(filesDir, 'b_2.jpg'), Buffer.from('MZ 실행 파일인 척')); // 내용이 jpg 아님 → 건너뜀
+const FAKE_JPG = Buffer.from('MZ 실행 파일인 척');
+fs.writeFileSync(path.join(filesDir, 'b_2.jpg'), FAKE_JPG); // 내용이 jpg 아님 → 건너뜀
+fs.writeFileSync(path.join(filesDir, 'c_3.pdf'), Buffer.from('%PDF-1.4 덜 복사됨')); // JSON size와 실제 크기가 다름 → 건너뜀
 const keyA = crypto.randomBytes(32).toString('base64');
 process.env.CLIENT_SECRET_KEY = keyA;
 
@@ -28,14 +30,15 @@ const data = {
             memo: MEMO,
             files: [
                 { legacyKey: 'g_info:1:0', originalName: '가짜자료.pdf', storedFile: 'a_1.pdf', size: 18 },
-                { legacyKey: 'g_info:1:1', originalName: '가짜사진.jpg', storedFile: 'b_2.jpg', size: 10 },
+                { legacyKey: 'g_info:1:1', originalName: '가짜사진.jpg', storedFile: 'b_2.jpg', size: FAKE_JPG.length },
                 { legacyKey: 'g_info:1:2', originalName: '없는파일.pdf', storedFile: 'none.pdf', size: 1 },
+                { legacyKey: 'g_info:1:3', originalName: '덜복사.pdf', storedFile: 'c_3.pdf', size: 999 },
             ],
         },
         { legacyWrId: 2, kind: 'own', name: '홍길동상사', createdAt: '2020-01-02 10:00:00', memo: '', files: [] },
     ],
 };
-const PLAIN = [MEMO, '테스트업체', '홍길동상사', '가짜자료', '가짜사진', 'a_1.pdf', 'b_2.jpg', 'none.pdf'];
+const PLAIN = [MEMO, '테스트업체', '홍길동상사', '가짜자료', '가짜사진', '덜복사', 'a_1.pdf', 'b_2.jpg', 'none.pdf', 'c_3.pdf'];
 
 // ---- 가짜 DB (wk_client·wk_file 메모리) ----
 let db;
@@ -86,9 +89,10 @@ const rejects = async (p, code) => {
 
 (async () => {
     reset();
-    // 1번째 실행: 업체 2, 첨부 1(검사 실패·없는 파일 2는 건너뜀)
+    // 1번째 실행: 업체 2, 첨부 1(검사 실패·없는 파일 2, 크기 불일치 1은 건너뜀)
     const first = await go();
-    assert.deepStrictEqual(first, { clients: 2, clientsSkipped: 0, files: 1, filesSkipped: 0, filesRejected: 2 });
+    assert.deepStrictEqual(first, { clients: 2, clientsSkipped: 0, files: 1, filesSkipped: 0, filesRejected: 2, filesSizeMismatch: 1 });
+    assert.ok(out.at(-1).includes('크기 불일치(건너뜀) 1'));
     assert.strictEqual(db.clients.length, 2);
     assert.strictEqual(db.files.length, 1);
     // 메모는 암호문으로만 — SQL 파라미터에 평문 메모 없음, 같은 키로 풀림. 빈 메모는 NULL
@@ -105,7 +109,7 @@ const rejects = async (p, code) => {
 
     // 2번째 실행: 중복 없음
     const second = await go();
-    assert.deepStrictEqual(second, { clients: 0, clientsSkipped: 2, files: 0, filesSkipped: 1, filesRejected: 2 });
+    assert.deepStrictEqual(second, { clients: 0, clientsSkipped: 2, files: 0, filesSkipped: 1, filesRejected: 2, filesSizeMismatch: 1 });
     assert.strictEqual(db.clients.length, 2);
     assert.strictEqual(db.files.length, 1);
     assert.strictEqual(stored().length, 1);
@@ -113,7 +117,8 @@ const rejects = async (p, code) => {
     // dry-run: 쓰기 없음
     calls = [];
     const dry = await go({ dryRun: true });
-    assert.deepStrictEqual(dry, { clients: 2, clientsSkipped: 0, files: 1, filesSkipped: 0, filesRejected: 2 });
+    assert.deepStrictEqual(dry, { clients: 2, clientsSkipped: 0, files: 1, filesSkipped: 0, filesRejected: 2, filesSizeMismatch: 1 });
+    assert.ok(out.at(-1).includes('크기 불일치 1'));
     assert.deepStrictEqual(writes(), []);
     assert.strictEqual(stored().length, 1);
 
@@ -140,6 +145,8 @@ const rejects = async (p, code) => {
     for (const bad of [{}, { clients: [{ ...data.clients[0], kind: 'x' }] }, { clients: [{ ...data.clients[0], name: '' }] },
         { clients: [{ ...data.clients[0], files: [{ ...data.clients[0].files[0], storedFile: '../a_1.pdf' }] }] },
         { clients: [{ ...data.clients[0], files: [{ ...data.clients[0].files[0], legacyKey: 'g_info:2:0' }] }] },
+        { clients: [{ ...data.clients[0], files: [{ ...data.clients[0].files[0], size: undefined }] }] },
+        { clients: [{ ...data.clients[0], files: [{ ...data.clients[0].files[0], size: '18' }] }] },
         { clients: [data.clients[0], data.clients[0]] }]) {
         calls = [];
         await rejects(go({ data: bad }), 'BAD_JSON');

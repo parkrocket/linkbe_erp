@@ -51,6 +51,16 @@ const log = (...a) => out.push(a.join(' '));
     // 넣는 칸은 정해진 것만 (JSON의 다른 칸은 버림)
     assert.deepStrictEqual(inserts[0], { calendarId: 'cal-1', resource: { ...ev(2) } });
 
+    // 실패 원인은 코드 건수만 출력
+    assert.strictEqual(out.at(-1), '실패 원인: 500×1');
+
+    // 실패 원인: HTTP 상태·코드별 건수, 이상한 코드는 UNKNOWN
+    const errs = [Object.assign(new Error('x'), { response: { status: 404 } }), Object.assign(new Error('x'), { code: 404 }), Object.assign(new Error('x'), { code: 403 }), Object.assign(new Error('x'), { code: '테스트 일정 내용' }), new Error('x')];
+    const failing = { events: { list: async () => Promise.reject(errs.shift()) } };
+    out.length = 0;
+    assert.strictEqual((await run({ calendar: failing, calendarId: 'cal-1', events: [ev(11), ev(12), ev(13), ev(14), ev(15)], log })).failed, 5);
+    assert.strictEqual(out.at(-1), '실패 원인: 404×2, 403×1, UNKNOWN×2');
+
     // 다시 실행 — 중복 없음(3은 실패했으므로 다시 시도)
     inserts = [];
     assert.deepStrictEqual(await run({ calendar: makeCalendar(existing), calendarId: 'cal-1', events, dryRun: false, log }), { added: 1, toAdd: 0, skipped: 2, failed: 0 });

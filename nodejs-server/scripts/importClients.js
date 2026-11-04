@@ -51,6 +51,8 @@ function validate(data) {
                     !keys.has(f.legacyKey) &&
                     keys.add(f.legacyKey) &&
                     str(f.originalName, 1, 255) &&
+                    Number.isInteger(f.size) &&
+                    f.size >= 0 &&
                     isSafeFile(f.storedFile),
             );
         if (!ok) throw fail('BAD_JSON', `${i + 1}번째 업체 모양 오류`);
@@ -58,12 +60,22 @@ function validate(data) {
     });
 }
 
-// 첨부 원본 읽기 — 없거나 50MB 넘거나 확장자·내용 검사 실패면 null
+// 첨부 원본 읽기 → Buffer. 실제 크기가 JSON size와 다르면 'size'(복사가 덜 됐거나 다른 파일), 없거나 50MB 넘거나 확장자·내용 검사 실패면 'rejected'
 const readChecked = (filesDir, f) => {
     const file = path.join(filesDir, f.storedFile);
-    if (!fs.existsSync(file) || fs.statSync(file).size > MAX_FILE) return null;
+    if (!fs.existsSync(file)) return 'rejected';
+    const size = fs.statSync(file).size;
+    if (size !== f.size) return 'size';
+    if (size > MAX_FILE) return 'rejected';
     const buffer = fs.readFileSync(file);
-    return isAllowedFile({ buffer, originalname: f.originalName }) ? buffer : null;
+    return isAllowedFile({ buffer, originalname: f.originalName }) ? buffer : 'rejected';
+};
+// 읽기 결과를 건수에 반영 — 쓸 수 있으면 Buffer, 아니면 null
+const tally = (counts, result) => {
+    if (Buffer.isBuffer(result)) return result;
+    if (result === 'size') counts.filesSizeMismatch++;
+    else counts.filesRejected++;
+    return null;
 };
 
 async function run({ pool, data, filesDir, cpId, dryRun = false, log = console.log }) {
@@ -81,18 +93,18 @@ async function run({ pool, data, filesDir, cpId, dryRun = false, log = console.l
         }
     }
 
-    const counts = { clients: 0, clientsSkipped: 0, files: 0, filesSkipped: 0, filesRejected: 0 };
+    const counts = { clients: 0, clientsSkipped: 0, files: 0, filesSkipped: 0, filesRejected: 0, filesSizeMismatch: 0 };
     if (dryRun) {
         for (const c of data.clients) {
             counts.clients++;
-            for (const f of c.files) readChecked(filesDir, f) ? counts.files++ : counts.filesRejected++;
+            for (const f of c.files) if (tally(counts, readChecked(filesDir, f))) counts.files++;
         }
-        log(`[dry-run] 업체 ${counts.clients} · 첨부 ${counts.files} · 첨부 검사 실패 ${counts.filesRejected} (쓰기 없음)`);
+        log(`[dry-run] 업체 ${counts.clients} · 첨부 ${counts.files} · 첨부 검사 실패 ${counts.filesRejected} · 크기 불일치 ${counts.filesSizeMismatch} (쓰기 없음)`);
         return counts;
     }
 
     for (const c of data.clients) {
-        const one = { clients: 0, clientsSkipped: 0, files: 0, filesSkipped: 0, filesRejected: 0 };
+        const one = { clients: 0, clientsSkipped: 0, files: 0, filesSkipped: 0, filesRejected: 0, filesSizeMismatch: 0 };
         const copied = [];
         const conn = await pool.getConnection();
         try {
@@ -117,11 +129,8 @@ async function run({ pool, data, filesDir, cpId, dryRun = false, log = console.l
                     one.filesSkipped++;
                     continue;
                 }
-                const buffer = readChecked(filesDir, f);
-                if (!buffer) {
-                    one.filesRejected++;
-                    continue;
-                }
+                const buffer = tally(one, readChecked(filesDir, f));
+                if (!buffer) continue;
                 const saved = saveWorkFile({ buffer, originalname: f.originalName });
                 copied.push(saved.storedName);
                 await conn.query(
@@ -140,7 +149,7 @@ async function run({ pool, data, filesDir, cpId, dryRun = false, log = console.l
         }
         for (const k of Object.keys(counts)) counts[k] += one[k];
     }
-    log(`업체 추가 ${counts.clients} · 이미 있음 ${counts.clientsSkipped} / 첨부 추가 ${counts.files} · 이미 있음 ${counts.filesSkipped} · 검사 실패(건너뜀) ${counts.filesRejected}`);
+    log(`업체 추가 ${counts.clients} · 이미 있음 ${counts.clientsSkipped} / 첨부 추가 ${counts.files} · 이미 있음 ${counts.filesSkipped} · 검사 실패(건너뜀) ${counts.filesRejected} · 크기 불일치(건너뜀) ${counts.filesSizeMismatch}`);
     return counts;
 }
 

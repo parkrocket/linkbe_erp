@@ -106,6 +106,8 @@ export const emptyCredentialForm = (): CredentialForm => ({
 });
 
 const URL_RE = /^(https?|ftps?|sftp):\/\//i;
+// 주소 안의 아이디·비밀번호(user:pass@host) — 평문이 가려지지 않고 목록·기록에 그대로 보이므로 거절
+const URL_USERINFO_RE = /^[a-z][a-z0-9+.-]*:\/\/[^/?#]*@/i;
 
 export type CredentialErrors = Partial<Record<'label' | 'url' | 'loginId' | 'secret' | 'memo', string>>;
 
@@ -115,6 +117,7 @@ export function validateCredentialForm(f: CredentialForm): CredentialErrors {
     const url = f.url.trim();
     if (url.length > 500) e.url = '주소는 500자까지예요';
     else if (url && !URL_RE.test(url)) e.url = 'http://, https://, ftp://, sftp:// 로 시작해야 해요';
+    else if (URL_USERINFO_RE.test(url)) e.url = '주소에 아이디·비밀번호를 넣지 말고 아이디·비밀번호 칸에 넣어 주세요';
     if (f.loginId.trim().length > 200) e.loginId = '아이디는 200자까지예요';
     if (f.secret.length > 500) e.secret = '비밀번호는 500자까지예요';
     if (f.memo.length > 5000) e.memo = '메모는 5,000자까지예요';
