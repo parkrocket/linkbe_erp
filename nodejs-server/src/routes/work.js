@@ -5,6 +5,7 @@ const contract = require('../controllers/workContractController');
 const docSetting = require('../controllers/workDocSettingController');
 const ledger = require('../controllers/workLedgerController');
 const client = require('../controllers/workClientController');
+const board = require('../controllers/workBoardController');
 const { requireWorkDoc } = require('../middlewares/requireWorkDoc');
 const { requireClientSecret } = require('../middlewares/requireClientSecret');
 const router = express.Router();
@@ -19,7 +20,7 @@ router.delete('/expenses/:id', work.remove);
 router.post('/expenses/:id/status', work.changeStatus);
 
 // 견적·계약서·양식 설정 — 업무 문서 권한자만(경비와 별개)
-router.use(['/contracts', '/doc-settings', '/ledger', '/accounts'], requireWorkDoc);
+router.use(['/contracts', '/doc-settings', '/ledger', '/accounts', '/boards'], requireWorkDoc);
 
 router.get('/contracts', contract.list);
 router.get('/contracts/companies', contract.companies); // :id보다 먼저
@@ -38,6 +39,15 @@ router.get('/accounts', ledger.accounts);
 router.post('/accounts', ledger.createAccount);
 router.post('/accounts/:id', ledger.updateAccount);
 router.delete('/accounts/:id', ledger.removeAccount);
+
+// 바이럴 게시판(게시판 이름 viral 고정)
+router.get('/boards/viral', board.list);
+router.post('/boards/viral', board.create);
+router.get('/boards/viral/:id', board.detail);
+router.post('/boards/viral/:id', board.update);
+router.delete('/boards/viral/:id', board.remove);
+router.post('/boards/viral/:id/comments', board.createComment);
+router.delete('/boards/viral/:id/comments/:cid', board.removeComment);
 
 router.get('/doc-settings', docSetting.overview);
 router.post('/doc-settings/categories', docSetting.createCategory);
