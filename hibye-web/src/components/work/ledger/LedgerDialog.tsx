@@ -13,7 +13,7 @@ import { kstDate } from '@/lib/schedule';
 import { formatWon } from '@/lib/shop';
 
 const MAX_AMOUNT = 2_000_000_000;
-const CONFLICT_TEXT = '다른 사람이 먼저 고쳤어요. 내 입력은 그대로 두었어요 — 새로 불러온 뒤 다시 저장해 주세요.';
+const CONFLICT_TEXT = '다른 사람이 먼저 고쳤어요. 내 입력은 아직 그대로예요.';
 const FIELD_CLASS = 'w-full rounded-lg border border-line bg-white px-3 py-2.5 text-sm text-ink focus-visible:outline-2 focus-visible:outline-primary-soft';
 
 type Form = { side: Side; entryDate: string; accountId: string; title: string; supply: string; tax: string; taxEdited: boolean; memo: string };
@@ -80,6 +80,7 @@ export function LedgerDialog({
     const [busy, setBusy] = useState(false);
     const [message, setMessage] = useState('');
     const [conflict, setConflict] = useState(false);
+    const [notice, setNotice] = useState(''); // 정보 안내(오류 아님)
 
     const fetchDetail = useCallback(async () => (await apiFetch<{ entry: LedgerDetail }>(`/api/work/ledger/${target}`)).entry, [target]);
 
@@ -121,12 +122,17 @@ export function LedgerDialog({
 
     const autoTax = () => setForm(prev => ({ ...prev, taxEdited: false, tax: formatMoneyInput(String(vat(parseMoney(prev.supply)))) }));
 
+    // 선택 가능한 항목에 없는 계정(옛 계정·구분 불일치)은 보이지 않게 보내지 않고 '선택해 주세요'로 둠
+    const groups = accountGroups(accounts, form.side);
+    const selectedId = groups.some(g => g.items.some(i => String(i.id) === form.accountId)) ? form.accountId : '';
+
     const save = async () => {
-        const found = validate(form);
+        const found = validate({ ...form, accountId: selectedId });
         setErrors(found);
         if (Object.keys(found).length) return;
         setBusy(true);
         setMessage('');
+        setNotice('');
         setConflict(false);
         try {
             await apiFetch(isNew ? '/api/work/ledger' : `/api/work/ledger/${target}`, {
@@ -134,7 +140,7 @@ export function LedgerDialog({
                 body: {
                     side: form.side,
                     entryDate: form.entryDate,
-                    accountId: Number(form.accountId),
+                    accountId: Number(selectedId),
                     title: form.title.trim(),
                     memo: form.memo,
                     supply: parseMoney(form.supply),
@@ -151,14 +157,19 @@ export function LedgerDialog({
         }
     };
 
-    // 충돌 뒤: 최신 수정 시각만 받고 입력은 유지 (실패해도 입력 그대로)
+    // 충돌 뒤: 서버 최신 값으로 폼·initial·taxEdited를 다시 만듦 (내 입력은 버림). 실패하면 입력 유지
     const reloadAfterConflict = async () => {
         setBusy(true);
+        setMessage('');
         try {
             const d = await fetchDetail();
+            const f = toForm(d);
+            setInitial(f);
+            setForm(f);
             setUpdatedAt(d.updatedAt);
+            setErrors({});
             setConflict(false);
-            setMessage('최신 내용을 확인했어요. 지금 저장하면 내 입력으로 바뀌어요.');
+            setNotice('최신 내용으로 바꿨어요.');
         } catch (e) {
             setMessage(e instanceof ApiError && e.status === 404 ? errorText(e) : '새로 불러오지 못했어요. 입력은 그대로예요. 잠시 뒤 다시 시도해 주세요.');
         }
@@ -178,24 +189,28 @@ export function LedgerDialog({
         }
     };
 
-    const groups = accountGroups(accounts, form.side);
     const total = parseMoney(form.supply) + parseMoney(form.tax);
 
     return (
         <Modal open title={isNew ? '새 장부' : '장부 수정'} size="lg" onClose={onClose} canClose={canClose}>
             {(message || conflict) && (
                 <div role="alert" className="mb-3 rounded-lg bg-rejected-bg px-3 py-2.5 text-sm text-rejected-fg">
-                    {conflict ? (
+                    {message}
+                    {conflict && (
                         <span className="flex flex-wrap items-center gap-3">
                             {CONFLICT_TEXT}
                             <Button variant="secondary" disabled={busy} onClick={reloadAfterConflict}>
                                 새로 불러오기
                             </Button>
+                            <span className="text-xs">내 입력은 지워지고 최신 내용으로 바뀌어요</span>
                         </span>
-                    ) : (
-                        message
                     )}
                 </div>
+            )}
+            {notice && (
+                <p role="status" className="mb-3 rounded-lg bg-primary-soft px-3 py-2.5 text-sm text-primary">
+                    {notice}
+                </p>
             )}
 
             {loadError ? (
@@ -219,8 +234,9 @@ export function LedgerDialog({
                         계정과목
                         <select
                             aria-invalid={errors.accountId ? true : undefined}
+                            aria-describedby={errors.accountId ? 'accountId-error' : undefined}
                             className={`${FIELD_CLASS} ${errors.accountId ? 'border-rejected-fg' : ''}`}
-                            value={form.accountId}
+                            value={selectedId}
                             onChange={e => set('accountId', e.target.value)}
                         >
                             <option value="">선택해 주세요</option>
@@ -242,7 +258,7 @@ export function LedgerDialog({
                                 ),
                             )}
                         </select>
-                        {errors.accountId && <span className="text-xs font-normal text-rejected-fg">{errors.accountId}</span>}
+                        {errors.accountId && <span id="accountId-error" className="text-xs font-normal text-rejected-fg">{errors.accountId}</span>}
                     </label>
                     <TextField label="제목" name="title" maxLength={200} value={form.title} error={errors.title} onChange={e => set('title', e.target.value)} />
                     <TextField
@@ -254,7 +270,7 @@ export function LedgerDialog({
                         hint="환불 등은 앞에 -를 붙여요"
                         onChange={e => changeSupply(e.target.value)}
                     />
-                    <div className="flex items-end gap-2">
+                    <div className="flex items-start gap-2">
                         <div className="flex-1">
                             <TextField
                                 label="부가세 (원)"
@@ -265,7 +281,7 @@ export function LedgerDialog({
                                 onChange={e => setForm(prev => ({ ...prev, tax: formatMoneyInput(e.target.value), taxEdited: true }))}
                             />
                         </div>
-                        <Button variant="secondary" disabled={!form.taxEdited} onClick={autoTax}>
+                        <Button variant="secondary" className="mt-[1.625rem]" disabled={!form.taxEdited} onClick={autoTax}>
                             자동 계산
                         </Button>
                     </div>

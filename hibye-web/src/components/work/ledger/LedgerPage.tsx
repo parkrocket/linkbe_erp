@@ -39,6 +39,7 @@ export function LedgerPage() {
     const acc = useApiData<{ accounts: Account[] }>('/api/work/accounts', undefined, 'GET');
     const data = list.state.status === 'ok' ? list.state.data : null;
     const accounts = acc.state.status === 'ok' ? acc.state.data.accounts : [];
+    const accountsReady = acc.state.status === 'ok'; // 계정 목록이 와야 팝업·행 열기 가능
     const lastPage = data ? Math.max(1, Math.ceil(data.total / data.size)) : 1;
     const accountName = (id: number) => accounts.find(a => a.id === id)?.name ?? '-';
 
@@ -57,7 +58,7 @@ export function LedgerPage() {
         <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                 <h1 className="text-2xl font-bold">매출/매입</h1>
-                <Button disabled={acc.state.status !== 'ok'} onClick={() => setDialog('new')}>
+                <Button disabled={!accountsReady} onClick={() => setDialog('new')}>
                     새 장부
                 </Button>
             </div>
@@ -123,6 +124,11 @@ export function LedgerPage() {
                 </Button>
             </form>
 
+            {acc.state.status === 'error' && (
+                <div className="mt-4">
+                    <ErrorState onRetry={acc.reload} />
+                </div>
+            )}
             {list.state.status === 'loading' && <Skeleton className="mt-4 h-72 w-full" />}
             {list.state.status === 'error' && (
                 <div className="mt-4">
@@ -132,7 +138,7 @@ export function LedgerPage() {
 
             {data && (
                 <>
-                    <dl className="mt-4 grid gap-3 sm:grid-cols-3" aria-live="polite">
+                    <dl className="mt-4 grid gap-3 sm:grid-cols-3">
                         {(
                             [
                                 ['매출 합계', data.summary.sales],
@@ -142,7 +148,7 @@ export function LedgerPage() {
                         ).map(([label, n]) => (
                             <div key={label} className="rounded-lg bg-surface px-4 py-3">
                                 <dt className="text-xs text-muted">{label}</dt>
-                                <dd className="mt-1 text-lg font-bold">
+                                <dd className="mt-1 text-lg font-bold" aria-live="polite">
                                     <Money n={n} />
                                 </dd>
                             </div>
@@ -172,7 +178,7 @@ export function LedgerPage() {
                                                 <td className="px-3 py-2.5">{SIDE_LABEL[r.side]}</td>
                                                 <td className="px-3 py-2.5 text-muted">{accountName(r.accountId)}</td>
                                                 <td className="max-w-56 truncate px-3 py-2.5">
-                                                    <button type="button" className="font-semibold text-primary hover:underline" onClick={() => setDialog(r.id)}>
+                                                    <button type="button" disabled={!accountsReady} className="font-semibold text-primary hover:underline disabled:cursor-wait disabled:opacity-60" onClick={() => setDialog(r.id)}>
                                                         {r.title}
                                                     </button>
                                                 </td>
