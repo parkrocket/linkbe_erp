@@ -315,7 +315,8 @@ export function buildPrintDocument(css: string, body: string, title: string): st
 // 금액 입력: 숫자와 맨 앞 '-'만 남기고 천 단위 콤마 (음수 허용)
 export function formatMoneyInput(v: string): string {
     const neg = v.trimStart().startsWith('-');
-    const digits = v.replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+    // 숫자는 10자리까지 (아주 긴 붙여넣기가 Infinity가 되지 않게, 범위 검사는 저장 때)
+    const digits = v.replace(/\D/g, '').replace(/^0+(?=\d)/, '').slice(0, 10);
     if (!digits) return neg ? '-' : '';
     return (neg ? '-' : '') + Number(digits).toLocaleString('ko-KR');
 }

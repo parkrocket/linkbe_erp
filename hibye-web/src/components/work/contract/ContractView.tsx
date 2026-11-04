@@ -25,21 +25,23 @@ export function ContractView({ id }: { id: string }) {
     const [busy, setBusy] = useState(false);
     const [message, setMessage] = useState('');
 
-    const load = useCallback(async () => {
+    // 성공 여부를 돌려줌 — 화면 상태(loadState)는 처음 불러올 때만 바꿔, 다시 불러오기 실패가 폼·입력을 지우지 않게
+    const load = useCallback(async (): Promise<boolean> => {
         try {
             const r = await apiFetch<{ contract: ContractDetail }>(`/api/work/contracts/${encodeURIComponent(id)}`);
             setDetail(r.contract);
             setLoadState('ok');
             setFormKey(k => k + 1);
+            return true;
         } catch (e) {
-            if (e instanceof ApiError && e.status === 401) return router.replace('/login?redirect=/');
-            setLoadState(e instanceof ApiError && e.status === 404 ? 'notFound' : 'error');
+            if (e instanceof ApiError && e.status === 401) router.replace('/login?redirect=/');
+            else setLoadState(prev => (prev === 'ok' ? prev : e instanceof ApiError && e.status === 404 ? 'notFound' : 'error'));
+            return false;
         }
     }, [id, router]);
 
     useEffect(() => {
         // 마운트 때 상세 불러오기 (상태 갱신은 응답 뒤)
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         void load();
     }, [load]);
 
@@ -80,11 +82,16 @@ export function ContractView({ id }: { id: string }) {
                                 key={formKey}
                                 initial={detail}
                                 onCancel={() => setEditing(false)}
-                                onSaved={() => {
+                                // 저장 직후: 최신 값을 받은 뒤 보기 모드로 (수정 전 값이 잠깐 보이지 않게). 실패해도 보기 모드 + 안내
+                                onSaved={async () => {
+                                    setMessage('');
+                                    if (!(await load())) setMessage('저장은 됐지만 최신 내용을 불러오지 못했어요. 새로고침해 주세요.');
                                     setEditing(false);
-                                    void load();
                                 }}
-                                onReload={() => void load()}
+                                onReload={async () => {
+                                    setMessage('');
+                                    if (!(await load())) setMessage('새로 불러오지 못했어요. 입력한 내용은 그대로 있으니 잠시 뒤 다시 눌러 주세요.');
+                                }}
                             />
                         </>
                     ) : (

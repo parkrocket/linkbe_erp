@@ -191,6 +191,9 @@ describe('화면 입력 도우미', () => {
         expect(formatMoneyInput('-')).toBe('-');
         expect(formatMoneyInput('12-3a4')).toBe('1,234');
         expect(formatMoneyInput('')).toBe('');
+        expect(formatMoneyInput('9'.repeat(400))).toBe('9,999,999,999');
+        expect(formatMoneyInput('-' + '9'.repeat(400))).toBe('-9,999,999,999');
+        expect(parseMoney(formatMoneyInput('9'.repeat(400)))).toBe(9999999999);
         expect(parseMoney('-1,234')).toBe(-1234);
         expect(parseMoney('-')).toBe(0);
         expect(parseMoney('')).toBe(0);

@@ -104,7 +104,7 @@ const CONFLICT_TEXT = '다른 사람이 먼저 고쳤어요. 내 입력은 그�
 type Company = { companyName: string; bizNo: string; ceoName: string; companyEmail: string; managerName: string; managerPhone: string; managerEmail: string };
 
 // 작성·수정 폼 — 새 계약(initial 없음)과 상세의 수정 모드 공용
-export function ContractForm({ initial, onCancel, onSaved, onReload }: { initial?: ContractDetail; onCancel?: () => void; onSaved?: () => void; onReload?: () => void }) {
+export function ContractForm({ initial, onCancel, onSaved, onReload }: { initial?: ContractDetail; onCancel?: () => void; onSaved?: () => void | Promise<void>; onReload?: () => void | Promise<void> }) {
     const router = useRouter();
     const [form, setForm] = useState<FormState>(() => toState(initial));
     const [categories, setCategories] = useState<Category[]>([]);
@@ -168,11 +168,17 @@ export function ContractForm({ initial, onCancel, onSaved, onReload }: { initial
         }, 300);
     };
     // 고를 때만 업체 정보와 첫 담당자를 덮어씀
-    const pickCompany = (c: Company) => {
-        seq.current++;
+    const closeSuggest = () => {
+        seq.current++; // 늦게 오는 응답이 다시 열지 않게
+        clearTimeout(timer.current);
         setSuggest([]);
+    };
+    const pickCompany = (c: Company) => {
+        closeSuggest();
         setForm(prev => {
-            const first = { ...(prev.managers[0] ?? emptyManager()), name: c.managerName, phone: c.managerPhone, email: c.managerEmail };
+            // 추천에 값이 없는 칸은 이미 입력한 담당자 정보를 유지
+            const cur = prev.managers[0] ?? emptyManager();
+            const first = { ...cur, name: c.managerName || cur.name, phone: c.managerPhone || cur.phone, email: c.managerEmail || cur.email };
             return { ...prev, companyName: c.companyName, bizNo: c.bizNo, ceoName: c.ceoName, companyEmail: c.companyEmail, managers: [first, ...prev.managers.slice(1)] };
         });
     };
@@ -219,7 +225,7 @@ export function ContractForm({ initial, onCancel, onSaved, onReload }: { initial
         try {
             if (initial) {
                 await apiFetch(`/api/work/contracts/${initial.id}`, { method: 'POST', body: payload });
-                onSaved?.();
+                await onSaved?.();
             } else {
                 const r = await apiFetch<{ id: number }>('/api/work/contracts', { method: 'POST', body: payload });
                 router.push(`/work/contracts/${r.id}`);
@@ -273,7 +279,10 @@ export function ContractForm({ initial, onCancel, onSaved, onReload }: { initial
                         ))}
                     </select>
                 </Field>
-                <div className="relative">
+                <div
+                    className="relative"
+                    onBlur={e => !e.currentTarget.contains(e.relatedTarget) && closeSuggest()}
+                >
                     <Field label="업체명 (필수)">
                         <input
                             required
@@ -282,11 +291,11 @@ export function ContractForm({ initial, onCancel, onSaved, onReload }: { initial
                             className={INPUT}
                             value={form.companyName}
                             onChange={e => onCompanyInput(e.target.value)}
-                            onKeyDown={e => e.key === 'Escape' && setSuggest([])}
+                            onKeyDown={e => e.key === 'Escape' && closeSuggest()}
                         />
                     </Field>
                     {suggest.length > 0 && (
-                        <ul className="absolute z-10 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-line bg-white text-sm shadow-lg" aria-label="업체 추천">
+                        <ul onMouseDown={e => e.preventDefault()} className="absolute z-10 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-line bg-white text-sm shadow-lg" aria-label="업체 추천">
                             {suggest.map((c, i) => (
                                 <li key={`${c.companyName}-${i}`}>
                                     <button type="button" className="flex w-full gap-2 px-3 py-2 text-left hover:bg-surface focus-visible:outline-2 focus-visible:outline-primary" onClick={() => pickCompany(c)}>
