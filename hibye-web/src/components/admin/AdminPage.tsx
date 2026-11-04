@@ -14,11 +14,12 @@ import { LeavesTab } from './LeavesTab';
 import { OrgTab } from './OrgTab';
 import { MembersTab } from './MembersTab';
 import { PendingTab } from './PendingTab';
+import { SecretKeyPanel } from './SecretKeyPanel';
 
-type Tab = 'pending' | 'members' | 'leaves' | 'balances' | 'org' | 'homepage';
+type Tab = 'pending' | 'members' | 'leaves' | 'balances' | 'org' | 'homepage' | 'security';
 export type RunAction = (action: () => Promise<unknown>, doneText: string) => Promise<void>;
 
-const TABS: Tab[] = ['pending', 'members', 'leaves', 'balances', 'org', 'homepage'];
+const TABS: Tab[] = ['pending', 'members', 'leaves', 'balances', 'org', 'homepage', 'security'];
 
 // /admin — 홈페이지 권한자는 홈페이지 탭만(직원 목록 API는 관리자 전용이라 부르지 않음)
 export function AdminPage({ myUserId, homepageOnly = false, initialTab }: { myUserId: string; homepageOnly?: boolean; initialTab?: string }) {
@@ -83,6 +84,9 @@ function FullAdminPage({ myUserId, initialTab }: { myUserId: string; initialTab:
                 <TabButton active={tab === 'homepage'} onClick={() => setTab('homepage')}>
                     홈페이지
                 </TabButton>
+                <TabButton active={tab === 'security'} onClick={() => setTab('security')}>
+                    보안
+                </TabButton>
             </div>
 
             {notice && (
@@ -105,6 +109,8 @@ function FullAdminPage({ myUserId, initialTab }: { myUserId: string; initialTab:
                     <OrgTab />
                 ) : tab === 'homepage' ? (
                     <HomepageTab />
+                ) : tab === 'security' ? (
+                    <SecretKeyPanel />
                 ) : (
                     <>
                         {state.status === 'loading' && <Skeleton className="h-48 w-full" />}
