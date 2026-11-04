@@ -46,11 +46,32 @@ const lockedThenLogged = (cp, id, log) => {
     err(validateClient, { kind: 'client', name: ' ' }, 'Invalid name');
     err(validateClient, { kind: 'client', name: 'a'.repeat(101) }, 'Invalid name');
 
+    const NO_SITE = { port: null, adminUrl: '', adminId: '', adminSecret: null, dbHost: '', dbName: '', dbId: '', dbSecret: null };
     const C = (patch = {}) => ({ kind: 'ftp', label: ' 메인 ', url: 'sftp://example.com', loginId: 'user', ...patch });
     assert.deepStrictEqual(validateCredential(C({ secret: ' p@ss ', memo: '' })), {
-        ok: true, value: { kind: 'ftp', label: '메인', url: 'sftp://example.com', loginId: 'user', secret: ' p@ss ', memo: null },
+        ok: true, value: { kind: 'ftp', label: '메인', url: 'sftp://example.com', loginId: 'user', secret: ' p@ss ', memo: null, ...NO_SITE },
     });
     assert.strictEqual(validateCredential(C()).value.secret, undefined); // 없으면 그대로(수정 시)
+    // 세트가 아닌 항목은 세트 칸을 보내도 비움(세트 → 다른 종류로 바꾸면 지워짐)
+    assert.deepStrictEqual(validateCredential(C({ port: 22, adminId: 'x', dbSecret: 'y' })).value, validateCredential(C()).value);
+
+    // ---- 호스팅 세트(site) ----
+    const S = (patch = {}) => ({ kind: 'site', label: '호스팅', url: 'sftp://host.kr', loginId: 'ftpid', port: 22, adminUrl: ' https://a.kr/adm ', adminId: 'adm', adminSecret: 'apw', dbHost: 'localhost', dbName: 'db1', dbId: 'dbu', dbSecret: 'dpw', ...patch });
+    assert.deepStrictEqual(validateCredential(S()).value, {
+        kind: 'site', label: '호스팅', url: 'sftp://host.kr', loginId: 'ftpid', secret: undefined, memo: undefined,
+        port: 22, adminUrl: 'https://a.kr/adm', adminId: 'adm', adminSecret: 'apw', dbHost: 'localhost', dbName: 'db1', dbId: 'dbu', dbSecret: 'dpw',
+    });
+    assert.deepStrictEqual(validateCredential(S({ port: '', adminSecret: undefined, dbSecret: '' })).value.port, null);
+    assert.deepStrictEqual([validateCredential(S({ adminSecret: undefined })).value.adminSecret, validateCredential(S({ dbSecret: '' })).value.dbSecret], [undefined, null]);
+    for (const url of ['', 'ftp://a', 'SFTP://a']) assert.ok(validateCredential(S({ url })).ok, url);
+    for (const url of ['https://a', 'ftps://a', 'sftp://u:p@a']) err(validateCredential, S({ url }), 'Invalid url');
+    for (const port of [0, 65536, 1.5, '22', 'a']) err(validateCredential, S({ port }), 'Invalid port');
+    for (const adminUrl of ['javascript:x', 'https://u:p@a']) err(validateCredential, S({ adminUrl }), 'Invalid adminUrl');
+    err(validateCredential, S({ dbName: 'a'.repeat(101) }), 'Invalid dbName');
+    err(validateCredential, S({ dbId: 1 }), 'Invalid dbId');
+    err(validateCredential, S({ adminSecret: 'a'.repeat(501) }), 'Invalid adminSecret');
+    for (const field of ['adminSecret', 'dbSecret']) assert.ok(validateReveal({ field, action: 'view' }, true).ok, field);
+    err(b => validateReveal(b, true), { field: 'toString', action: 'view' }, 'Invalid field');
     for (const url of ['', 'http://a', 'HTTPS://a', 'ftp://a', 'ftps://a', 'sftp://a']) assert.ok(validateCredential(C({ url })).ok, url);
     for (const url of ['javascript:alert(1)', ' javascript:alert(1)', 'data:text/html,x', 'example.com', 'a'.repeat(501)]) err(validateCredential, C({ url }), 'Invalid url');
     err(validateCredential, C({ kind: 'x' }), 'Invalid kind');
@@ -71,7 +92,7 @@ const lockedThenLogged = (cp, id, log) => {
     assert.ok(sql.includes('c.cp_id = ?') && sql.includes('c.kind = ?') && sql.includes('c.name LIKE ?') && sql.includes('cr.login_id LIKE ?') && sql.includes('f.original_name LIKE ?'));
     assert.ok(!sql.includes('c.id IN'), '메모 맞은 업체 없으면 IN 없음');
     const like = '%테스\\_트\\%%';
-    assert.deepStrictEqual(params, [1, 'own', like, like, like, like, like]);
+    assert.deepStrictEqual(params, [1, 'own', ...Array(10).fill(like)]);
     assert.ok(!/(secret_enc|memo_enc|legacy_memo_enc)(?! IS NOT NULL)/.test(sql), '목록에 암호 칸 SELECT');
     assert.ok(/f\.cp_id = c\.cp_id/.test(sql), '첨부 개수가 회사 범위 밖');
     reset([[/FROM wk_client c/, [[]]]]);
@@ -158,14 +179,28 @@ const lockedThenLogged = (cp, id, log) => {
     const cv = { kind: 'ftp', label: '메인', url: '', loginId: 'u', secretEnc: 'v1:AAA', memoEnc: null };
     assert.strictEqual(await Credential.create(1, 5, cv, actor), 9);
     const ins = calls.find(c => /^INSERT INTO wk_client_credential/.test(c.sql));
-    assert.deepStrictEqual(ins.params, [5, 'ftp', '메인', '', 'u', 'v1:AAA', null, 3]);
+    assert.deepStrictEqual(ins.params, [5, 'ftp', '메인', '', 'u', 'v1:AAA', null, 3, null, '', '', null, '', '', '', null]);
     lockedThenLogged(1, 5, { credentialId: 9, target: 'credential', action: 'create' });
+    // 세트: 세트 칸도 저장(비밀번호는 암호문)
+    reset([found, [/COALESCE\(MAX\(sort\)/, [[{ next: 0 }]]], ok]);
+    const sv = { ...cv, kind: 'site', port: 22, adminUrl: 'https://a', adminId: 'adm', adminSecretEnc: 'v1:A', dbHost: 'h', dbName: 'n', dbId: 'd', dbSecretEnc: 'v1:D' };
+    await Credential.create(1, 5, sv, actor);
+    const insSite = calls.find(c => /^INSERT INTO wk_client_credential/.test(c.sql));
+    assert.ok(insSite.sql.includes('port, admin_url, admin_id, admin_secret_enc, db_host, db_name, db_id, db_secret_enc'));
+    assert.deepStrictEqual(insSite.params, [5, 'site', '메인', '', 'u', 'v1:AAA', null, 0, 22, 'https://a', 'adm', 'v1:A', 'h', 'n', 'd', 'v1:D']);
+    // 수정: 세트 비밀번호도 undefined = 그대로
+    reset([found, ok]);
+    await Credential.update(1, 5, 3, { ...sv, secretEnc: undefined, memoEnc: undefined, dbSecretEnc: undefined }, actor);
+    assert.ok(calls[1].sql.includes('admin_secret_enc = ?') && !calls[1].sql.includes('db_secret_enc') && !calls[1].sql.includes(' secret_enc'));
+    reset();
+    await Credential.findEnc(1, 5, 3);
+    assert.ok(calls[0].sql.includes('cr.admin_secret_enc') && calls[0].sql.includes('cr.db_secret_enc'));
 
     // 수정: secretEnc undefined = 그대로(칸 자체를 안 건드림), null = 지움
     reset([found, ok]);
     assert.strictEqual(await Credential.update(1, 5, 3, { kind: 'db', label: 'a', url: '', loginId: 'b', memoEnc: null }, actor), true);
     assert.ok(!calls[1].sql.includes('secret_enc') && calls[1].sql.includes('memo_enc = ?') && calls[1].sql.includes('WHERE client_id = ? AND id = ?'));
-    assert.deepStrictEqual(calls[1].params, ['db', 'a', '', 'b', null, 5, 3]);
+    assert.deepStrictEqual(calls[1].params, ['db', 'a', '', 'b', null, '', '', '', '', '', null, 5, 3]);
     lockedThenLogged(1, 5, { credentialId: 3, target: 'credential', action: 'update' });
     // 다른 업체의 항목 → 0행 → null·롤백
     reset([found, [/^UPDATE/, [{ affectedRows: 0 }]]]);

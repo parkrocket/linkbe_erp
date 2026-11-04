@@ -59,9 +59,10 @@ Client.list = async (cpId, { q, kind, memoIds = [] } = {}) => {
     if (q) {
         const like = `%${escapeLike(q)}%`;
         conds.push(`(c.name LIKE ?
-            OR EXISTS (SELECT 1 FROM wk_client_credential cr WHERE cr.client_id = c.id AND (cr.label LIKE ? OR cr.url LIKE ? OR cr.login_id LIKE ?))
+            OR EXISTS (SELECT 1 FROM wk_client_credential cr WHERE cr.client_id = c.id AND (cr.label LIKE ? OR cr.url LIKE ? OR cr.login_id LIKE ?
+                OR cr.admin_url LIKE ? OR cr.admin_id LIKE ? OR cr.db_host LIKE ? OR cr.db_name LIKE ? OR cr.db_id LIKE ?))
             OR EXISTS (SELECT 1 FROM wk_file f WHERE f.cp_id = c.cp_id AND f.owner_type = 'client' AND f.owner_id = c.id AND f.original_name LIKE ?)${memoIds.length ? ' OR c.id IN (?)' : ''})`);
-        params.push(like, like, like, like, like);
+        params.push(...Array(10).fill(like));
         if (memoIds.length) params.push(memoIds);
     }
     const [rows] = await pool.query(
@@ -121,6 +122,7 @@ const CRED_JOIN = 'FROM wk_client_credential cr JOIN wk_client c ON c.id = cr.cl
 Credential.list = async (cpId, clientId) => {
     const [rows] = await pool.query(
         `SELECT cr.id, cr.kind, cr.label, cr.url, cr.login_id, cr.secret_enc IS NOT NULL AS has_secret, cr.memo_enc IS NOT NULL AS has_memo, cr.memo_enc, cr.sort,
+         cr.port, cr.admin_url, cr.admin_id, cr.admin_secret_enc IS NOT NULL AS has_admin_secret, cr.db_host, cr.db_name, cr.db_id, cr.db_secret_enc IS NOT NULL AS has_db_secret,
          ${KST('cr.updated_at')} AS updated_at ${CRED_JOIN} WHERE cr.client_id = ? ORDER BY cr.sort, cr.id`,
         [cpId, clientId],
     );
@@ -133,9 +135,17 @@ Credential.memosOf = async cpId => {
     return rows;
 };
 
+// 호스팅 세트 칸(kind 'site') — 다른 종류는 빈 값·null(검사에서 비움)
+const SITE_COLS = ['port', 'admin_url', 'admin_id', 'admin_secret_enc', 'db_host', 'db_name', 'db_id', 'db_secret_enc'];
+const siteParams = v => [v.port ?? null, v.adminUrl ?? '', v.adminId ?? '', v.adminSecretEnc ?? null, v.dbHost ?? '', v.dbName ?? '', v.dbId ?? '', v.dbSecretEnc ?? null];
+
 // 보기·복사용 암호문
 Credential.findEnc = async (cpId, clientId, id) => {
-    const [rows] = await pool.query(`SELECT cr.id, cr.label, cr.secret_enc, cr.memo_enc ${CRED_JOIN} WHERE cr.client_id = ? AND cr.id = ?`, [cpId, clientId, id]);
+    const [rows] = await pool.query(`SELECT cr.id, cr.label, cr.secret_enc, cr.memo_enc, cr.admin_secret_enc, cr.db_secret_enc ${CRED_JOIN} WHERE cr.client_id = ? AND cr.id = ?`, [
+        cpId,
+        clientId,
+        id,
+    ]);
     return rows[0];
 };
 
@@ -144,8 +154,9 @@ Credential.create = (cpId, clientId, value, actor) =>
     withClient(cpId, clientId, async conn => {
         const [[row]] = await conn.query('SELECT COALESCE(MAX(sort), -1) + 1 AS next FROM wk_client_credential WHERE client_id = ?', [clientId]);
         const [result] = await conn.query(
-            'INSERT INTO wk_client_credential (client_id, kind, label, url, login_id, secret_enc, memo_enc, sort) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-            [clientId, value.kind, value.label, value.url, value.loginId, value.secretEnc, value.memoEnc, row ? row.next : 0],
+            `INSERT INTO wk_client_credential (client_id, kind, label, url, login_id, secret_enc, memo_enc, sort, ${SITE_COLS.join(', ')})
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ${SITE_COLS.map(() => '?').join(', ')})`,
+            [clientId, value.kind, value.label, value.url, value.loginId, value.secretEnc, value.memoEnc, row ? row.next : 0, ...siteParams(value)],
         );
         await CredentialLog.insert(conn, { cpId, clientId, credentialId: result.insertId, target: 'credential', action: 'create', actor });
         return result.insertId;
@@ -154,10 +165,12 @@ Credential.create = (cpId, clientId, value, actor) =>
 // secretEnc·memoEnc가 undefined면 그 칸은 그대로. 반환: true | null(업체 없음 또는 다른 업체의 항목)
 Credential.update = (cpId, clientId, id, value, actor) =>
     withClient(cpId, clientId, async conn => {
-        const sets = ['kind = ?', 'label = ?', 'url = ?', 'login_id = ?'];
-        const params = [value.kind, value.label, value.url, value.loginId];
-        if (value.secretEnc !== undefined) (sets.push('secret_enc = ?'), params.push(value.secretEnc));
-        if (value.memoEnc !== undefined) (sets.push('memo_enc = ?'), params.push(value.memoEnc));
+        const sets = ['kind = ?', 'label = ?', 'url = ?', 'login_id = ?', 'port = ?', 'admin_url = ?', 'admin_id = ?', 'db_host = ?', 'db_name = ?', 'db_id = ?'];
+        const [port, adminUrl, adminId, , dbHost, dbName, dbId] = siteParams(value);
+        const params = [value.kind, value.label, value.url, value.loginId, port, adminUrl, adminId, dbHost, dbName, dbId];
+        for (const [col, v] of [['secret_enc', value.secretEnc], ['memo_enc', value.memoEnc], ['admin_secret_enc', value.adminSecretEnc], ['db_secret_enc', value.dbSecretEnc]]) {
+            if (v !== undefined) (sets.push(`${col} = ?`), params.push(v));
+        }
         const [result] = await conn.query(`UPDATE wk_client_credential SET ${sets.join(', ')} WHERE client_id = ? AND id = ?`, [...params, clientId, id]);
         if (result.affectedRows === 0) return null;
         await CredentialLog.insert(conn, { cpId, clientId, credentialId: id, target: 'credential', action: 'update', actor });

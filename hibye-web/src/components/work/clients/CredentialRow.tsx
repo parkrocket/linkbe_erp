@@ -4,18 +4,19 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { apiFetch } from '@/lib/api';
 import { useClearOnHide } from '@/lib/clearOnHide';
-import { clientErrorText, CREDENTIAL_KIND_LABEL, isLongMemo, isWebUrl, maskedLabel, REVEAL_MS, type Credential } from '@/lib/clients';
+import { clientErrorText, CREDENTIAL_KIND_LABEL, isLongMemo, isWebUrl, maskedLabel, REVEAL_MS, splitServer, type Credential, type SecretField } from '@/lib/clients';
 
-type Field = 'secret'; // 가리는 칸은 비밀번호뿐 — 메모는 화면에 바로 보임(11-04)
+// 가리는 칸은 비밀번호들뿐 — 메모는 화면에 바로 보임(11-04)
 type Action = 'view' | 'copy';
 const UNREADABLE = '저장된 값을 읽을 수 없어요. 암호화 키를 확인해 주세요.';
+const SECRET_NAME: Record<SecretField, string> = { secret: '비밀번호', adminSecret: '관리자 비밀번호', dbSecret: 'DB 비밀번호' };
 
 // 항목 한 줄 — 평문은 '보기' 응답만 React state에 두고 30초 뒤·화면을 떠나거나 탭이 숨겨지면 지움 (저장소·주소·콘솔에 남기지 않음)
 export function CredentialRow({ clientId, credential: c, onEdit, onDelete }: { clientId: number; credential: Credential; onEdit: () => void; onDelete: () => void }) {
-    const [plain, setPlain] = useState<Partial<Record<Field, string>>>({});
+    const [plain, setPlain] = useState<Partial<Record<SecretField, string>>>({});
     const [busy, setBusy] = useState(false);
     const [notice, setNotice] = useState('');
-    const timers = useRef<Partial<Record<Field, number>>>({});
+    const timers = useRef<Partial<Record<SecretField, number>>>({});
     const mounted = useRef(true);
 
     // 화면을 떠나거나(숨긴 Activity로 보관돼도 state는 남으므로) 탭이 숨겨지면 평문·타이머 모두 지움
@@ -32,7 +33,7 @@ export function CredentialRow({ clientId, credential: c, onEdit, onDelete }: { c
         };
     }, []);
 
-    const hide = (field: Field) => {
+    const hide = (field: SecretField) => {
         window.clearTimeout(timers.current[field]);
         setPlain(prev => {
             const next = { ...prev };
@@ -42,10 +43,10 @@ export function CredentialRow({ clientId, credential: c, onEdit, onDelete }: { c
     };
 
     // 서버가 기록을 남긴 뒤에만 값을 줌 — 실패하면 값 없음
-    const reveal = (field: Field, action: Action) =>
+    const reveal = (field: SecretField, action: Action) =>
         apiFetch<{ value: string | null; unreadable?: boolean }>(`/api/work/clients/${clientId}/credentials/${c.id}/reveal`, { method: 'POST', body: { field, action } });
 
-    const view = async (field: Field) => {
+    const view = async (field: SecretField) => {
         setBusy(true);
         setNotice('');
         try {
@@ -77,7 +78,7 @@ export function CredentialRow({ clientId, credential: c, onEdit, onDelete }: { c
     };
 
     // 복사: 받은 값은 클립보드에만 쓰고 state에 남기지 않음
-    const copy = async (field: Field) => {
+    const copy = async (field: SecretField) => {
         setBusy(true);
         setNotice('');
         try {
@@ -90,6 +91,36 @@ export function CredentialRow({ clientId, credential: c, onEdit, onDelete }: { c
             setBusy(false);
         }
     };
+
+    // 칸 렌더 도우미 — 이름·값 한 쌍
+    const url = (value: string) => (value ? isWebUrl(value) ? <a href={value} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{value}</a> : value : '-');
+    const textWithCopy = (value: string, name: string) => (
+        <span className="flex flex-wrap items-center gap-2">
+            <span className="break-all">{value || '-'}</span>
+            {value && (
+                <Button variant="ghost" className="px-2 py-1 text-xs" aria-label={`${name} 복사`} onClick={() => write(value)}>
+                    복사
+                </Button>
+            )}
+        </span>
+    );
+    const secret = (field: SecretField, has: boolean) => {
+        if (!has) return '-';
+        const shown = plain[field];
+        const name = SECRET_NAME[field];
+        return (
+            <span className="flex flex-wrap items-center gap-2">
+                {shown === undefined ? <Masked /> : <span className="break-all font-mono">{shown}</span>}
+                <Button variant="ghost" className="px-2 py-1 text-xs" disabled={busy} aria-label={shown === undefined ? `${name} 보기` : `${name} 가리기`} onClick={() => (shown === undefined ? view(field) : hide(field))}>
+                    {shown === undefined ? '보기' : '가리기'}
+                </Button>
+                <Button variant="ghost" className="px-2 py-1 text-xs" disabled={busy} aria-label={`${name} 복사`} onClick={() => copy(field)}>
+                    복사
+                </Button>
+            </span>
+        );
+    };
+    const server = splitServer(c.url);
 
     return (
         <li className="rounded-lg border border-line p-3 text-sm">
@@ -105,60 +136,67 @@ export function CredentialRow({ clientId, credential: c, onEdit, onDelete }: { c
                     </Button>
                 </span>
             </div>
-            <dl className="mt-2 grid gap-x-4 gap-y-1.5 sm:grid-cols-[4rem_1fr]">
-                <dt className="text-xs text-muted">주소</dt>
-                <dd className="break-all">
-                    {c.url ? (
-                        isWebUrl(c.url) ? (
-                            <a href={c.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                                {c.url}
-                            </a>
-                        ) : (
-                            c.url
-                        )
-                    ) : (
-                        '-'
-                    )}
-                </dd>
-                <dt className="text-xs text-muted">아이디</dt>
-                <dd className="flex flex-wrap items-center gap-2">
-                    <span className="break-all">{c.loginId || '-'}</span>
-                    {c.loginId && (
-                        <Button variant="ghost" className="px-2 py-1 text-xs" aria-label="아이디 복사" onClick={() => write(c.loginId)}>
-                            복사
-                        </Button>
-                    )}
-                </dd>
-                <dt className="text-xs text-muted">비밀번호</dt>
-                <dd className="flex flex-wrap items-center gap-2">
-                    {c.hasSecret ? (
-                        <>
-                            {plain.secret === undefined ? <Masked /> : <span className="break-all font-mono">{plain.secret}</span>}
-                            <Button variant="ghost" className="px-2 py-1 text-xs" disabled={busy} aria-label={plain.secret === undefined ? '비밀번호 보기' : '비밀번호 가리기'} onClick={() => (plain.secret === undefined ? view('secret') : hide('secret'))}>
-                                {plain.secret === undefined ? '보기' : '가리기'}
-                            </Button>
-                            <Button variant="ghost" className="px-2 py-1 text-xs" disabled={busy} aria-label="비밀번호 복사" onClick={() => copy('secret')}>
-                                복사
-                            </Button>
-                        </>
-                    ) : (
-                        '-'
-                    )}
-                </dd>
-                {c.hasMemo && (
-                    <>
-                        <dt className="text-xs text-muted">메모</dt>
-                        <dd className="min-w-0">{c.memoUnreadable ? <span className="text-rejected-fg">{UNREADABLE}</span> : <MemoText memo={c.memo ?? ''} />}</dd>
-                    </>
-                )}
-            </dl>
-            {plain.secret !== undefined && <p className="mt-1.5 text-xs text-muted">{REVEAL_MS / 1000}초 뒤 다시 가려져요</p>}
+            {c.kind === 'site' ? (
+                <div className="mt-2 grid gap-3 lg:grid-cols-3">
+                    <Group title={c.url ? `서버 (${server.protocol.toUpperCase()})` : '서버'}>
+                        <Pair name="주소">{textWithCopy(server.host, '서버 주소')}</Pair>
+                        <Pair name="포트">{c.port ?? '-'}</Pair>
+                        <Pair name="아이디">{textWithCopy(c.loginId, '서버 아이디')}</Pair>
+                        <Pair name="비밀번호">{secret('secret', c.hasSecret)}</Pair>
+                    </Group>
+                    <Group title="사이트 관리자">
+                        <Pair name="주소">
+                            <span className="break-all">{url(c.adminUrl)}</span>
+                        </Pair>
+                        <Pair name="아이디">{textWithCopy(c.adminId, '관리자 아이디')}</Pair>
+                        <Pair name="비밀번호">{secret('adminSecret', c.hasAdminSecret)}</Pair>
+                    </Group>
+                    <Group title="DB">
+                        <Pair name="호스트">{textWithCopy(c.dbHost, 'DB 호스트')}</Pair>
+                        <Pair name="DB 이름">{textWithCopy(c.dbName, 'DB 이름')}</Pair>
+                        <Pair name="아이디">{textWithCopy(c.dbId, 'DB 아이디')}</Pair>
+                        <Pair name="비밀번호">{secret('dbSecret', c.hasDbSecret)}</Pair>
+                    </Group>
+                </div>
+            ) : (
+                <dl className="mt-2 grid gap-x-4 gap-y-1.5 sm:grid-cols-[4rem_1fr]">
+                    <Pair name="주소">
+                        <span className="break-all">{url(c.url)}</span>
+                    </Pair>
+                    <Pair name="아이디">{textWithCopy(c.loginId, '아이디')}</Pair>
+                    <Pair name="비밀번호">{secret('secret', c.hasSecret)}</Pair>
+                </dl>
+            )}
+            {c.hasMemo && (
+                <dl className="mt-2 grid gap-x-4 gap-y-1.5 sm:grid-cols-[4rem_1fr]">
+                    <Pair name="메모">{c.memoUnreadable ? <span className="text-rejected-fg">{UNREADABLE}</span> : <MemoText memo={c.memo ?? ''} />}</Pair>
+                </dl>
+            )}
+            {Object.keys(plain).length > 0 && <p className="mt-1.5 text-xs text-muted">{REVEAL_MS / 1000}초 뒤 다시 가려져요</p>}
             {notice && (
                 <p role="status" className="mt-1.5 text-xs text-primary">
                     {notice}
                 </p>
             )}
         </li>
+    );
+}
+
+function Group({ title, children }: { title: string; children: React.ReactNode }) {
+    return (
+        <section className="rounded-md bg-surface/60 p-2.5">
+            <h4 className="mb-1.5 text-xs font-semibold text-muted">{title}</h4>
+            <dl className="grid grid-cols-[4rem_1fr] gap-x-3 gap-y-1.5">{children}</dl>
+        </section>
+    );
+}
+
+function Pair({ name, children }: { name: string; children: React.ReactNode }) {
+    return (
+        <>
+            <dt className="text-xs text-muted">{name}</dt>
+            <dd className="min-w-0">{children}</dd>
+        </>
     );
 }
 

@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from './api';
-import { clientErrorText, credentialBody, emptyCredentialForm, isLongMemo, isWebUrl, logText, validateClientName, validateCredentialForm, REVEAL_MS } from './clients';
+import { clientErrorText, credentialBody, credentialToForm, emptyCredentialForm, splitServer, type Credential, isLongMemo, isWebUrl, logText, validateClientName, validateCredentialForm, REVEAL_MS } from './clients';
 
 describe('clients', () => {
     it('항목 입력 검사', () => {
-        const f = emptyCredentialForm();
+        const f = { ...emptyCredentialForm(), kind: 'ftp' as const };
         expect(validateCredentialForm(f)).toEqual({});
+        expect(validateCredentialForm(emptyCredentialForm())).toEqual({});
         expect(validateCredentialForm({ ...f, url: 'javascript:alert(1)' }).url).toBeTruthy();
         expect(validateCredentialForm({ ...f, url: 'sftp://a.example' }).url).toBeUndefined();
         expect(validateCredentialForm({ ...f, url: 'ftp://user:pw@a.example' }).url).toBe('주소에 아이디·비밀번호를 넣지 말고 아이디·비밀번호 칸에 넣어 주세요');
@@ -24,6 +25,27 @@ describe('clients', () => {
         expect(keep.memo).toBe('');
         expect(credentialBody({ ...f, secret: 'pw', memo: '메모' })).toMatchObject({ label: '가', secret: 'pw', memo: '메모' });
         expect(credentialBody({ ...f, secret: 'pw', clearSecret: true }).secret).toBe('');
+    });
+
+    it('호스팅 세트: 입력 검사·본문·고치기 불러오기', () => {
+        const f = { ...emptyCredentialForm(), host: ' a.cafe24.com ', loginId: 'f', secret: 'pw', adminUrl: 'https://a.kr/adm', adminId: 'adm', dbHost: 'localhost', dbName: 'n', dbId: 'd', dbSecret: 'dp' };
+        expect(validateCredentialForm(f)).toEqual({});
+        expect(validateCredentialForm({ ...f, host: 'ftp://a' }).host).toBeTruthy();
+        expect(validateCredentialForm({ ...f, host: 'u@a' }).host).toBeTruthy();
+        for (const port of ['0', '65536', 'a', '1.5']) expect(validateCredentialForm({ ...f, port }).port, port).toBeTruthy();
+        expect(validateCredentialForm({ ...f, port: '' }).port).toBeUndefined();
+        expect(validateCredentialForm({ ...f, adminUrl: 'javascript:x' }).adminUrl).toBeTruthy();
+        const body = credentialBody({ ...f, protocol: 'sftp', port: '2222' });
+        expect(body).toMatchObject({ kind: 'site', url: 'sftp://a.cafe24.com', port: 2222, adminId: 'adm', dbSecret: 'dp' });
+        expect(JSON.parse(JSON.stringify(body))).not.toHaveProperty('adminSecret');
+        expect(credentialBody({ ...f, host: '', port: '' })).toMatchObject({ url: '', port: null });
+        expect(credentialBody({ ...f, clearAdminSecret: true })).toMatchObject({ adminSecret: '' });
+        // 세트가 아닌 항목은 세트 칸을 보내지 않음
+        expect(credentialBody({ ...f, kind: 'ftp', url: 'ftp://x' })).not.toHaveProperty('adminId');
+        expect(splitServer('SFTP://h.kr')).toEqual({ protocol: 'sftp', host: 'h.kr' });
+        const c = { id: 1, kind: 'site', label: '메인', url: 'sftp://h.kr', loginId: 'f', hasSecret: true, port: 22, adminUrl: 'https://a', adminId: 'adm', hasAdminSecret: true, dbHost: 'localhost', dbName: 'n', dbId: 'd', hasDbSecret: false, hasMemo: false, memo: null, memoUnreadable: false, sort: 0, updatedAt: '' } satisfies Credential;
+        expect(credentialToForm(c)).toMatchObject({ protocol: 'sftp', host: 'h.kr', port: '22', adminId: 'adm', secret: '', adminSecret: '', dbSecret: '' });
+        expect(logText({ action: 'view', target: 'db_pw', credentialLabel: '메인', actorName: '홍길동', createdAt: '' })).toBe('홍길동 · DB 비밀번호 보기 · 메인');
     });
 
     it('긴 메모 접기 기준', () => {

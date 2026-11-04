@@ -59,9 +59,9 @@ let clientUpdate = true;
 Client.update = rec('update', () => clientUpdate);
 let clientRemove = [];
 Client.remove = rec('remove', () => clientRemove);
-const credRow = { id: 3, kind: 'ftp', label: '메인', url: 'ftp://example.com', login_id: 'user', has_secret: 1, has_memo: 1, sort: 0, updated_at: '2026-11-04 10:00:00', secret_enc: `v1:${PLAIN}`, memo_enc: `v1:${MEMO}` };
+const credRow = { id: 3, kind: 'ftp', label: '메인', url: 'ftp://example.com', login_id: 'user', has_secret: 1, has_memo: 1, port: null, admin_url: '', admin_id: '', has_admin_secret: 0, db_host: '', db_name: '', db_id: '', has_db_secret: 0, sort: 0, updated_at: '2026-11-04 10:00:00', secret_enc: `v1:${PLAIN}`, memo_enc: `v1:${MEMO}` };
 Credential.list = rec('credList', [credRow]);
-let credEnc = { id: 3, label: '메인', secret_enc: `v1:${PLAIN}`, memo_enc: `v1:${MEMO}` };
+let credEnc = { id: 3, label: '메인', secret_enc: `v1:${PLAIN}`, memo_enc: `v1:${MEMO}`, admin_secret_enc: 'v1:ADMINPW', db_secret_enc: 'v1:DBPW' };
 Credential.findEnc = rec('findEnc', (cp, cid, id) => (cp === 1 && cid === 5 && id === 3 ? credEnc : undefined));
 let credCreate = 21;
 Credential.create = rec('credCreate', () => credCreate);
@@ -115,7 +115,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
     res = await call(ctrl.detail, { params: { id: '5' } });
     assert.deepStrictEqual(Object.keys(res.body), ['client', 'credentials', 'files', 'logs']);
     assert.deepStrictEqual(res.body.client, { id: 5, kind: 'client', name: '테스트업체', hasLegacyMemo: true, legacyMemoUnreadable: false });
-    assert.deepStrictEqual(res.body.credentials, [{ id: 3, kind: 'ftp', label: '메인', url: 'ftp://example.com', loginId: 'user', hasSecret: true, hasMemo: true, memo: MEMO, memoUnreadable: false, sort: 0, updatedAt: '2026-11-04 10:00:00' }]);
+    assert.deepStrictEqual(res.body.credentials, [{ id: 3, kind: 'ftp', label: '메인', url: 'ftp://example.com', loginId: 'user', hasSecret: true, port: null, adminUrl: '', adminId: '', hasAdminSecret: false, dbHost: '', dbName: '', dbId: '', hasDbSecret: false, hasMemo: true, memo: MEMO, memoUnreadable: false, sort: 0, updatedAt: '2026-11-04 10:00:00' }]);
     assert.deepStrictEqual(res.body.files, [{ id: 8, originalName: '견적.pdf', size: 10, createdAt: '2026-11-04 10:00:00' }]);
     assert.deepStrictEqual(res.body.logs, [{ action: 'view', target: 'secret', credentialLabel: '메인', actorName: '홍길동', createdAt: '2026-11-04 10:00:00' }]);
     noPlain(res.body, '상세', true); // 항목 메모는 보이는 칸, 비밀번호·예전 메모는 없어야 함
@@ -150,7 +150,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
     // ---- 항목: 저장 전에 암호화, undefined = 그대로, '' = 지움 ----
     res = await call(ctrl.createCredential, { params: { id: '5' }, body: { kind: 'ftp', label: '메인', url: 'ftp://example.com', loginId: 'user', secret: PLAIN, memo: '' } });
     assert.deepStrictEqual(res.body, { id: 21 });
-    assert.deepStrictEqual(calls.credCreate.slice(0, 3), [1, 5, { kind: 'ftp', label: '메인', url: 'ftp://example.com', loginId: 'user', secretEnc: `v1:${PLAIN}`, memoEnc: null }]);
+    assert.deepStrictEqual(calls.credCreate.slice(0, 3), [1, 5, { kind: 'ftp', label: '메인', url: 'ftp://example.com', loginId: 'user', secretEnc: `v1:${PLAIN}`, memoEnc: null, port: null, adminUrl: '', adminId: '', dbHost: '', dbName: '', dbId: '', adminSecretEnc: null, dbSecretEnc: null }]);
     noPlain(res.body, '항목 저장 응답');
     await call(ctrl.createCredential, { params: { id: '5' }, body: { kind: 'etc' } });
     assert.deepStrictEqual([calls.credCreate[2].secretEnc, calls.credCreate[2].memoEnc], [null, null]);
@@ -160,6 +160,13 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
     expect(await call(ctrl.createCredential, { params: { id: '5' }, body: { kind: 'admin', url: 'https://user@example.com/admin' } }), 400, 'Invalid url');
     res = await call(ctrl.createCredential, { params: { id: '5' }, body: { kind: 'admin', url: 'https://example.com/a?mail=a@b.kr' } });
     assert.deepStrictEqual(res.body, { id: 21 });
+    // 세트: 비밀번호 셋 모두 암호화, 평문은 응답에 없음
+    res = await call(ctrl.createCredential, { params: { id: '5' }, body: { kind: 'site', url: 'sftp://h', port: 22, loginId: 'f', secret: PLAIN, adminUrl: 'https://a', adminId: 'adm', adminSecret: 'APW', dbHost: 'localhost', dbName: 'n', dbId: 'd', dbSecret: 'DPW' } });
+    assert.deepStrictEqual(res.body, { id: 21 });
+    assert.deepStrictEqual(calls.credCreate[2], { kind: 'site', label: '', url: 'sftp://h', loginId: 'f', port: 22, adminUrl: 'https://a', adminId: 'adm', dbHost: 'localhost', dbName: 'n', dbId: 'd', secretEnc: `v1:${PLAIN}`, memoEnc: null, adminSecretEnc: 'v1:APW', dbSecretEnc: 'v1:DPW' });
+    await call(ctrl.updateCredential, { params: { id: '5', cid: '3' }, body: { kind: 'site', dbSecret: '' } });
+    assert.deepStrictEqual([calls.credUpdate[3].adminSecretEnc, calls.credUpdate[3].dbSecretEnc], [undefined, null]);
+    expect(await call(ctrl.createCredential, { params: { id: '5' }, body: { kind: 'site', url: 'https://h' } }), 400, 'Invalid url');
     credCreate = null;
     expect(await call(ctrl.createCredential, { params: { id: '5' }, body: { kind: 'etc' } }), 404, 'Not found');
     keyReady = false;
@@ -169,7 +176,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
     res = await call(ctrl.updateCredential, { params: { id: '5', cid: '3' }, body: { kind: 'db', label: 'a', url: '', loginId: 'b', secret: '' } });
     assert.deepStrictEqual(res.body, { ok: true });
-    assert.deepStrictEqual(calls.credUpdate.slice(0, 4), [1, 5, 3, { kind: 'db', label: 'a', url: '', loginId: 'b', secretEnc: null, memoEnc: undefined }]);
+    assert.deepStrictEqual(calls.credUpdate.slice(0, 4), [1, 5, 3, { kind: 'db', label: 'a', url: '', loginId: 'b', secretEnc: null, memoEnc: undefined, port: null, adminUrl: '', adminId: '', dbHost: '', dbName: '', dbId: '', adminSecretEnc: null, dbSecretEnc: null }]);
     credUpdate = null;
     expect(await call(ctrl.updateCredential, { params: { id: '5', cid: '3' }, body: { kind: 'db' } }), 404, 'Not found');
     expect(await call(ctrl.updateCredential, { params: { id: '5', cid: 'x' }, body: { kind: 'db' } }), 404, 'Not found');
@@ -186,6 +193,15 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
     res = await call(ctrl.revealCredential, { params: { id: '5', cid: '3' }, body: { field: 'memo', action: 'copy' } });
     assert.deepStrictEqual(res.body, { value: MEMO });
     assert.deepStrictEqual([logs[1].target, logs[1].action], ['memo', 'copy']);
+    // 세트 비밀번호: 칸별 기록 target
+    res = await call(ctrl.revealCredential, { params: { id: '5', cid: '3' }, body: { field: 'adminSecret', action: 'view' } });
+    assert.deepStrictEqual([res.body, logs[2].target], [{ value: 'ADMINPW' }, 'admin_pw']);
+    res = await call(ctrl.revealCredential, { params: { id: '5', cid: '3' }, body: { field: 'dbSecret', action: 'copy' } });
+    assert.deepStrictEqual([res.body, logs[3].target], [{ value: 'DBPW' }, 'db_pw']);
+    credEnc = { ...credEnc, db_secret_enc: null };
+    expect(await call(ctrl.revealCredential, { params: { id: '5', cid: '3' }, body: { field: 'dbSecret', action: 'view' } }), 404, 'Not found');
+    credEnc = { ...credEnc, db_secret_enc: 'v1:DBPW' };
+    logs.splice(2);
     // 기록 실패 → 500, 값 없음
     logFail = true;
     res = await call(ctrl.revealCredential, { params: { id: '5', cid: '3' }, body: { field: 'secret', action: 'view' } });

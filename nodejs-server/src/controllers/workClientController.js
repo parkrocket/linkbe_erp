@@ -1,7 +1,7 @@
 const { Client, Credential, ClientFile, CredentialLog } = require('../models/clientModel');
 const Admin = require('../models/adminModel');
 const box = require('../utils/secretBox'); // box.encrypt 형태로 호출 — 점검에서 가짜로 바꿀 수 있게
-const { validateClient, validateCredential, validateReveal, CLIENT_KINDS } = require('../utils/clientValidation');
+const { validateClient, validateCredential, validateReveal, CLIENT_KINDS, REVEAL_FIELDS } = require('../utils/clientValidation');
 const { WORK_UPLOAD_ROOT, isAllowedFile, saveWorkFile, removeWorkFile, attachmentHeader, isStoredName } = require('../utils/workUploads');
 
 // 거래처 접속정보 API — requireAuth·requireClientSecret 뒤. 모든 조회·변경은 req.userCpId 범위(모델이 업체 cp_id로 확인)
@@ -55,6 +55,11 @@ const memoOf = enc => {
 
 // 비밀 칸 암호화: undefined = 그대로, null = 지움 (키 없으면 SECRET_KEY_MISSING → 503)
 const encOrKeep = v => (v === undefined ? undefined : v === null ? null : box.encrypt(v));
+// 검사한 항목 값 → 모델 값(비밀 칸 넷은 암호문으로). isNew: 새 항목은 '그대로'(undefined)가 없으므로 null
+const credentialValue = ({ secret, memo, adminSecret, dbSecret, ...rest }, isNew) => {
+    const enc = v => (isNew ? (encOrKeep(v) ?? null) : encOrKeep(v));
+    return { ...rest, secretEnc: enc(secret), memoEnc: enc(memo), adminSecretEnc: enc(adminSecret), dbSecretEnc: enc(dbSecret) };
+};
 
 // 저장 파일 지우기 — 정리 단계라 실패해도 응답은 그대로(코드만 기록)
 const discard = storedName => {
@@ -121,6 +126,14 @@ exports.detail = handle(async (req, res) => {
             url: c.url,
             loginId: c.login_id,
             hasSecret: Boolean(c.has_secret),
+            port: c.port,
+            adminUrl: c.admin_url,
+            adminId: c.admin_id,
+            hasAdminSecret: Boolean(c.has_admin_secret),
+            dbHost: c.db_host,
+            dbName: c.db_name,
+            dbId: c.db_id,
+            hasDbSecret: Boolean(c.has_db_secret),
             hasMemo: Boolean(c.has_memo),
             ...memoOf(c.memo_enc),
             sort: c.sort,
@@ -169,8 +182,7 @@ exports.createCredential = handle(async (req, res) => {
     if (!id) return notFound(res);
     const checked = validateCredential(req.body);
     if (!checked.ok) return fail(res, 400, checked.error);
-    const { secret, memo, ...rest } = checked.value;
-    const value = { ...rest, secretEnc: encOrKeep(secret) ?? null, memoEnc: encOrKeep(memo) ?? null };
+    const value = credentialValue(checked.value, true);
     const actor = await actorOf(req);
     if (!actor) return noActor(res);
     const newId = await Credential.create(req.userCpId, id, value, actor);
@@ -184,8 +196,7 @@ exports.updateCredential = handle(async (req, res) => {
     if (!id || !cid) return notFound(res);
     const checked = validateCredential(req.body);
     if (!checked.ok) return fail(res, 400, checked.error);
-    const { secret, memo, ...rest } = checked.value;
-    const value = { ...rest, secretEnc: encOrKeep(secret), memoEnc: encOrKeep(memo) };
+    const value = credentialValue(checked.value, false);
     const actor = await actorOf(req);
     if (!actor) return noActor(res);
     if (!(await Credential.update(req.userCpId, id, cid, value, actor))) return notFound(res);
@@ -228,7 +239,8 @@ exports.revealCredential = handle(async (req, res) => {
     const { field, action } = checked.value;
     const row = await Credential.findEnc(req.userCpId, id, cid);
     if (!row) return notFound(res);
-    await reveal(req, res, row[`${field}_enc`], { cpId: req.userCpId, clientId: id, credentialId: cid, target: field, action });
+    const [column, target] = REVEAL_FIELDS[field];
+    await reveal(req, res, row[column], { cpId: req.userCpId, clientId: id, credentialId: cid, target, action });
 });
 
 exports.revealLegacy = handle(async (req, res) => {
