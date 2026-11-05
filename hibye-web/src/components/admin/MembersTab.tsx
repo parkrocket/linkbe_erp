@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
-import type { RunAction } from './AdminPage';
+import type { RunAction } from './useAdminUsers';
 import { MemberDialog } from './MemberDialog';
 import { changeRole, changeStatus, joinedAt, STATUS_LABEL, STATUS_TONE, type AdminUser } from './adminApi';
 

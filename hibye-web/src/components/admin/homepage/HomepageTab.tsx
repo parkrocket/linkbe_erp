@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import type { HomepageMenu } from '@/lib/adminNav';
 import { CustomersPanel } from './CustomersPanel';
 import { FaqPanel } from './FaqPanel';
 import { InquiriesPanel } from './InquiriesPanel';
@@ -10,51 +10,27 @@ import { PopupPanel } from './PopupPanel';
 import { PostsPanel } from './PostsPanel';
 import { ProductsPanel } from './ProductsPanel';
 
-const MENUS = [
-    ['inquiries', '문의함'],
-    ['orders', '주문'],
-    ['products', '개인결제 상품'],
-    ['customers', '고객 회원'],
-    ['notice', '공지사항'],
-    ['portfolio', '포트폴리오'],
-    ['faq', 'FAQ'],
-    ['popup', '메인 팝업'],
-    ['pages', '안내 페이지'],
-] as const;
-type Menu = (typeof MENUS)[number][0];
-
-// 홈페이지(linkbe.kr) 관리 — 문의함이 기본(가장 자주 확인)
-export function HomepageTab() {
-    const [menu, setMenu] = useState<Menu>('inquiries');
-    return (
-        <>
-            <div role="group" aria-label="홈페이지 메뉴" className="mb-4 flex flex-wrap gap-1.5">
-                {MENUS.map(([value, label]) => (
-                    <button
-                        key={value}
-                        type="button"
-                        aria-pressed={menu === value}
-                        onClick={() => setMenu(value)}
-                        className={`rounded-full border px-3 py-1 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-primary ${
-                            menu === value
-                                ? 'border-primary bg-primary-soft font-bold text-primary'
-                                : 'border-line text-muted hover:text-ink'
-                        }`}
-                    >
-                        {label}
-                    </button>
-                ))}
-            </div>
-            {menu === 'inquiries' && <InquiriesPanel />}
-            {menu === 'orders' && <OrdersPanel />}
-            {menu === 'products' && <ProductsPanel />}
-            {menu === 'customers' && <CustomersPanel />}
-            {(menu === 'notice' || menu === 'portfolio') && <PostsPanel key={menu} board={menu} />}
-            {menu === 'faq' && <FaqPanel />}
-            {menu === 'popup' && <PopupPanel />}
-            {menu === 'pages' && <PagesPanel />}
-        </>
-    );
+// 홈페이지(linkbe.kr) 관리 — 메뉴는 주소(/admin/homepage/<메뉴>)로 고름(lib/adminNav.ts HOMEPAGE_MENUS)
+export function HomepagePanel({ menu }: { menu: HomepageMenu }) {
+    switch (menu) {
+        case 'inquiries':
+            return <InquiriesPanel />;
+        case 'orders':
+            return <OrdersPanel />;
+        case 'products':
+            return <ProductsPanel />;
+        case 'customers':
+            return <CustomersPanel />;
+        case 'notice':
+        case 'portfolio':
+            return <PostsPanel key={menu} board={menu} />;
+        case 'faq':
+            return <FaqPanel />;
+        case 'popup':
+            return <PopupPanel />;
+        case 'pages':
+            return <PagesPanel />;
+    }
 }
 
 export function NoticeLine({ notice }: { notice: { tone: 'ok' | 'error'; text: string } | null }) {

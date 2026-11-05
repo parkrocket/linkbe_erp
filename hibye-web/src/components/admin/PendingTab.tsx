@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Modal } from '@/components/leave/Modal';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
-import type { RunAction } from './AdminPage';
+import type { RunAction } from './useAdminUsers';
 import { changeStatus, joinedAt, type AdminUser } from './adminApi';
 
 // 가입 승인 탭 — 승인은 바로, 거절은 확인 후
