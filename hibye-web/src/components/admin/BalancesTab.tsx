@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useApiData } from '@/components/dashboard/useApiData';
 import { Modal } from '@/components/leave/Modal';
+import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
@@ -87,13 +88,20 @@ export function BalancesTab() {
             <p className="mb-3 text-xs text-muted">입력한 값으로 남은 일수를 덮어써요. 연차는 0.5일 단위, 휴가는 하루 단위예요.</p>
 
             {!rows.length ? (
-                <EmptyState message="승인된 직원이 없어요" />
+                <EmptyState message="직원이 없어요" />
             ) : (
                 <ul className="divide-y divide-line">
                     {rows.map(row => (
-                        <li key={row.mb_no} className="flex flex-wrap items-start gap-x-4 gap-y-2 py-3">
+                        // 비활성 직원은 회색 배경 + '비활성' 표시(색만으로 구분하지 않게)
+                        <li
+                            key={row.mb_no}
+                            className={`flex flex-wrap items-start gap-x-4 gap-y-2 px-3 py-3 ${row.user_status === 'inactive' ? 'bg-neutral-bg' : 'bg-white'}`}
+                        >
                             <div className="min-w-40 flex-1">
-                                <p className="text-sm font-bold">{row.user_name}</p>
+                                <p className="flex items-center gap-1.5 text-sm font-bold">
+                                    {row.user_name}
+                                    {row.user_status === 'inactive' && <Badge tone="rejected">비활성</Badge>}
+                                </p>
                                 <p className="truncate text-xs text-muted">{row.user_id}</p>
                             </div>
                             {(['stip', 'vaca'] as const).map(kind => (

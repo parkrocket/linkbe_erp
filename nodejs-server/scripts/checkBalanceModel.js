@@ -83,11 +83,11 @@ const input = changes => ({ cpId: 1, actorMbNo: 2, reason: '2027년 연차 부�
     ]);
     assert.strictEqual(queries.filter(q => q === 'COMMIT').length, 1);
 
-    // 목록: 같은 회사 승인 직원만, 필요한 컬럼만
+    // 목록: 같은 회사 승인·비활성 직원만(대기·거절 제외), 필요한 컬럼만
     reset([]);
     await Balance.listApproved(7);
     let q = queries[0];
-    assert.ok(/cp_id = \?/.test(q.sql) && /user_status = 'approved'/.test(q.sql) && !/SELECT\s+\*/i.test(q.sql) && !/user_password/.test(q.sql));
+    assert.ok(/cp_id = \?/.test(q.sql) && /user_status IN \('approved', 'inactive'\)/.test(q.sql) && !/SELECT\s+\*/i.test(q.sql) && !/user_password/.test(q.sql));
     assert.deepStrictEqual(q.params, [7]);
 
     // 존재 확인: 같은 회사 조건

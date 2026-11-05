@@ -6,6 +6,7 @@ export type BalanceRow = {
     user_id: string;
     user_stip: number | null;
     user_vaca: number | null;
+    user_status?: 'approved' | 'inactive';
 };
 
 // 입력칸 문자열 — 키가 없으면 수정하지 않은 칸

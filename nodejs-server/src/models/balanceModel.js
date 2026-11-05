@@ -15,9 +15,10 @@ Balance.BalanceError = BalanceError;
 
 const num = v => (v === null || v === undefined ? null : Number(v));
 
+// 승인 직원 먼저, 비활성 직원은 뒤에 (화면에서 배경색으로 구분)
 Balance.listApproved = async cpId => {
     const [rows] = await pool.query(
-        "SELECT mb_no, user_name, user_id, user_stip, user_vaca FROM lk_user WHERE cp_id = ? AND user_status = 'approved' ORDER BY user_name",
+        "SELECT mb_no, user_name, user_id, user_stip, user_vaca, user_status FROM lk_user WHERE cp_id = ? AND user_status IN ('approved', 'inactive') ORDER BY user_status = 'inactive', user_name",
         [cpId],
     );
     return rows;
