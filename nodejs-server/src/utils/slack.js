@@ -23,7 +23,6 @@ const publishHomeView = async (
     myGtw,
     myVa,
     date,
-    encryptedUserId,
 ) => {
     const userName = user.user_name;
 

@@ -4,7 +4,6 @@ const {
     sendSlackMessage,
     updateSlackStatus,
 } = require('../utils/slack');
-const { encrypt, decrypt } = require('../utils/crypto');
 const User = require('../models/userModel');
 const Gtw = require('../models/gtwModel');
 const Vca = require('../models/vacationModel');
@@ -67,7 +66,6 @@ const handleHomeView = async (req, res) => {
 
             const userEmail = userInfo.user.profile.email;
             const date = moment().format('YYYY-MM-DD');
-            const encryptedUserId = encrypt(`${date}|${userEmail}`);
 
             const user = await User.findByEmailAsync(userEmail);
             if (!user) {
@@ -87,7 +85,6 @@ const handleHomeView = async (req, res) => {
                 myGtw,
                 myVa,
                 date,
-                encryptedUserId,
             );
 
             res.status(200).send();
@@ -97,114 +94,6 @@ const handleHomeView = async (req, res) => {
         }
     } else {
         res.status(200).send();
-    }
-};
-
-const handleGtwCheck = async (req, res) => {
-    const { userId, type, platform, slackuser } = req.query;
-
-    const date = moment().format('YYYY-MM-DD');
-    const dateNow = moment().format('HH시mm분ss초');
-
-    const location = type.includes('gtw') ? 'office' : 'home';
-
-    let ip;
-    let errorM = '';
-
-    if (process.env.NODE_ENV === 'development') {
-        ip = process.env.DEV_IP;
-    } else {
-        ip = req.clientIp.includes('::ffff:')
-            ? req.clientIp.split('::ffff:')[1]
-            : req.clientIp;
-    }
-
-    try {
-        const decryptedUserId = decrypt(userId);
-        const parts = decryptedUserId.split('|');
-
-        if (date !== parts[0]) {
-            return res.json({
-                message: '잘못된 접근입니다.',
-                windowClose: false,
-            });
-        }
-
-        /*
-
-        if (type === 'gtw' && process.env.COMPANY_IP !== ip) {
-            return res.json({
-                message: '지정된 ip가 아닙니다.',
-                windowClose: false,
-            });
-        }
-            */
-
-        console.log('퇴근버튼 누름');
-
-        const gtw = await Gtw.findByGtwAsync(parts[1], date);
-        if (type === 'gtw' && gtw.length > 0) {
-            errorM =
-                gtw[0].end_time === null
-                    ? '이미 출근중입니다.'
-                    : '이미 퇴근하셨습니다. 내일도 화이팅.';
-            return res.json({ message: errorM, windowClose: false });
-        }
-
-        await Gtw.createAsync(parts[1], type, date, ip, platform);
-
-        const userInfo = await client.users.info({ user: slackuser });
-        if (userInfo.ok) {
-            const userEmail = userInfo.user.profile.email;
-            const encryptedUserId = encrypt(`${date}|${userEmail}`);
-
-            const user = await User.findByEmailAsync(userEmail);
-            if (!user) {
-                console.log('User not found:', userEmail);
-                return res
-                    .status(404)
-                    .json({ refreshSuccess: false, error: 'User not found' });
-            }
-
-            const gtwAll = await Gtw.findByGtwAllAsync(date);
-            const myGtw = await Gtw.findByGtwAsync(user.user_id, date);
-            const myVa = await Vca.findByAllAsync();
-
-            await publishHomeView(
-                slackuser,
-                user,
-                gtwAll,
-                myGtw,
-                myVa,
-                date,
-                encryptedUserId,
-            );
-
-            const message =
-                type === 'gtw' || type === 'remote_gtw'
-                    ? `${user.user_name}님이 ${dateNow}에 출근하셨습니다.`
-                    : `${user.user_name}님이 ${dateNow}에 퇴근하셨습니다.`;
-
-            await sendSlackMessage('#출퇴근', message);
-
-            const emoji =
-                type === 'gtw' ? '🏢' : type === 'remote_gtw' ? '🏠' : '';
-            const emojiText =
-                type === 'gtw'
-                    ? '회사 출근중'
-                    : type === 'remote_gtw'
-                    ? '재택 출근중'
-                    : '';
-
-            //await updateSlackStatus(slackuser, emoji, emojiText);
-
-            return res.json({ message: '출근완료', windowClose: true });
-        } else {
-            return res.status(500).send('Error fetching user info');
-        }
-    } catch (error) {
-        console.error('Error in /gtwCheck route:', error);
-        return res.status(400).send('Invalid user ID');
     }
 };
 
@@ -273,6 +162,5 @@ const handleInteractions = async (req, res) => {
 module.exports = {
     handleSlackEvents,
     handleHomeView,
-    handleGtwCheck,
     handleInteractions,
 };

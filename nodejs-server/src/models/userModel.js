@@ -14,8 +14,9 @@ User.create = async ({ email, password, name, phone, cpId, doe, gender, birth })
     return result.insertId;
 };
 
+// 회사는 이름만 — 사무실 IP·사업자번호 등 lk_company 칸이 로그인·auth 응답에 실려 나가던 것 차단
 User.findByEmail = (userId, callback) => {
-    db.query('SELECT * FROM lk_user left join lk_company on lk_user.cp_id = lk_company.cp_id WHERE user_id = ?', [userId], (err, results) => {
+    db.query('SELECT lk_user.*, lk_company.cp_name FROM lk_user left join lk_company on lk_user.cp_id = lk_company.cp_id WHERE user_id = ?', [userId], (err, results) => {
         if (err) {
             return callback(err, null);
         }

@@ -193,6 +193,15 @@ function reset(user = { mb_no: 5, cp_id: 1, user_name: '홍길동', user_stip: 5
     assert.ok(ran(/DELETE FROM lk_vacation WHERE id = \?/) && queries.includes('COMMIT'));
     assert.ok(calendarCalls.includes('delete:evt-7'));
 
+    // 취소: 지난 근태는 본인 취소 불가(400), 오늘은 가능 — 오늘은 Apply.today 가짜 '2026-10-29'
+    reset(undefined, [[/FROM lk_vacation/, [{ id: 9, user_id: 'me', type: 'day', calendar_id: 'evt-9', ymd: '2026-10-28' }]]]);
+    const pastCancel = await Apply.cancel({ id: 9, userId: 'me' }).catch(e => e);
+    assert.strictEqual(pastCancel.message, 'Past date not allowed');
+    assert.ok(!ran(/DELETE/) && !ran(/UPDATE lk_user/) && calendarCalls.length === 0, '지난 근태는 아무것도 바꾸지 않음');
+    reset(undefined, [[/FROM lk_vacation/, [{ id: 9, user_id: 'me', type: 'home', calendar_id: null, ymd: '2026-10-29' }]]]);
+    await Apply.cancel({ id: 9, userId: 'me' });
+    assert.ok(ran(/DELETE FROM lk_vacation WHERE id = \?/), '오늘 근태는 취소 가능');
+
     // 취소: 재택 — 복원 없음
     reset(undefined, [[/FROM lk_vacation/, [{ id: 8, user_id: 'me', type: 'home', calendar_id: null }]]]);
     await Apply.cancel({ id: 8, userId: 'me' });

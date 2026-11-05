@@ -4,7 +4,7 @@ const User = require('../models/userModel');
 // 로그인 없이 호출 가능한 API (경로는 /api 기준)
 // - users: 로그인·가입·인증확인·로그아웃
 // - company/list: 회원가입 화면의 회사 목록
-// - slack: Slack 서버 호출(서명 검증으로 보호) 및 암호화 링크(gtwCheck)
+// - slack: Slack 서버 호출(서명 검증으로 보호)
 const PUBLIC_PATHS = [
     '/users/login',
     '/users/register',

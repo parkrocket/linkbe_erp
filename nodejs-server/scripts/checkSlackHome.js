@@ -20,7 +20,7 @@ const user = { user_name: '김직원', user_doe: '2024-03-04', user_stip: 7.5, u
     // 출퇴근 상태와 관계없이 출퇴근 버튼·/gtw 링크 없음 (출퇴근 기록 미사용, 새 앱에 /gtw 없음)
     for (const gtw_status of [0, 1, 2]) {
         published = [];
-        await publishHomeView('U1', { ...user, gtw_status, gtw_location: 'office' }, [{ start_time: '2026-11-02T09:00:00' }], [], '2026-11-02', 'enc');
+        await publishHomeView('U1', { ...user, gtw_status, gtw_location: 'office' }, [{ start_time: '2026-11-02T09:00:00' }], [], '2026-11-02');
         const json = JSON.stringify(published[0].view.blocks);
         assert.ok(!json.includes('/gtw'), `gtw_status ${gtw_status}: /gtw 링크 남음`);
         for (const id of ['clock_in', 'remote_clock_in', 'clock_out']) assert.ok(!json.includes(id), `${id} 버튼 남음`);

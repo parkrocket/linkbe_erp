@@ -134,7 +134,8 @@ function CancelDialog({ target, user, onClose, onCanceled }: CancelProps) {
                 router.replace('/login?redirect=/vaca');
                 return;
             }
-            setError(e instanceof ApiError && e.status === 404 ? '이미 취소된 근태예요.' : '취소하지 못했어요. 잠시 후 다시 시도해 주세요.');
+            if (e instanceof ApiError && e.reason === 'Past date not allowed') setError('지난 근태는 취소할 수 없어요. 관리자에게 문의해 주세요.');
+            else setError(e instanceof ApiError && e.status === 404 ? '이미 취소된 근태예요.' : '취소하지 못했어요. 잠시 후 다시 시도해 주세요.');
         } finally {
             setSubmitting(false);
         }

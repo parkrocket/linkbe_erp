@@ -243,7 +243,7 @@ const cancelLeave = async ({ where, params, actorMbNo, memoSuffix = '', notPast 
 // 본인 취소 — 소유 확인(id + 토큰 주인), 종류·캘린더 ID는 DB 값 사용
 // (기존: id만으로 삭제 + 요청 바디의 userId에 복원 → 남의 근태 삭제·내 잔여 부풀리기 가능)
 Apply.cancel = async ({ id, userId }) => {
-    await cancelLeave({ where: 'v.id = ? AND v.user_id = ?', params: [id, userId] });
+    await cancelLeave({ where: 'v.id = ? AND v.user_id = ?', params: [id, userId], notPast: true }); // 지난 근태는 본인 취소 불가(잔여 되돌리기 방지)
 };
 
 // 관리자 대신 취소 — 같은 회사 직원의 오늘 이후 근태만, 장부 변경자는 관리자·메모에 사유

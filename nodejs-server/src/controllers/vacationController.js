@@ -26,7 +26,8 @@ exports.cancel = (req, res) => require('./applyController').applyCancel(req, res
 exports.vcaWeeklyStatus = (req, res) => {
     //const date = moment().format('YYYY-MM-DD');
 
-    const { userId, date } = req.body;
+    const userId = req.userId; // 토큰 주인만 (바디 userId로 남의 기록 조회 차단)
+    const { date } = req.body;
 
     Vacation.findByVcaWeeklyStatus(userId, date, (err, gtw) => {
         if (err) {

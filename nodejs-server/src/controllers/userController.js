@@ -32,7 +32,8 @@ exports.login = (req, res) => {
             return res.status(200).json({ loginSuccess: false, error: 'Database query error' });
         }
         if (!user) {
-            return res.status(200).json({ loginSuccess: false, error: 'User not found' });
+            // 없는 계정도 비밀번호 틀림과 같은 문구 — 문구로 가입 여부를 알 수 없게
+            return res.status(200).json({ loginSuccess: false, error: 'Invalid credentials' });
         }
 
         User.comparePassword(password, user.user_password, (err, isMatch) => {

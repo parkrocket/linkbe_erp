@@ -21,8 +21,9 @@ exports.companyIn = (req, res) => {
             : req.clientIp;
     }
 
-    const { userId, type, platform } = req.body;
-    console.log('test');
+    // 사용자는 토큰 주인만 — 요청 바디의 userId로 남의 출근 기록·Slack 알림을 만들 수 있었음
+    const userId = req.userId;
+    const { type, platform } = req.body;
     /*
 
     if (process.env.COMPANY_IP !== ip) {
@@ -70,7 +71,8 @@ exports.companyIn = (req, res) => {
 exports.gtwStatus = (req, res) => {
     //const date = moment().format('YYYY-MM-DD');
 
-    const { userId, date } = req.body;
+    const userId = req.userId; // 토큰 주인만 (바디 userId로 남의 기록 조회 차단)
+    const { date } = req.body;
 
     Gtw.findByGtwStatus(userId, date, (err, gtw) => {
         if (err) {
@@ -87,7 +89,8 @@ exports.gtwStatus = (req, res) => {
 exports.gtwWeeklyStatus = (req, res) => {
     //const date = moment().format('YYYY-MM-DD');
 
-    const { userId, date } = req.body;
+    const userId = req.userId; // 토큰 주인만 (바디 userId로 남의 기록 조회 차단)
+    const { date } = req.body;
 
     Gtw.findByGtwWeeklyStatus(userId, date, (err, gtw) => {
         if (err) {

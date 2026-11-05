@@ -46,6 +46,11 @@ const runMiddleware = (mw, req) =>
         assert.deepStrictEqual(res.cookies, [], `${status}: 쿠키 발급 금지`);
         assert.ok(!res.body.token, `${status}: 토큰 응답 금지`);
     }
+    // 없는 계정 → 비밀번호 틀림과 같은 문구 (가입 여부 노출 금지)
+    loginUser = undefined;
+    const none = fakeRes();
+    userController.login({ body: { email: 'none@b.c', password: 'x' } }, none);
+    assert.deepStrictEqual(none.body, { loginSuccess: false, error: 'Invalid credentials' });
     // 승인 → 로그인 성공
     loginUser = { user_id: 'a@b.c', user_password: 'hash', user_status: 'approved' };
     const ok = fakeRes();
