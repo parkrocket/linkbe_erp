@@ -42,7 +42,7 @@ function requireAuth(req, res, next) {
         if (err) {
             return res.status(401).json({ isAuth: false, error: 'Invalid token' });
         }
-        // 매 요청 계정 상태 확인 — 비활성화·거절되면 토큰 만료(24h)를 기다리지 않고 다음 요청부터 차단
+        // 매 요청 계정 상태 확인 — 비활성화·거절되면 토큰 만료(24시간·30일)를 기다리지 않고 다음 요청부터 차단
         let account;
         try {
             account = await User.findStatusById(decoded.userId);

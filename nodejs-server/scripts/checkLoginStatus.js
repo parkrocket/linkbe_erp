@@ -19,7 +19,7 @@ const fakeRes = () => {
     const r = { code: 200, cookies: [] };
     r.status = c => ((r.code = c), r);
     r.json = b => ((r.body = b), r);
-    r.cookie = (name, value, options) => (r.cookies.push(name), (r.cookieOptions = options));
+    r.cookie = (name, value, options) => (r.cookies.push(name), (r.cookieOptions = options), (r.token = value));
     r.clearCookie = (name, options) => (r.cleared = { name, options });
     return r;
 };
@@ -60,6 +60,17 @@ const runMiddleware = (mw, req) =>
     // 쿠키 보안 (2026-11-02 전환 후): 화면 코드가 읽지 못하게, 24시간(JWT 만료와 같음), 다른 사이트 요청엔 안 실림
     assert.deepStrictEqual(ok.cookieOptions, { httpOnly: true, secure: false, sameSite: 'lax', maxAge: 24 * 60 * 60 * 1000, path: '/' });
     assert.ok(!('token' in ok.body), '로그인 응답 본문에 토큰을 싣지 않음 (쿠키로만)');
+    // JWT 만료도 쿠키와 같은 24시간
+    const ttlOf = token => (d => d.exp - d.iat)(jwt.decode(token));
+    assert.strictEqual(ttlOf(ok.token), 24 * 60 * 60);
+    // '로그인 상태 유지'(remember: true)만 30일 — 쿠키·JWT 둘 다. true가 아닌 값(문자열 등)은 24시간
+    const DAY = 24 * 60 * 60;
+    for (const [remember, days] of [[true, 30], ['true', 1], [1, 1], [false, 1]]) {
+        const r = fakeRes();
+        userController.login({ body: { email: 'a@b.c', password: 'x', remember } }, r);
+        assert.strictEqual(r.cookieOptions.maxAge, days * DAY * 1000, `remember=${JSON.stringify(remember)} 쿠키`);
+        assert.strictEqual(ttlOf(r.token), days * DAY, `remember=${JSON.stringify(remember)} JWT`);
+    }
     // 운영은 HTTPS 전용
     const prevEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'production';

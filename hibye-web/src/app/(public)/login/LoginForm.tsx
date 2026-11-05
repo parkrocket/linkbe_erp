@@ -28,7 +28,8 @@ export function LoginForm() {
             // 로그인 쿠키(x_auth)는 API 응답(Set-Cookie)이 설정 — 화면 코드는 토큰을 다루지 않음
             const res = await apiFetch<LoginResponse>('/api/users/login', {
                 method: 'POST',
-                body: { email: form.get('email'), password: form.get('password') },
+                // remember: 체크하면 30일, 아니면 24시간 (서버가 쿠키·토큰 만료를 정함)
+                body: { email: form.get('email'), password: form.get('password'), remember: form.get('remember') === 'on' },
             });
             if (!res.loginSuccess) {
                 // 승인 대기·거절·비활성은 사유 안내, 그 외는 계정 존재 여부를 드러내지 않는 단일 문구
@@ -59,6 +60,14 @@ export function LoginForm() {
                     autoComplete="current-password"
                     className={INPUT_CLASS}
                 />
+            </label>
+            {/* 기본은 꺼짐 — 공용 PC에서 30일 로그인이 남지 않게 */}
+            <label className="flex items-center gap-2 text-sm text-ink">
+                <input name="remember" type="checkbox" className="size-4 accent-primary" aria-describedby="remember-hint" />
+                로그인 상태 유지
+                <span id="remember-hint" className="text-xs text-muted">
+                    (30일, 공용 PC에서는 끄세요)
+                </span>
             </label>
             {error && (
                 <p role="alert" className="text-sm text-rejected-fg">

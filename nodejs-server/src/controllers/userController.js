@@ -12,7 +12,10 @@ const ADMIN_URL = 'https://hibye.kr/admin/pending'; // 가입 승인 화면
 
 // 로그인 쿠키 속성 (2026-11-02 새 앱 전환 후) — 화면 코드가 읽지 못하게(httpOnly), 운영은 HTTPS 전용,
 // 다른 사이트에서 보낸 요청엔 안 실림(lax). 지울 때도 같은 속성이어야 브라우저가 같은 쿠키로 인식
-const TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // JWT expiresIn '24h'와 같게
+// 유효 기간: 기본 24시간, 로그인 화면 '로그인 상태 유지' 체크 시 30일 (11-05) — 쿠키와 JWT 만료를 같은 값으로
+// 비활성화는 requireAuth가 매 요청 DB에서 확인하므로 기간과 관계없이 즉시 차단
+const TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
+const REMEMBER_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const cookieOptions = () => ({ httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/' });
 
 // 로그인 차단 상태 → 사유 (approved만 로그인 가능)
@@ -53,8 +56,10 @@ exports.login = (req, res) => {
 
             // JWT 생성 및 전송
 
-            const token = jwt.sign({ userId: user.user_id }, secretKey, { expiresIn: '24h' });
-            res.cookie('x_auth', token, { ...cookieOptions(), maxAge: TOKEN_TTL_MS });
+            // remember는 true일 때만 30일 (문자열 'false' 등은 기본 24시간)
+            const ttlMs = req.body.remember === true ? REMEMBER_TTL_MS : TOKEN_TTL_MS;
+            const token = jwt.sign({ userId: user.user_id }, secretKey, { expiresIn: ttlMs / 1000 });
+            res.cookie('x_auth', token, { ...cookieOptions(), maxAge: ttlMs });
 
             // 토큰은 쿠키로만 (본문에 실으면 화면 스크립트가 읽을 수 있음)
             return res.json({ loginSuccess: true, message: 'Login successful', user: toSafeUser(user) });
