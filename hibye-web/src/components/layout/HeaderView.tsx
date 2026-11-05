@@ -17,16 +17,20 @@ const NAV = [
 // 숫자 배지 낭독 문구 — 업무는 대기 경비 건수, 그 밖(관리)은 승인 대기 인원
 const WORK_LABEL = '건 승인 대기';
 
-const isActive = (pathname: string, href: string) =>
-    href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(href + '/');
+// '관리'는 주소가 문의함(홈페이지 권한자)이어도 관리 화면 전체에서 선택 표시
+const isActive = (pathname: string, href: string) => {
+    const section = href.startsWith('/admin') ? '/admin' : href;
+    return section === '/' ? pathname === '/' : pathname === section || pathname.startsWith(section + '/');
+};
 
-type Props = { userName: string | null; canManage?: boolean; pendingCount?: number; workBadge?: number };
+// manageHref: '관리' 메뉴 주소 — 관리자는 대시보드, 홈페이지 권한자는 문의함(없으면 메뉴 없음)
+type Props = { userName: string | null; manageHref?: string; pendingCount?: number; workBadge?: number };
 
-export function HeaderView({ userName, canManage = false, pendingCount = 0, workBadge = 0 }: Props) {
+export function HeaderView({ userName, manageHref, pendingCount = 0, workBadge = 0 }: Props) {
     const pathname = usePathname();
     // 관리자·홈페이지 권한자에게 '관리' 메뉴 (승인 대기 인원 배지는 관리자만 — 권한자는 0)
     const base = [...NAV, { href: '/work', label: '업무', badge: workBadge, unit: WORK_LABEL }];
-    const nav = canManage ? [...base, { href: '/admin', label: '관리', badge: pendingCount }] : base;
+    const nav = manageHref ? [...base, { href: manageHref, label: '관리', badge: pendingCount }] : base;
     const router = useRouter();
     const [menuOpen, setMenuOpen] = useState(false);
     const [userMenuOpen, setUserMenuOpen] = useState(false);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { adminNavFor, adminRedirect, HOMEPAGE_HOME, HOMEPAGE_MENUS, isHomepageMenu, isWorkSettingsTab, legacyAdminPath } from './adminNav';
+import { adminNavFor, HOMEPAGE_MENUS, isHomepageMenu, isWorkSettingsTab, legacyAdminPath } from './adminNav';
 
 describe('adminNavFor', () => {
     it('관리자: 대시보드·직원·홈페이지·업무 설정·보안, 링크 20개', () => {
@@ -42,16 +42,6 @@ describe('legacyAdminPath — 예전 /admin?tab= 주소', () => {
         expect(legacyAdminPath('security')).toBe('/admin/security');
         expect(legacyAdminPath('x')).toBe('/admin');
         expect(legacyAdminPath('constructor')).toBe('/admin');
-    });
-});
-
-describe('adminRedirect — 홈페이지 권한자는 홈페이지 밖 못 감', () => {
-    it('경로별', () => {
-        expect(adminRedirect('/admin', false)).toBe(HOMEPAGE_HOME);
-        expect(adminRedirect('/admin/members', false)).toBe(HOMEPAGE_HOME);
-        expect(adminRedirect('/admin/homepage/faq', false)).toBeNull();
-        expect(adminRedirect('/admin', true)).toBeNull();
-        expect(adminRedirect('/admin/security', true)).toBeNull();
     });
 });
 

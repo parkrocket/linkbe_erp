@@ -3,7 +3,7 @@ import { Suspense, type ReactNode } from 'react';
 import { AdminShell } from '@/components/admin/AdminShell';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { adminNavFor } from '@/lib/adminNav';
-import { getAdminPendingCount, getCurrentUser, getNewInquiryCount, getShopAwaitingCount } from '@/lib/auth';
+import { getAdminPendingCount, getCurrentUser, getNewInquiryCount, getShopAwaitingCount, loginPath } from '@/lib/auth';
 import { canManageHomepage } from '@/lib/homepage';
 
 // /admin/* 공통 틀 — 로그인·관리 권한(관리자 또는 홈페이지 권한) 확인 후 사이드 메뉴. 관리자 전용 화면은 각 page가 다시 확인
@@ -17,7 +17,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
 async function Shell({ children }: { children: ReactNode }) {
     const user = await getCurrentUser();
-    if (!user) redirect('/login?redirect=/admin');
+    if (!user) redirect(await loginPath('/admin'));
     if (!canManageHomepage({ user_role: user.user_role ?? 'member', homepage_access: user.homepage_access })) redirect('/');
     const isAdmin = user.user_role === 'admin';
     const [pending, inquiries, orders] = await Promise.all([isAdmin ? getAdminPendingCount() : 0, getNewInquiryCount(), getShopAwaitingCount()]);

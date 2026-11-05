@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { getAdminPendingCount, getCurrentUser, getShopAwaitingCount, getWorkPendingCount } from '@/lib/auth';
+import { HOMEPAGE_HOME } from '@/lib/adminNav';
 import { canManageHomepage } from '@/lib/homepage';
 import { canApproveExpense } from '@/lib/work';
 import { HeaderView, Logo } from './HeaderView';
@@ -28,7 +29,7 @@ async function HeaderWithUser() {
         canManage ? getShopAwaitingCount() : 0,
         canApprove ? getWorkPendingCount() : 0,
     ]);
-    return <HeaderView userName={user?.user_name ?? null} canManage={canManage} pendingCount={pending + awaiting} workBadge={workPending} />;
+    return <HeaderView userName={user?.user_name ?? null} manageHref={canManage ? (isAdmin ? '/admin' : HOMEPAGE_HOME) : undefined} pendingCount={pending + awaiting} workBadge={workPending} />;
 }
 
 function HeaderFallback() {

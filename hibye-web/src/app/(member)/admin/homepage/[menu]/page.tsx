@@ -9,7 +9,12 @@ import { HOMEPAGE_MENUS, isHomepageMenu } from '@/lib/adminNav';
 
 type Params = Promise<{ menu: string }>;
 
-export const metadata: Metadata = { title: '홈페이지 — 관리 — hibye' };
+// 브라우저 탭 제목에 메뉴 이름(문의함·주문 등) — 탭 여러 개를 띄워도 구분되게
+export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+    const { menu } = await params;
+    const label = HOMEPAGE_MENUS.find(m => m.key === menu)?.label ?? '홈페이지';
+    return { title: `${label} — 관리 — hibye` };
+}
 
 // /admin/homepage/<메뉴> — 관리자·홈페이지 권한자(layout이 확인). 없는 메뉴는 404
 export default function Page({ params }: { params: Params }) {

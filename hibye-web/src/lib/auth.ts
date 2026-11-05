@@ -1,8 +1,9 @@
 // 서버 컴포넌트 전용 — 현재 로그인 사용자 조회
 // 토큰 검증은 API 서버가 하고, 여기서는 쿠키를 전달만 함 (JWT 비밀키는 API 서버에만)
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { cache } from 'react';
 import { apiFetch, ApiError } from './api';
+import { PATH_HEADER } from '@/proxy';
 import type { User } from './types';
 
 type AuthResponse = { isAuth: boolean; user?: User };
@@ -29,7 +30,7 @@ export const getCurrentUser = cache(async (): Promise<User | null> => {
 });
 
 // 헤더 '관리' 메뉴 배지 — 관리자일 때만 호출, 실패해도 헤더는 그려지도록 0
-export async function getAdminPendingCount(): Promise<number> {
+export const getAdminPendingCount = cache(async (): Promise<number> => {
     const token = (await cookies()).get('x_auth')?.value;
     if (!token) return 0;
     try {
@@ -38,10 +39,10 @@ export async function getAdminPendingCount(): Promise<number> {
     } catch {
         return 0;
     }
-}
+});
 
 // 경비 승인 권한자용 대기 경비 수 — 실패해도 헤더는 그려지도록 0
-export async function getWorkPendingCount(): Promise<number> {
+export const getWorkPendingCount = cache(async (): Promise<number> => {
     const token = (await cookies()).get('x_auth')?.value;
     if (!token) return 0;
     try {
@@ -50,11 +51,10 @@ export async function getWorkPendingCount(): Promise<number> {
     } catch {
         return 0;
     }
-}
+});
 
-// 홈페이지 권한자용 입금 대기 주문 수 — 실패해도 헤더는 그려지도록 0
 // 새 문의(상태 new) 건수 — 관리 대시보드·메뉴 배지. 실패하면 0(다른 건수 함수와 같음)
-export async function getNewInquiryCount(): Promise<number> {
+export const getNewInquiryCount = cache(async (): Promise<number> => {
     const token = (await cookies()).get('x_auth')?.value;
     if (!token) return 0;
     try {
@@ -63,9 +63,10 @@ export async function getNewInquiryCount(): Promise<number> {
     } catch {
         return 0;
     }
-}
+});
 
-export async function getShopAwaitingCount(): Promise<number> {
+// 홈페이지 권한자용 입금 대기 주문 수 — 실패해도 헤더는 그려지도록 0
+export const getShopAwaitingCount = cache(async (): Promise<number> => {
     const token = (await cookies()).get('x_auth')?.value;
     if (!token) return 0;
     try {
@@ -74,4 +75,10 @@ export async function getShopAwaitingCount(): Promise<number> {
     } catch {
         return 0;
     }
+});
+
+// 토큰 만료 등으로 로그인에 보낼 주소 — proxy가 넘긴 지금 주소로 돌아오게(없으면 fallback). 열린 이동 검사는 로그인 화면 safeRedirect
+export async function loginPath(fallback: string): Promise<string> {
+    const current = (await headers()).get(PATH_HEADER) ?? fallback;
+    return `/login?redirect=${encodeURIComponent(current)}`;
 }

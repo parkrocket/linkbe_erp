@@ -18,14 +18,19 @@ export function AdminShell({ groups, badges, children }: Props) {
 
     return (
         <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-6 md:flex-row md:py-10">
-            <label className="md:hidden">
-                <span className="sr-only">관리 메뉴</span>
+            <div className="md:hidden">
                 <select
                     aria-label="관리 메뉴"
                     value={current}
                     onChange={e => router.push(e.target.value)}
                     className="w-full rounded-lg border border-line bg-white px-3 py-2.5 text-sm font-semibold"
                 >
+                    {/* 메뉴에 없는 주소(404 등)에서 첫 메뉴가 선택된 것처럼 보이지 않게 */}
+                    {current === '' && (
+                        <option value="" disabled>
+                            메뉴 선택
+                        </option>
+                    )}
                     {groups.map(g => {
                         const options = g.items.map(i => (
                             <option key={i.href} value={i.href}>
@@ -42,7 +47,7 @@ export function AdminShell({ groups, badges, children }: Props) {
                         );
                     })}
                 </select>
-            </label>
+            </div>
 
             <aside aria-label="관리 메뉴" className="hidden w-52 shrink-0 md:block">
                 <nav className="sticky top-6 flex flex-col gap-5">

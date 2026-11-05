@@ -67,9 +67,3 @@ export function legacyAdminPath(tab: string | undefined): string | null {
     if (tab === 'homepage') return HOMEPAGE_HOME;
     return LEGACY_TABS.includes(tab) ? `/admin/${tab}` : '/admin';
 }
-
-// 홈페이지 권한자가 홈페이지 밖 관리 주소를 열면 문의함으로. 이동이 필요 없으면 null
-export function adminRedirect(path: string, isAdmin: boolean): string | null {
-    if (isAdmin || path.startsWith('/admin/homepage/')) return null;
-    return HOMEPAGE_HOME;
-}
