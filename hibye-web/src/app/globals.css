@@ -31,6 +31,9 @@
     --color-dusk: #ffb36b;
     --color-mist: #ece8f7;
     --color-haze: #9b94b3;
+    --color-strong: #ffffff; /* 제목 */
+    --color-hi-from: #ffffff; /* hi 글자 그라데이션 시작 */
+    --color-bye-from: #ffd9b0; /* bye 글자 그라데이션 시작 */
     --font-sans: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 }
 
@@ -132,6 +135,29 @@ body:has([data-landing]) > footer {
 }
 body:has([data-landing]) {
     background: var(--color-night);
+}
+/* 첫 화면 빛 번짐 색 — 어두운 테마 기본값 */
+[data-landing] {
+    --glow-hi: rgb(94 43 184 / 0.4);
+    --glow-bye: rgb(255 179 107 / 0.15);
+}
+/* 밝은 테마 — 같은 변수 이름에 밝은 값. 라일락·노을은 흰 바탕 대비를 위해 진하게 */
+[data-landing='light'] {
+    --color-night: #fbf9ff;
+    --color-night-2: #f2eefb;
+    --color-night-line: #e2dbf2;
+    --color-lilac: #6a3fc4;
+    --color-dusk: #e8792b;
+    --color-mist: #2a2340;
+    --color-haze: #6b6880;
+    --color-strong: #150e29;
+    --color-hi-from: #a585ee;
+    --color-bye-from: #ffb877;
+    --glow-hi: rgb(94 43 184 / 0.16);
+    --glow-bye: rgb(255 160 90 / 0.2);
+}
+body:has([data-landing='light']) {
+    background: #fbf9ff;
 }
 
 /* 랜딩 첫 화면의 단 하나의 움직임 — 하루 선이 hi에서 bye로 그어지고 일정이 차례로 켜짐

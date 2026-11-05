@@ -3,7 +3,8 @@ import type { CSSProperties, ReactNode } from 'react';
 import { BUSINESS_INFO, COPYRIGHT } from '@/components/layout/Footer';
 import { AdminMock, CalendarMock, SlackApplyMock, WorkMock } from './LandingMockups';
 
-// 새 원페이지 랜딩 (시안 — /landing에서 확인, 확정되면 '/' 로그인 전 화면으로 교체)
+// 새 원페이지 랜딩 (시안 — /landing 어두운 테마, /landing/light 밝은 테마. 확정되면 '/' 로그인 전 화면으로 교체)
+// 색은 globals.css 랜딩 변수(night·mist·lilac·dusk 등) — 테마는 data-landing 값으로 변수만 바꿈
 // 핵심 장치: hi(출근 인사)와 bye(퇴근 인사)를 잇는 하루 선. 움직임은 첫 화면 이 한 번만(globals.css .day-line)
 
 // 하루 선 위의 일 — at: 가로 위치(%), d: 켜지는 시각(애니메이션 지연)
@@ -31,9 +32,9 @@ const linkFocus = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-
 const primaryButton = `inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#6d3ad0] ${linkFocus}`;
 const quietButton = `inline-flex items-center justify-center rounded-xl border border-night-line px-5 py-3 text-sm font-semibold text-mist transition-colors hover:border-haze ${linkFocus}`;
 
-export function HibyeLanding() {
+export function HibyeLanding({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
     return (
-        <div data-landing className="flex flex-1 flex-col bg-night text-mist">
+        <div data-landing={theme} className="flex flex-1 flex-col bg-night text-mist">
             <LandingNav />
             <main className="flex-1">
                 <Hero />
@@ -59,7 +60,7 @@ function LandingNav() {
                     <a href="#rules" className={`hover:text-mist ${linkFocus}`}>자동 규칙</a>
                     <a href="#start" className={`hover:text-mist ${linkFocus}`}>시작하기</a>
                 </nav>
-                <Link href="/login" className={`ml-auto rounded-lg bg-mist px-4 py-2 text-sm font-semibold text-night hover:bg-white ${linkFocus}`}>
+                <Link href="/login" className={`ml-auto rounded-lg bg-mist px-4 py-2 text-sm font-semibold text-night hover:opacity-90 ${linkFocus}`}>
                     로그인
                 </Link>
             </div>
@@ -71,19 +72,19 @@ function Hero() {
     return (
         <section className="relative overflow-hidden">
             {/* 아침(왼쪽 위 라일락)과 저녁(오른쪽 아래 노을) 빛 */}
-            <div aria-hidden className="pointer-events-none absolute -top-40 -left-40 size-[36rem] rounded-full bg-primary/40 blur-[120px]" />
-            <div aria-hidden className="pointer-events-none absolute -right-40 bottom-0 size-[28rem] rounded-full bg-dusk/15 blur-[120px]" />
+            <div aria-hidden className="pointer-events-none absolute -top-40 -left-40 size-[36rem] rounded-full bg-(--glow-hi) blur-[120px]" />
+            <div aria-hidden className="pointer-events-none absolute -right-40 bottom-0 size-[28rem] rounded-full bg-(--glow-bye) blur-[120px]" />
 
             <div className="relative mx-auto w-full max-w-6xl px-4 pt-14 pb-20 md:pt-20 md:pb-28">
                 <div aria-hidden className="flex items-end justify-between text-[clamp(5.5rem,20vw,15rem)] leading-[0.8] font-black tracking-[-0.07em] select-none">
-                    <span className="bg-gradient-to-b from-white to-lilac bg-clip-text text-transparent">hi</span>
-                    <span className="bg-gradient-to-b from-[#ffd9b0] to-dusk bg-clip-text text-transparent">bye</span>
+                    <span className="bg-gradient-to-b from-hi-from to-lilac bg-clip-text text-transparent">hi</span>
+                    <span className="bg-gradient-to-b from-bye-from to-dusk bg-clip-text text-transparent">bye</span>
                 </div>
 
                 <DayLine />
 
                 <div className="mt-14 max-w-2xl md:mt-20">
-                    <h1 className="text-3xl leading-tight font-extrabold tracking-tight text-white md:text-5xl md:leading-[1.15]">
+                    <h1 className="text-3xl leading-tight font-extrabold tracking-tight text-strong md:text-5xl md:leading-[1.15]">
                         출근 인사부터 퇴근 인사까지,
                         <br />
                         링크비의 하루가 여기 있어요
@@ -136,7 +137,7 @@ function Features() {
     return (
         <section id="features" aria-labelledby="features-title" className="scroll-mt-16 border-t border-night-line/60 bg-night-2/40">
             <div className="mx-auto w-full max-w-6xl px-4 py-20 md:py-28">
-                <h2 id="features-title" className="max-w-xl text-2xl font-extrabold tracking-tight text-balance text-white md:text-4xl">
+                <h2 id="features-title" className="max-w-xl text-2xl font-extrabold tracking-tight text-balance break-keep text-strong md:text-4xl">
                     하루 동안 쓰는 것들이 한곳에
                 </h2>
                 <div className="mt-12 grid gap-4 md:grid-cols-6">
@@ -163,7 +164,7 @@ function Feature({ title, text, className, big = false, children }: { title: str
     return (
         <article className={`flex flex-col gap-6 border border-night-line bg-night-2 p-6 md:p-7 ${big ? 'rounded-[28px]' : 'rounded-2xl'} ${className}`}>
             <div>
-                <h3 className={`font-bold text-white ${big ? 'text-2xl' : 'text-lg'}`}>{title}</h3>
+                <h3 className={`font-bold text-strong ${big ? 'text-2xl' : 'text-lg'}`}>{title}</h3>
                 <p className="mt-2 max-w-md text-sm leading-6 text-haze">{text}</p>
             </div>
             <div className="mt-auto">{children}</div>
@@ -176,7 +177,7 @@ function Rules() {
         <section id="rules" aria-labelledby="rules-title" className="scroll-mt-16">
             <div className="mx-auto grid w-full max-w-6xl gap-10 px-4 py-20 md:grid-cols-[1fr_1.6fr] md:py-28">
                 <div>
-                    <h2 id="rules-title" className="text-2xl font-extrabold tracking-tight text-balance text-white md:text-4xl">
+                    <h2 id="rules-title" className="text-2xl font-extrabold tracking-tight text-balance break-keep text-strong md:text-4xl">
                         사람이 기억하지 않아도 되는 규칙
                     </h2>
                     <p className="mt-4 text-sm leading-6 text-haze">웹에서 신청하든 Slack에서 신청하든 서버가 같은 규칙으로 확인해요.</p>
@@ -198,14 +199,14 @@ function Steps() {
     return (
         <section id="start" aria-labelledby="start-title" className="scroll-mt-16 border-t border-night-line/60 bg-night-2/40">
             <div className="mx-auto w-full max-w-6xl px-4 py-20 md:py-28">
-                <h2 id="start-title" className="text-2xl font-extrabold tracking-tight text-balance text-white md:text-4xl">
+                <h2 id="start-title" className="text-2xl font-extrabold tracking-tight text-balance break-keep text-strong md:text-4xl">
                     시작하는 방법
                 </h2>
                 <ol className="mt-12 grid gap-8 md:grid-cols-3 md:gap-6">
                     {STEPS.map((s, i) => (
                         <li key={s.title} className="border-t-2 border-primary pt-5">
                             <span className="text-sm font-bold tabular-nums text-lilac">{i + 1}단계</span>
-                            <h3 className="mt-2 text-lg font-bold text-white">{s.title}</h3>
+                            <h3 className="mt-2 text-lg font-bold text-strong">{s.title}</h3>
                             <p className="mt-2 text-sm leading-6 text-haze">{s.text}</p>
                         </li>
                     ))}
@@ -220,10 +221,10 @@ function Steps() {
 function Closing() {
     return (
         <section aria-labelledby="closing-title" className="relative overflow-hidden">
-            <div aria-hidden className="pointer-events-none absolute -bottom-48 left-1/2 size-[40rem] -translate-x-1/2 rounded-full bg-dusk/10 blur-[120px]" />
+            <div aria-hidden className="pointer-events-none absolute -bottom-48 left-1/2 size-[40rem] -translate-x-1/2 rounded-full bg-(--glow-bye) blur-[120px]" />
             <div className="relative mx-auto flex w-full max-w-6xl flex-col items-start gap-8 px-4 py-24 md:flex-row md:items-end md:justify-between md:py-32">
                 <div>
-                    <h2 id="closing-title" className="text-3xl font-extrabold tracking-tight text-white md:text-5xl">
+                    <h2 id="closing-title" className="text-3xl font-extrabold tracking-tight text-strong md:text-5xl">
                         링크비 구성원이라면
                         <br />
                         지금 가입하세요
@@ -237,7 +238,7 @@ function Closing() {
                         </Link>
                     </div>
                 </div>
-                <span aria-hidden className="bg-gradient-to-b from-[#ffd9b0] to-dusk bg-clip-text text-[clamp(4rem,12vw,9rem)] leading-none font-black tracking-[-0.07em] text-transparent select-none">
+                <span aria-hidden className="bg-gradient-to-b from-bye-from to-dusk bg-clip-text text-[clamp(4rem,12vw,9rem)] leading-none font-black tracking-[-0.07em] text-transparent select-none">
                     bye
                 </span>
             </div>

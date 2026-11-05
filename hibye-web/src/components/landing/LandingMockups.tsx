@@ -39,7 +39,7 @@ export function SlackApplyMock() {
 }
 
 // 일정: 한 달 달력 — 공휴일·연차·재택 점
-const DAY_MARKS: Record<number, string> = { 3: 'bg-dusk', 9: 'bg-dusk', 12: 'bg-lilac', 18: 'bg-teal-300', 20: 'bg-lilac', 21: 'bg-lilac', 26: 'bg-teal-300' };
+const DAY_MARKS: Record<number, string> = { 3: 'bg-dusk', 9: 'bg-dusk', 12: 'bg-lilac', 18: 'bg-teal-500', 20: 'bg-lilac', 21: 'bg-lilac', 26: 'bg-teal-500' };
 export function CalendarMock() {
     // 11월 1일이 토요일인 달 — 앞 빈칸 6개
     const cells = [...Array(6).fill(null), ...Array.from({ length: 30 }, (_, i) => i + 1)];
@@ -50,7 +50,7 @@ export function CalendarMock() {
                     <span key={d}>{d}</span>
                 ))}
                 {cells.map((day, i) => (
-                    <span key={i} className={`flex h-7 flex-col items-center justify-center rounded-md ${day === 20 ? 'bg-primary/40 text-white' : 'text-mist/80'}`}>
+                    <span key={i} className={`flex h-7 flex-col items-center justify-center rounded-md ${day === 20 ? 'bg-primary text-white' : 'text-mist/80'}`}>
                         {day}
                         {day && DAY_MARKS[day] && <span className={`mt-0.5 size-1 rounded-full ${DAY_MARKS[day]}`} />}
                     </span>
@@ -59,7 +59,7 @@ export function CalendarMock() {
             <div className="mt-3 flex gap-3 text-haze">
                 <span className="flex items-center gap-1"><span className="size-1.5 rounded-full bg-dusk" />공휴일</span>
                 <span className="flex items-center gap-1"><span className="size-1.5 rounded-full bg-lilac" />연차</span>
-                <span className="flex items-center gap-1"><span className="size-1.5 rounded-full bg-teal-300" />재택</span>
+                <span className="flex items-center gap-1"><span className="size-1.5 rounded-full bg-teal-500" />재택</span>
             </div>
         </div>
     );
