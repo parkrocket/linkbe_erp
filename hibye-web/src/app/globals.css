@@ -22,6 +22,15 @@
     --color-neutral-bg: #f4f3f8;
 
     --radius-card: 12px;
+
+    /* 새 랜딩(/landing) — 보라빛 밤 바탕, hi(아침 라일락)·bye(저녁 노을) */
+    --color-night: #120c24;
+    --color-night-2: #1b1433;
+    --color-night-line: #2c2448;
+    --color-lilac: #b9a3f0;
+    --color-dusk: #ffb36b;
+    --color-mist: #ece8f7;
+    --color-haze: #9b94b3;
     --font-sans: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 }
 
@@ -114,4 +123,45 @@ html:has(dialog[open]) {
     margin-left: -2px;
     border-radius: 9999px;
     background: var(--color-pending-fg);
+}
+
+/* 새 랜딩 — 공용 헤더·푸터 대신 랜딩 자체 내비·푸터 (data-landing이 있는 화면만, JS 없이) */
+body:has([data-landing]) > header,
+body:has([data-landing]) > footer {
+    display: none;
+}
+body:has([data-landing]) {
+    background: var(--color-night);
+}
+
+/* 랜딩 첫 화면의 단 하나의 움직임 — 하루 선이 hi에서 bye로 그어지고 일정이 차례로 켜짐
+   모바일은 세로 선(위→아래), 데스크톱은 가로 선(왼쪽→오른쪽). 움직임 줄이기 설정이면 끔 */
+@keyframes day-draw-y {
+    from { transform: scaleY(0); }
+}
+@keyframes day-draw-x {
+    from { transform: scaleX(0); }
+}
+@keyframes day-pop {
+    from { opacity: 0; transform: translateY(6px); }
+}
+.day-line {
+    transform-origin: top;
+    animation: day-draw-y 1.6s cubic-bezier(0.65, 0, 0.35, 1) 0.2s both;
+}
+.day-event {
+    animation: day-pop 0.5s ease-out both;
+    animation-delay: var(--d, 0s);
+}
+@media (min-width: 768px) {
+    .day-line {
+        transform-origin: left;
+        animation-name: day-draw-x;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .day-line,
+    .day-event {
+        animation: none;
+    }
 }

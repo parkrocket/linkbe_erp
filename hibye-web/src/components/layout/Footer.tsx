@@ -1,12 +1,19 @@
-// 기존 react-app 푸터 문구 유지 — 사업자번호·대표·전화는 예시 값으로 실제 정보 수령 후 교체 필요
+// 사업자 정보 — 공용 푸터와 새 랜딩 푸터가 함께 씀 (통신판매업 신고번호·이메일은 받으면 추가)
+export const BUSINESS_INFO = [
+    '사업자 등록번호 : 247-47-00369 | 대표 : 조인호',
+    '주소 : 서울특별시 영등포구 양평로 22길 21 | 전화 : 02-6925-1774',
+];
+// 연도는 고정 — cacheComponents에서 정적 화면의 new Date()는 빌드 오류
+export const COPYRIGHT = 'Copyright 2026. Linkbe. All rights reserved.';
+
 export function Footer() {
     return (
         <footer className="mt-auto border-t border-line bg-white">
             <div className="mx-auto w-full max-w-6xl px-4 py-8 text-xs leading-6 text-muted">
-                <p>사업자 등록번호 : 000-00-00000 | 통신판매업신고번호: 제 0000호</p>
-                <p>대표 : 홍길동 | 주소 : 서울시 금천구 디지털로9길 65(가산동, 백상스타타워1차)</p>
-                <p>전화 : 02--000-0000 | 이메일 : linkbe.kr</p>
-                <p className="mt-2">Copyright 2024. Linkbe. All rights reserved.</p>
+                {BUSINESS_INFO.map(line => (
+                    <p key={line}>{line}</p>
+                ))}
+                <p className="mt-2">{COPYRIGHT}</p>
             </div>
         </footer>
     );
