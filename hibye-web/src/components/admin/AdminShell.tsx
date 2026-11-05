@@ -76,7 +76,7 @@ export function AdminShell({ groups, badges, children }: Props) {
                 </nav>
             </aside>
 
-            <div className="min-w-0 flex-1">{children}</div>
+            <main className="min-w-0 flex-1">{children}</main>
         </div>
     );
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useApiData } from '@/components/dashboard/useApiData';
 import { Modal } from '@/components/leave/Modal';
@@ -27,6 +28,7 @@ type Notice = { tone: 'ok' | 'error'; text: string } | null;
 
 // 개인결제 주문 — 필터(상태·수단·기간·검색), 입금 대기 강조
 export function OrdersPanel() {
+    const router = useRouter();
     const [filter, setFilter] = useState({ status: '', payMethod: '', from: '', to: '', q: '' });
     const [search, setSearch] = useState('');
     const [page, setPage] = useState(1);
@@ -48,6 +50,7 @@ export function OrdersPanel() {
     const reloadAll = () => {
         refresh();
         waiting.refresh();
+        router.refresh(); // 사이드 메뉴 '주문'·헤더 배지(서버에서 셈)
     };
 
     return (

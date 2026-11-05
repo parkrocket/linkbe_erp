@@ -1,6 +1,7 @@
 'use client';
 
 import { Paperclip } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useApiData } from '@/components/dashboard/useApiData';
 import { Modal } from '@/components/leave/Modal';
@@ -29,6 +30,7 @@ const SELECT =
 
 // 문의함 — 1:1 문의·견적 요청. 목록은 이름·회사만, 연락처·내용은 상세에서만(개인정보 최소)
 export function InquiriesPanel() {
+    const router = useRouter();
     const [kind, setKind] = useState('');
     const [status, setStatus] = useState('');
     const [opened, setOpened] = useState<number | null>(null);
@@ -89,7 +91,16 @@ export function InquiriesPanel() {
                     </ul>
                 ))}
             {state.status === 'ok' && <Pager page={page} total={state.data.total ?? 0} onPage={setPage} />}
-            {opened !== null && <InquiryDialog id={opened} onClose={() => setOpened(null)} onSaved={refresh} />}
+            {opened !== null && (
+                <InquiryDialog
+                    id={opened}
+                    onClose={() => setOpened(null)}
+                    onSaved={() => {
+                        refresh();
+                        router.refresh(); // 사이드 메뉴 '문의함' 배지(서버 layout에서 셈)
+                    }}
+                />
+            )}
         </>
     );
 }
