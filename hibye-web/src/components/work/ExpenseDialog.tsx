@@ -13,7 +13,6 @@ import {
     EXPENSE_BODY_TEMPLATE,
     EXPENSE_CATEGORY_LABEL,
     EXPENSE_STATUS_LABEL,
-    commaWonInText,
     sumWonInText,
     toExpensePayload,
     validateExpenseForm,
@@ -202,12 +201,11 @@ export function ExpenseDialog({
                             value={form.body}
                             placeholder="금액 뒤에는 '원'을 붙여 주세요 (예: 150,000원)"
                             onChange={e => {
-                                // 예전 경비 화면처럼 내용의 '…원'을 더해 금액 칸에 (없으면 금액은 그대로)
+                                // 예전 경비 화면과 같음: 입력할 때마다 내용의 '…원' 합계를 금액 칸에, 합계가 0이면 비움
                                 const body = e.target.value;
                                 const sum = sumWonInText(body);
-                                setForm(f => ({ ...f, body, ...(sum !== null ? { amount: comma(String(sum)) } : {}) }));
+                                setForm(f => ({ ...f, body, amount: sum > 0 ? comma(String(sum)) : '' }));
                             }}
-                            onBlur={() => set('body', commaWonInText(form.body))}
                         />
                         {errors.body && <span className="text-xs font-normal text-rejected-fg">{errors.body}</span>}
                     </label>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canApproveExpense, commaWonInText, sumWonInText, EXPENSE_STATUS_LABEL, shiftMonth, toExpensePayload, validateExpenseForm, type ExpenseForm } from './work';
+import { canApproveExpense, sumWonInText, EXPENSE_STATUS_LABEL, shiftMonth, toExpensePayload, validateExpenseForm, type ExpenseForm } from './work';
 
 const ok: ExpenseForm = { spentOn: '2026-11-03', category: 'etc', amount: '12,000', title: '테스트', body: '' };
 
@@ -40,14 +40,11 @@ it('상태 라벨 순서', () => {
     expect(Object.keys(EXPENSE_STATUS_LABEL)).toEqual(['pending', 'approved', 'confirmed', 'paid']);
 });
 
-describe('sumWonInText·commaWonInText', () => {
-    it('숫자+원만 더함, 없으면 null', () => {
+describe('sumWonInText', () => {
+    it('숫자+원만 더함(예전 경비 화면과 같음), 없으면 0', () => {
         expect(sumWonInText('내역 : 식대\n입금액 : 150,000원\n\n결제액 : 20000 원')).toBe(170000);
-        expect(sumWonInText('2. 내역\n카드 1234')).toBeNull();
-        expect(sumWonInText('10만원')).toBeNull();
+        expect(sumWonInText('2. 내역\n카드 1234')).toBe(0);
+        expect(sumWonInText('10만원')).toBe(0);
         expect(sumWonInText('0원')).toBe(0);
-    });
-    it('원 앞 숫자에 콤마', () => {
-        expect(commaWonInText('입금액 : 150000원, 1,000원\n카드 1234')).toBe('입금액 : 150,000원, 1,000원\n카드 1234');
     });
 });
