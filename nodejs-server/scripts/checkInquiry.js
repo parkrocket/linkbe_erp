@@ -101,10 +101,10 @@ const reset = () => ((saved = undefined), (notices = []), (recent = 0), (failSav
     assert.ok(/^[0-9a-f-]{36}$/.test(f.storedName), 'UUID 이름');
     assert.ok(fs.existsSync(path.join(process.env.UPLOAD_ROOT, 'private', f.storedName)), '비공개 폴더에 저장');
     // Slack: 회사·이름만 (연락처·내용 없음), 이스케이프
-    assert.deepStrictEqual(notices, [{ channel: '#hibye-관리', text: '[1:1 문의] 링크비 홍길동님 → https://hibye.kr/admin?tab=homepage' }]);
+    assert.deepStrictEqual(notices, [{ channel: '#hibye-관리', text: '[1:1 문의] 링크비 홍길동님 → https://hibye.kr/admin/homepage/inquiries' }]);
     reset();
     await call('estimate', { ...estimate, company: '<b>회사</b>' });
-    assert.strictEqual(notices[0].text, '[견적 요청] &lt;b&gt;회사&lt;/b&gt; 홍길동님 → https://hibye.kr/admin?tab=homepage');
+    assert.strictEqual(notices[0].text, '[견적 요청] &lt;b&gt;회사&lt;/b&gt; 홍길동님 → https://hibye.kr/admin/homepage/inquiries');
     assert.ok(!notices[0].text.includes('010'), '연락처 미포함');
 
     // 종류 화이트리스트, 검증 실패 400

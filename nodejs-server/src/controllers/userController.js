@@ -8,7 +8,7 @@ const { escapeSlack } = require('../utils/slackEscape');
 const Company = require('../models/companyModel');
 const slack = require('../utils/slack'); // 호출 시점에 slack.sendSlackMessage 참조 (점검 스크립트에서 가짜 교체 가능)
 
-const ADMIN_URL = 'https://hibye.kr/admin';
+const ADMIN_URL = 'https://hibye.kr/admin/pending'; // 가입 승인 화면
 
 // 로그인 쿠키 속성 (2026-11-02 새 앱 전환 후) — 화면 코드가 읽지 못하게(httpOnly), 운영은 HTTPS 전용,
 // 다른 사이트에서 보낸 요청엔 안 실림(lax). 지울 때도 같은 속성이어야 브라우저가 같은 쿠키로 인식

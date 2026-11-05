@@ -137,7 +137,7 @@ exports.createInquiry = handle(async (req, res) => {
     // 알림은 저장 후 — 연락처·내용은 넣지 않음(개인정보), 실패해도 접수는 성공
     try {
         const v = input.value;
-        await slack.sendSlackMessage('#hibye-관리', `[${KIND_LABEL[kind]}] ${escapeSlack(v.company)} ${escapeSlack(v.name)}님 → https://hibye.kr/admin?tab=homepage`);
+        await slack.sendSlackMessage('#hibye-관리', `[${KIND_LABEL[kind]}] ${escapeSlack(v.company)} ${escapeSlack(v.name)}님 → https://hibye.kr/admin/homepage/inquiries`);
     } catch (error) {
         console.error('inquiry slack notice failed:', error.message);
     }
