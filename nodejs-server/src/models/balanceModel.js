@@ -16,12 +16,23 @@ Balance.BalanceError = BalanceError;
 const num = v => (v === null || v === undefined ? null : Number(v));
 
 // 승인 직원 먼저, 비활성 직원은 뒤에 (화면에서 배경색으로 구분)
-Balance.listApproved = async cpId => {
+// 올해(KST) 연차 사용: 연차 1·반차 0.5, 오늘까지는 used_stip, 남은 기간 신청분은 planned_stip (취소는 행이 지워져 자동 제외)
+Balance.listApproved = async (cpId, today = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)) => {
+    const year = today.slice(0, 4);
     const [rows] = await pool.query(
-        "SELECT mb_no, user_name, user_id, user_stip, user_vaca, user_status FROM lk_user WHERE cp_id = ? AND user_status IN ('approved', 'inactive') ORDER BY user_status = 'inactive', user_name",
-        [cpId],
+        `SELECT u.mb_no, u.user_name, u.user_id, u.user_stip, u.user_vaca, u.user_status,
+                COALESCE(v.used_stip, 0) AS used_stip, COALESCE(v.planned_stip, 0) AS planned_stip
+         FROM lk_user u
+         LEFT JOIN (
+             SELECT user_id,
+                    SUM(CASE WHEN date <= ? THEN IF(type = 'half', 0.5, 1) ELSE 0 END) AS used_stip,
+                    SUM(CASE WHEN date > ? THEN IF(type = 'half', 0.5, 1) ELSE 0 END) AS planned_stip
+             FROM lk_vacation WHERE type IN ('day', 'half') AND date BETWEEN ? AND ? GROUP BY user_id
+         ) v ON v.user_id = u.user_id
+         WHERE u.cp_id = ? AND u.user_status IN ('approved', 'inactive') ORDER BY u.user_status = 'inactive', u.user_name`,
+        [today, today, `${year}-01-01`, `${year}-12-31`, cpId],
     );
-    return rows;
+    return rows.map(r => ({ ...r, used_stip: num(r.used_stip), planned_stip: num(r.planned_stip) }));
 };
 
 Balance.exists = async (cpId, mbNo) => {

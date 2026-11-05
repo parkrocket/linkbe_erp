@@ -7,6 +7,9 @@ export type BalanceRow = {
     user_stip: number | null;
     user_vaca: number | null;
     user_status?: 'approved' | 'inactive';
+    // 올해(KST) 연차·반차 — 오늘까지 사용 / 남은 기간 신청분
+    used_stip?: number;
+    planned_stip?: number;
 };
 
 // 입력칸 문자열 — 키가 없으면 수정하지 않은 칸

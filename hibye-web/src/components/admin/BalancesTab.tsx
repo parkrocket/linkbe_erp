@@ -103,6 +103,10 @@ export function BalancesTab() {
                                     {row.user_status === 'inactive' && <Badge tone="rejected">비활성</Badge>}
                                 </p>
                                 <p className="truncate text-xs text-muted">{row.user_id}</p>
+                                <p className="mt-0.5 text-xs text-ink">
+                                    올해 연차 사용 <span className="font-bold">{row.used_stip ?? 0}일</span>
+                                    {!!row.planned_stip && <span className="text-muted"> · 예정 {row.planned_stip}일</span>}
+                                </p>
                             </div>
                             {(['stip', 'vaca'] as const).map(kind => (
                                 <BalanceInput

@@ -85,10 +85,12 @@ const input = changes => ({ cpId: 1, actorMbNo: 2, reason: '2027년 연차 부�
 
     // 목록: 같은 회사 승인·비활성 직원만(대기·거절 제외), 필요한 컬럼만
     reset([]);
-    await Balance.listApproved(7);
+    await Balance.listApproved(7, '2026-11-05');
     let q = queries[0];
     assert.ok(/cp_id = \?/.test(q.sql) && /user_status IN \('approved', 'inactive'\)/.test(q.sql) && !/SELECT\s+\*/i.test(q.sql) && !/user_password/.test(q.sql));
-    assert.deepStrictEqual(q.params, [7]);
+    // 올해 연차·반차만, 오늘 기준으로 사용/예정 나눔
+    assert.ok(/type IN \('day', 'half'\)/.test(q.sql));
+    assert.deepStrictEqual(q.params, ['2026-11-05', '2026-11-05', '2026-01-01', '2026-12-31', 7]);
 
     // 존재 확인: 같은 회사 조건
     reset([]);
