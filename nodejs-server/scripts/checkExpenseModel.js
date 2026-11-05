@@ -102,14 +102,10 @@ const last = () => calls[calls.length - 1];
     reply = [{ affectedRows: 0 }];
     assert.strictEqual(await Expense.transition(1, 3, 'pending', 'paid', '김승인'), false);
 
-    // pendingCount·approverEmails
+    // pendingCount
     reply = [[{ n: '4' }]];
     assert.strictEqual(await Expense.pendingCount(1), 4);
     assert.ok(last().sql.includes("status = 'pending'") && last().sql.includes('cp_id = ?'));
-    reply = [[{ user_id: 'a@x.kr' }]];
-    assert.deepStrictEqual(await Expense.approverEmails(1), ['a@x.kr']);
-    assert.ok(last().sql.includes("user_status = 'approved'") && last().sql.includes("user_role = 'admin' OR expense_approver = 1") && last().sql.includes('cp_id = ?'));
-    assert.deepStrictEqual(last().params, [1]);
 
     console.log('checkExpenseModel OK');
     process.exit(0);

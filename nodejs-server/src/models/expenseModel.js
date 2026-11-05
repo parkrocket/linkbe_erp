@@ -81,9 +81,4 @@ Expense.pendingCount = async cpId => {
     return Number(rows[0].n);
 };
 
-Expense.approverEmails = async cpId => {
-    const [rows] = await pool.query("SELECT user_id FROM lk_user WHERE cp_id = ? AND user_status = 'approved' AND (user_role = 'admin' OR expense_approver = 1)", [cpId]);
-    return rows.map(r => r.user_id);
-};
-
 module.exports = Expense;

@@ -8,6 +8,14 @@ slackDm.sendDm = async (email, text) => {
     dms.push({ email, text });
     return true;
 };
+// #결제 채널 알림 가짜 (실제 Slack 호출 없음)
+const slack = require('../src/utils/slack');
+const posts = [];
+let postThrows = false;
+slack.sendSlackMessage = async (channel, text) => {
+    if (postThrows) throw new Error('slack down');
+    posts.push({ channel, text });
+};
 
 const Expense = require('../src/models/expenseModel');
 const Admin = require('../src/models/adminModel');
@@ -31,7 +39,6 @@ Expense.updateOwnPending = rec('update', true);
 Expense.removeOwnPending = rec('remove', true);
 Expense.transition = rec('transition', true);
 Expense.pendingCount = rec('pendingCount', 4);
-Expense.approverEmails = async () => ['boss@x.kr', 'hong@x.kr'];
 
 const ctrl = require('../src/controllers/workExpenseController');
 const call = async (fn, req) => {
@@ -43,7 +50,7 @@ const call = async (fn, req) => {
 };
 const boss = { userId: 'boss@x.kr', expenseApprover: true };
 const input = { spentOn: '2026-11-03', category: 'etc', amount: 12000, title: '  <b>제목  ', body: '' };
-const reset = () => (dms.length = 0) || Object.keys(calls).forEach(k => delete calls[k]);
+const reset = () => (dms.length = 0) || (posts.length = 0) || Object.keys(calls).forEach(k => delete calls[k]);
 
 (async () => {
     // 목록: 일반 직원은 본인 것만(writerNo), 승인 권한자는 전체
@@ -74,18 +81,19 @@ const reset = () => (dms.length = 0) || Object.keys(calls).forEach(k => delete c
     assert.strictEqual(res.body.expense.history, 'h');
     assert.ok(!JSON.stringify(res.body).includes('@'));
 
-    // 기안: 본인 정보로 저장, 승인 권한자에게 DM(기안자 본인 제외), 제목 이스케이프
+    // 기안: 본인 정보로 저장, #결제 채널에 알림(개인 DM 없음), 제목 이스케이프
     reset();
     res = await call(ctrl.create, { body: input });
     assert.deepStrictEqual([res.code, res.body], [200, { id: 77 }]);
     assert.deepStrictEqual([calls.create[0][1].writerNo, calls.create[0][1].writerName, calls.create[0][1].title], [2, '홍길동', '<b>제목']);
-    assert.deepStrictEqual(dms, [{ email: 'boss@x.kr', text: '새 경비 기안: &lt;b&gt;제목 · 12,000원 · 홍길동' }]);
+    assert.deepStrictEqual(posts, [{ channel: process.env.SLACK_SHOP_CHANNEL || '#결제', text: '새 경비 기안: &lt;b&gt;제목 · 12,000원 · 홍길동 → https://hibye.kr/work/expense' }]);
+    assert.strictEqual(dms.length, 0);
     assert.strictEqual((await call(ctrl.create, { body: { ...input, amount: -1 } })).code, 400);
     // Slack이 죽어도 기안은 200
-    dmThrows = true;
+    postThrows = true;
     res = await call(ctrl.create, { body: input });
     assert.strictEqual(res.code, 200);
-    dmThrows = false;
+    postThrows = false;
 
     // 수정·삭제
     reset();

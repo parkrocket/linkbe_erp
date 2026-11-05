@@ -3,6 +3,7 @@ const Admin = require('../models/adminModel');
 const { EXPENSE_STATUSES, validateExpense, parseMonth } = require('../utils/expenseValidation');
 const { escapeSlack } = require('../utils/slackEscape');
 const slackDm = require('../utils/slackDm'); // 호출 시점 참조 (점검 스크립트에서 가짜 교체)
+const slack = require('../utils/slack'); // 호출 시점 참조 (점검 스크립트에서 가짜 교체)
 
 // 경비 API — requireAuth 뒤. 모든 조회·변경은 req.userCpId 범위, 권한 판단은 req.expenseApprover
 
@@ -89,10 +90,9 @@ exports.create = handle(async (req, res) => {
     const id = await Expense.create(req.userCpId, { writerNo: me.mb_no, writerName: me.user_name, ...checked.value });
     res.json({ id });
 
-    // 승인 권한자 전원에게 DM (기안자 본인 제외). 실패해도 이미 응답함
-    const text = `새 경비 기안: ${escapeSlack(checked.value.title)} · ${won(checked.value.amount)} · ${escapeSlack(me.user_name)}`;
-    const emails = (await Expense.approverEmails(req.userCpId).catch(() => [])).filter(e => e !== req.userId);
-    await Promise.allSettled(emails.map(e => dm(e, text)));
+    // #결제 채널에 알림(11-05 사용자 결정 — 예전엔 승인 권한자 개인 DM). 실패해도 이미 응답함
+    const text = `새 경비 기안: ${escapeSlack(checked.value.title)} · ${won(checked.value.amount)} · ${escapeSlack(me.user_name)} → https://hibye.kr/work/expense`;
+    await slack.sendSlackMessage(process.env.SLACK_SHOP_CHANNEL || '#결제', text).catch(() => {});
 });
 
 exports.update = handle(async (req, res) => {
