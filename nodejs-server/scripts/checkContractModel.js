@@ -90,18 +90,18 @@ const value = (patch = {}) => ({
     for (const c of calls.slice(1)) assert.ok(c.sql.includes('ORDER BY sort, id') && c.sql.includes('contract_id = ?') && c.params[0] === 9);
 
     // ---- nextDocNo ----
-    const docNoHandlers = used => [[/AS base/, [[{ base: '20261105-1030' }]]], [/SELECT doc_no/, [used.map(doc_no => ({ doc_no }))]]];
+    const docNoHandlers = used => [[/AS base/, [[{ base: '20261105103000' }]]], [/SELECT doc_no/, [used.map(doc_no => ({ doc_no }))]]];
     reset(docNoHandlers([]));
-    assert.strictEqual(await Contract.nextDocNo(pool, 1), '20261105-1030');
-    assert.ok(calls[0].sql.includes("CONVERT_TZ(NOW(), @@session.time_zone, '+09:00')") && calls[0].sql.includes("'%Y%m%d-%H%i'"));
+    assert.strictEqual(await Contract.nextDocNo(pool, 1), '20261105103000');
+    assert.ok(calls[0].sql.includes("CONVERT_TZ(NOW(), @@session.time_zone, '+09:00')") && calls[0].sql.includes("'%Y%m%d%H%i%s'"));
     assert.ok(calls[1].sql.includes('cp_id = ?'));
-    assert.deepStrictEqual(calls[1].params, [1, '20261105-1030', '20261105-1030-%']);
-    reset(docNoHandlers(['20261105-1030']));
-    assert.strictEqual(await Contract.nextDocNo(pool, 1), '20261105-1030-2');
-    reset(docNoHandlers(['20261105-1030', '20261105-1030-2']));
-    assert.strictEqual(await Contract.nextDocNo(pool, 1), '20261105-1030-3');
-    reset(docNoHandlers(['20261105-1030', '20261105-1030-3']));
-    assert.strictEqual(await Contract.nextDocNo(pool, 1), '20261105-1030-2', '비는 번호부터');
+    assert.deepStrictEqual(calls[1].params, [1, '20261105103000', '20261105103000-%']);
+    reset(docNoHandlers(['20261105103000']));
+    assert.strictEqual(await Contract.nextDocNo(pool, 1), '20261105103000-2');
+    reset(docNoHandlers(['20261105103000', '20261105103000-2']));
+    assert.strictEqual(await Contract.nextDocNo(pool, 1), '20261105103000-3');
+    reset(docNoHandlers(['20261105103000', '20261105103000-3']));
+    assert.strictEqual(await Contract.nextDocNo(pool, 1), '20261105103000-2', '비는 번호부터');
 
     // ---- create ----
     reset([...docNoHandlers([]), [/INSERT INTO wk_contract \(/, [{ insertId: 42 }]]]);
@@ -109,7 +109,7 @@ const value = (patch = {}) => ({
     assert.deepStrictEqual(events, ['begin', 'commit', 'release']);
     const ins = calls.find(c => c.sql.startsWith('INSERT INTO wk_contract ('));
     assert.ok(ins.sql.includes('cp_id, doc_no, created_by') && ins.sql.includes('memo') && ins.sql.includes('ops_server1') && ins.sql.includes('ops_spend'));
-    assert.deepStrictEqual(ins.params.slice(0, 3), [1, '20261105-1030', 7], '문서번호 비면 자동');
+    assert.deepStrictEqual(ins.params.slice(0, 3), [1, '20261105103000', 7], '문서번호 비면 자동');
     assert.strictEqual(ins.params.length, 3 + 24);
     assert.ok(ins.params.includes(1) && !ins.params.includes(true), '불리언은 숫자로');
     const itemIns = calls.find(c => c.sql.startsWith('INSERT INTO wk_contract_item'));

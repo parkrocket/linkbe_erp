@@ -13,7 +13,7 @@ const DATETIME_F = "'%Y-%m-%d %H:%i:%s'";
 // 표시용 KST 문자열(세션 시간대 → +09:00). 동시 수정 검사용 updated_at과는 별개
 const KST = col => `DATE_FORMAT(CONVERT_TZ(${col}, @@session.time_zone, '+09:00'), ${DATETIME_F})`;
 // KST 현재 시각 기준 문서번호 앞부분 (서버·DB 시간대가 달라 SQL 안에서 계산)
-const DOC_NO_BASE_SQL = "DATE_FORMAT(CONVERT_TZ(NOW(), @@session.time_zone, '+09:00'), '%Y%m%d-%H%i')";
+const DOC_NO_BASE_SQL = "DATE_FORMAT(CONVERT_TZ(NOW(), @@session.time_zone, '+09:00'), '%Y%m%d%H%i%s')"; // 예전 사이트와 같은 14자리(date('YmdHis'))
 
 // 상태별 WHERE 조각 — 우선순위: 취소 → 보류 → 완납 → 미수 → 진행
 const STATUS_SQL = {
@@ -111,7 +111,7 @@ const categoryOk = async (conn, cpId, categoryId) => {
     return rows.length > 0;
 };
 
-// 문서번호: KST YYYYMMDD-HHmm, 같은 회사에 있으면 -2, -3… 비는 번호
+// 문서번호: KST YYYYMMDDHHmmss(예전 사이트와 같은 형식), 같은 회사에 있으면 -2, -3… 비는 번호
 Contract.nextDocNo = async (conn, cpId) => {
     const [[{ base }]] = await conn.query(`SELECT ${DOC_NO_BASE_SQL} AS base`);
     const [rows] = await conn.query('SELECT doc_no FROM wk_contract WHERE cp_id = ? AND (doc_no = ? OR doc_no LIKE ?)', [cpId, base, `${base}-%`]);
