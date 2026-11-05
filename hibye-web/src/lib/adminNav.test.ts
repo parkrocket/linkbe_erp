@@ -1,14 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { adminNavFor, adminRedirect, HOMEPAGE_HOME, HOMEPAGE_MENUS, isHomepageMenu, legacyAdminPath } from './adminNav';
+import { adminNavFor, adminRedirect, HOMEPAGE_HOME, HOMEPAGE_MENUS, isHomepageMenu, isWorkSettingsTab, legacyAdminPath } from './adminNav';
 
 describe('adminNavFor', () => {
-    it('관리자: 대시보드·직원·홈페이지·보안, 링크 16개', () => {
+    it('관리자: 대시보드·직원·홈페이지·업무 설정·보안, 링크 20개', () => {
         const groups = adminNavFor(true);
-        expect(groups.map(g => g.title)).toEqual([null, '직원', '홈페이지', '보안']);
-        expect(groups.flatMap(g => g.items).length).toBe(1 + 5 + 9 + 1);
+        expect(groups.map(g => g.title)).toEqual([null, '직원', '홈페이지', '업무 설정', '보안']);
+        expect(groups.flatMap(g => g.items).length).toBe(1 + 5 + 9 + 4 + 1);
         expect(groups[0].items[0].href).toBe('/admin');
         expect(groups[1].items.map(i => i.href)).toEqual(['/admin/pending', '/admin/members', '/admin/leaves', '/admin/balances', '/admin/org']);
-        expect(groups[3].items[0].href).toBe('/admin/security');
+        expect(groups[3].items.map(i => [i.href, i.label])).toEqual([
+            ['/admin/work/categories', '분류'],
+            ['/admin/work/items', '품목 문구'],
+            ['/admin/work/docs', '양식'],
+            ['/admin/work/accounts', '계정과목'],
+        ]);
+        expect(groups[4].items[0].href).toBe('/admin/security');
     });
     it('홈페이지 권한자: 홈페이지 묶음만', () => {
         const groups = adminNavFor(false);
@@ -46,6 +52,14 @@ describe('adminRedirect — 홈페이지 권한자는 홈페이지 밖 못 감',
         expect(adminRedirect('/admin/homepage/faq', false)).toBeNull();
         expect(adminRedirect('/admin', true)).toBeNull();
         expect(adminRedirect('/admin/security', true)).toBeNull();
+    });
+});
+
+describe('isWorkSettingsTab', () => {
+    it('정해진 이름만', () => {
+        expect(isWorkSettingsTab('docs')).toBe(true);
+        expect(isWorkSettingsTab('Docs')).toBe(false);
+        expect(isWorkSettingsTab('constructor')).toBe(false);
     });
 });
 

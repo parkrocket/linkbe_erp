@@ -18,10 +18,5 @@ export const WORK_TABS = (user: Pick<User, 'user_role' | 'work_doc_access' | 'cl
           ]
         : []),
     ...(canClientSecret(user) ? [{ href: '/work/clients', label: '거래처 접속정보' }] : []),
-    ...(canWorkDoc(user)
-        ? [
-              { href: '/work/viral', label: '바이럴' },
-              { href: '/work/settings', label: '설정' },
-          ]
-        : []),
+    // 11-05: 바이럴은 쓰지 않아 메뉴에서 뺌(화면·데이터는 남김), 설정은 관리자 페이지(/admin/work/*)로 옮김
 ];

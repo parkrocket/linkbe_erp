@@ -13,6 +13,16 @@ export const HOMEPAGE_MENUS = [
 ] as const;
 export type HomepageMenu = (typeof HOMEPAGE_MENUS)[number]['key'];
 
+// 업무 설정(견적·계약서 분류·품목 문구·양식, 매출/매입 계정과목) — 관리자만 (11-05: 업무 메뉴에서 옮김)
+export const WORK_SETTINGS = [
+    { key: 'categories', label: '분류' },
+    { key: 'items', label: '품목 문구' },
+    { key: 'docs', label: '양식' },
+    { key: 'accounts', label: '계정과목' },
+] as const;
+export type WorkSettingsTab = (typeof WORK_SETTINGS)[number]['key'];
+export const isWorkSettingsTab = (v: string): v is WorkSettingsTab => WORK_SETTINGS.some(m => m.key === v);
+
 // 홈페이지 권한자의 첫 화면(문의함이 가장 자주 확인하는 곳)
 export const HOMEPAGE_HOME = '/admin/homepage/inquiries';
 
@@ -45,6 +55,7 @@ export function adminNavFor(isAdmin: boolean): AdminNavGroup[] {
             ],
         },
         HOMEPAGE_GROUP,
+        { title: '업무 설정', items: WORK_SETTINGS.map(m => ({ href: `/admin/work/${m.key}`, label: m.label })) },
         { title: '보안', items: [{ href: '/admin/security', label: '암호화 키' }] },
     ];
 }

@@ -168,8 +168,8 @@ export function PrintView({ id, kind, templateId }: { id: string; kind: DocKind;
                     </div>
                     {!picked ? (
                         <p className="rounded-lg bg-neutral-bg px-4 py-6 text-center text-sm text-muted">
-                            이 종류의 양식이 없어요 — 설정에서 양식을 추가해 주세요.{' '}
-                            <Link href="/work/settings" className="font-medium text-ink underline">
+                            이 종류의 양식이 없어요 — 관리자 페이지의 업무 설정에서 양식을 추가해 주세요.{' '}
+                            <Link href="/admin/work/docs" className="font-medium text-ink underline">
                                 설정으로 가기
                             </Link>
                         </p>
