@@ -202,6 +202,7 @@ function OrderDetail({
     const [memo, setMemo] = useState(order.adminMemo ?? '');
     const [reason, setReason] = useState('');
     const [cancelling, setCancelling] = useState(false);
+    const [kcpDone, setKcpDone] = useState(false);
     const [busy, setBusy] = useState(false);
     const [notice, setNotice] = useState<Notice>(null);
 
@@ -228,9 +229,11 @@ function OrderDetail({
     const doCancel = () => {
         const text = reason.trim();
         if (!text || text.length > 200) return setNotice({ tone: 'error', text: '취소 사유를 1~200자로 입력해 주세요.' });
-        if (!window.confirm(cancelConfirmText(order.payMethod, order.legacy))) return;
+        const skipKcp = kcpDone && isKcpCancel(order.payMethod, order.legacy);
+        const confirmText = skipKcp ? '정말 취소할까요? KCP는 다시 부르지 않고 이 주문 상태만 취소로 바꿔요.' : cancelConfirmText(order.payMethod, order.legacy);
+        if (!window.confirm(confirmText)) return;
         run(async () => {
-            const r = await cancelOrder(order.id, text);
+            const r = await cancelOrder(order.id, text, skipKcp);
             onNotice({ tone: 'ok', text: r.refundManually ? '취소했어요. 계좌로 직접 환불해 주세요.' : '취소했어요.' });
             onStale();
         }, '취소했어요.');
@@ -305,6 +308,12 @@ function OrderDetail({
                         취소 사유 (필수, 200자까지)
                         <input maxLength={200} value={reason} onChange={e => setReason(e.target.value)} className={`${FIELD} font-normal`} />
                     </label>
+                    {isKcpCancel(order.payMethod, order.legacy) && (
+                        <label className="flex items-center gap-2 text-sm">
+                            <input type="checkbox" checked={kcpDone} onChange={e => setKcpDone(e.target.checked)} />
+                            KCP 상점관리자에서 이미 취소했어요 (상태만 바꿈)
+                        </label>
+                    )}
                     <Button variant="ghost" className="self-end text-rejected-fg" disabled={busy} onClick={doCancel}>
                         주문 취소하기
                     </Button>

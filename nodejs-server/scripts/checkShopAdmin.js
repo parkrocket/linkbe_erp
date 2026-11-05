@@ -199,6 +199,14 @@ const call = async (fn, req) => {
     assert.ok(notices.at(-1).text.includes('&lt;b&gt;') && notices.at(-1).text.endsWith('(처리: 직원 #7)'));
     assert.strictEqual((await act(ctrl.cancelOrder, 5, { reason: 'r' })).body.ok, true);
     assert.strictEqual(kcpCalls.length, 2);
+    // KCP에서 이미 취소함 → KCP 호출 없이 상태만, 기록·알림에 표시, 직접 환불 안내 없음 (문자열 'true'는 무시)
+    res = await act(ctrl.cancelOrder, 4, { reason: 'r', kcpAlreadyCancelled: true });
+    assert.deepStrictEqual(res.body, { ok: true, refundManually: false });
+    assert.strictEqual(kcpCalls.length, 2);
+    assert.ok(trans.at(-1)[4].includes('이미 취소함') && notices.at(-1).text.includes('이미 취소함'));
+    await act(ctrl.cancelOrder, 4, { reason: 'r', kcpAlreadyCancelled: 'true' });
+    assert.strictEqual(kcpCalls.length, 3);
+    kcpCalls.length = 2;
     // KCP 실패 → 상태 그대로
     const tBefore = trans.length;
     kcpResult = { ok: false, resCd: 'X', resMsg: 'denied' };

@@ -213,24 +213,28 @@ exports.cancelOrder = handle(async (req, res) => {
     // 예전 사이트에서 옮긴 주문은 수단과 상관없이 KCP 취소를 부르지 않는다:
     // kcp_tno가 예전 거래번호라서, 부르면 몇 년 전 결제가 실제로 환불될 수 있음 → 상태만 바꾸고 환불은 직접
     const legacy = order.legacy_od_id != null;
-    const viaKcp = !legacy && ['card', 'bank'].includes(order.pay_method);
-    const canCancel = viaKcp ? wasPaid : wasPaid || order.status === 'awaiting_deposit';
+    const kcpPaid = !legacy && ['card', 'bank'].includes(order.pay_method);
+    const canCancel = kcpPaid ? wasPaid : wasPaid || order.status === 'awaiting_deposit';
     if (!canCancel) return fail(res, 400, 'Invalid transition');
+    // KCP 상점관리자에서 이미 취소한 결제 — 다시 부르면 실패하므로 상태만 바꾸고 기록에 남김
+    const kcpDone = kcpPaid && req.body?.kcpAlreadyCancelled === true;
+    const viaKcp = kcpPaid && !kcpDone;
 
     if (viaKcp) {
         // KCP 사유는 ASCII만 가능 — 한글 사유는 history·Slack에만
         const r = await kcp.cancel({ tno: order.kcp_tno, reason: 'admin cancel', custIp: req.ip, orderNo: order.order_no });
         if (!r.ok) return fail(res, 400, 'KCP cancel failed', { message: r.resMsg });
     }
-    const line = `${kstStamp()} 직원#${req.userId} 주문 취소: ${reason}${legacy ? ' (예전 주문 — KCP 취소 안 함, 환불은 직접)' : ''}`;
+    const note = legacy ? ' (예전 주문 — KCP 취소 안 함, 환불은 직접)' : kcpDone ? ' (KCP 상점관리자에서 이미 취소함 — 상태만 변경)' : '';
+    const line = `${kstStamp()} 직원#${req.userId} 주문 취소: ${reason}${note}`;
     const done = await Order.transition(order.order_no, wasPaid ? ['paid', 'completed'] : ['awaiting_deposit'], 'cancelled', { cancelled_at: 'NOW' }, line);
     if (!done) {
         if (viaKcp) await notice(req, `[주문 취소] ${order.order_no} — KCP 취소는 됐지만 주문 상태를 바꾸지 못했어요 — 확인 필요`);
         return fail(res, 409, 'Order changed');
     }
-    const refundManually = !viaKcp && wasPaid;
+    const refundManually = !kcpPaid && wasPaid;
     res.json({ ok: true, refundManually });
-    await notice(req, `[주문 취소] ${order.order_no} ${escapeSlack(order.product_title)} ${won(order.amount)}원 — ${escapeSlack(reason)}${legacy ? ' (예전 주문 — KCP 취소 안 함, 환불은 직접)' : refundManually ? ' (수동 환불 필요)' : ''}`);
+    await notice(req, `[주문 취소] ${order.order_no} ${escapeSlack(order.product_title)} ${won(order.amount)}원 — ${escapeSlack(reason)}${note || (refundManually ? ' (수동 환불 필요)' : '')}`);
 });
 
 exports.summary = handle(async (req, res) => res.json({ awaitingCount: await Order.awaitingCount() }));

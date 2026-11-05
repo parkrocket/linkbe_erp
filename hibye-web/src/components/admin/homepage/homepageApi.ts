@@ -141,8 +141,9 @@ export const ordersPath = (p: { status: string; payMethod: string; from: string;
 export const orderAction = (id: number, action: 'confirm-deposit' | 'complete') =>
     apiFetch(`${SHOP}/orders/${id}/${action}`, { method: 'POST' });
 export const saveOrderMemo = (id: number, memo: string) => apiFetch(`${SHOP}/orders/${id}/memo`, { method: 'POST', body: { memo } });
-export const cancelOrder = (id: number, reason: string) =>
-    apiFetch<{ ok: boolean; refundManually: boolean }>(`${SHOP}/orders/${id}/cancel`, { method: 'POST', body: { reason } });
+// kcpAlreadyCancelled: KCP 상점관리자에서 이미 취소한 결제 — 서버가 KCP를 부르지 않고 상태만 바꿈
+export const cancelOrder = (id: number, reason: string, kcpAlreadyCancelled = false) =>
+    apiFetch<{ ok: boolean; refundManually: boolean }>(`${SHOP}/orders/${id}/cancel`, { method: 'POST', body: { reason, kcpAlreadyCancelled } });
 
 // 상품·주문 오류 문구 (공통 문구는 homepageErrorMessage)
 export function shopErrorMessage(error: unknown) {
