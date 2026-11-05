@@ -58,7 +58,7 @@ export async function getNewInquiryCount(): Promise<number> {
     const token = (await cookies()).get('x_auth')?.value;
     if (!token) return 0;
     try {
-        const res = await apiFetch<{ newInquiries: number }>('/api/admin/homepage/summary', { cookie:  });
+        const res = await apiFetch<{ newInquiries: number }>('/api/admin/homepage/summary', { cookie: `x_auth=${token}` });
         return Number(res.newInquiries) || 0;
     } catch {
         return 0;
