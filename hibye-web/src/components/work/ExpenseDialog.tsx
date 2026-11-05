@@ -40,23 +40,27 @@ function errorText(e: unknown) {
     return '처리하지 못했어요. 잠시 뒤 다시 시도해 주세요.';
 }
 
-// 경비 팝업 — target이 'new'면 기안, 숫자면 상세(보기·수정·상태 변경)
+// 경비 팝업 — target이 'new'면 기안(copyFrom이 있으면 그 내용으로 채움), 숫자면 상세(보기·수정·상태 변경·복사)
 export function ExpenseDialog({
     target,
     canApprove,
+    copyFrom,
     onClose,
     onChanged,
+    onCopy,
 }: {
     target: 'new' | number;
     canApprove: boolean;
+    copyFrom?: ExpenseForm;
     onClose: () => void;
     onChanged: () => void;
+    onCopy?: (form: ExpenseForm) => void;
 }) {
     const isNew = target === 'new';
     const [detail, setDetail] = useState<ExpenseDetail | null>(null);
     const [loadError, setLoadError] = useState(false);
     const [editing, setEditing] = useState(isNew);
-    const [initial, setInitial] = useState<ExpenseForm>(newForm);
+    const [initial, setInitial] = useState<ExpenseForm>(() => copyFrom ?? newForm());
     const [form, setForm] = useState<ExpenseForm>(initial);
     const [errors, setErrors] = useState<ReturnType<typeof validateExpenseForm>>({});
     const [busy, setBusy] = useState(false);
@@ -151,7 +155,7 @@ export function ExpenseDialog({
     };
 
     const set = <K extends keyof ExpenseForm>(key: K, value: ExpenseForm[K]) => setForm(prev => ({ ...prev, [key]: value }));
-    const title = isNew ? '경비 기안' : editing ? '경비 수정' : '경비';
+    const title = isNew ? (copyFrom ? '경비 기안 (복사)' : '경비 기안') : editing ? '경비 수정' : '경비';
     const editable = detail?.isMine && detail.status === 'pending';
 
     return (
@@ -267,6 +271,12 @@ export function ExpenseDialog({
                         </div>
                     )}
                     <div className="flex justify-end gap-2">
+                        {onCopy && (
+                            // 같은 내용으로 새 기안 — 날짜는 오늘, 상태는 새 기안(대기)
+                            <Button variant="secondary" disabled={busy} onClick={() => onCopy({ ...toForm(detail), spentOn: kstDate(Date.now()) })}>
+                                복사
+                            </Button>
+                        )}
                         {editable && (
                             <>
                                 <Button variant="ghost" className="text-rejected-fg" disabled={busy} onClick={remove}>

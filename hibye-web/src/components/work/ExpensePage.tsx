@@ -9,7 +9,7 @@ import { ErrorState } from '@/components/ui/ErrorState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { kstDate } from '@/lib/schedule';
 import { formatWon } from '@/lib/shop';
-import { EXPENSE_CATEGORY_LABEL, EXPENSE_STATUS_LABEL, shiftMonth, type ExpenseCategory, type ExpenseItem, type ExpenseStatus } from '@/lib/work';
+import { EXPENSE_CATEGORY_LABEL, EXPENSE_STATUS_LABEL, shiftMonth, type ExpenseCategory, type ExpenseForm, type ExpenseItem, type ExpenseStatus } from '@/lib/work';
 import { ExpenseDialog } from './ExpenseDialog';
 import { StatusBadge } from './StatusBadge';
 
@@ -23,8 +23,13 @@ const SELECT_CLASS =
 export function ExpensePage({ canApprove }: { canApprove: boolean }) {
     const [ym, setYm] = useState(() => kstDate(Date.now()).slice(0, 7));
     const [status, setStatus] = useState<ExpenseStatus | ''>('');
-    // 팝업: 'new' = 기안, 숫자 = 상세
+    // 팝업: 'new' = 기안, 숫자 = 상세. copy = 상세에서 '복사'로 연 기안의 처음 값
     const [open, setOpen] = useState<'new' | number | null>(null);
+    const [copy, setCopy] = useState<ExpenseForm | null>(null);
+    const openDialog = (target: 'new' | number | null, from: ExpenseForm | null = null) => {
+        setCopy(from);
+        setOpen(target);
+    };
 
     const list = useApiData<ListResponse>(`/api/work/expenses?month=${ym}${status ? `&status=${status}` : ''}`, undefined, 'GET');
     const data = list.state.status === 'ok' ? list.state.data : null;
@@ -37,7 +42,7 @@ export function ExpensePage({ canApprove }: { canApprove: boolean }) {
                     경비
                     {!canApprove && <span className="text-sm font-normal text-muted">내 경비만 보여요</span>}
                 </h1>
-                <Button onClick={() => setOpen('new')}>경비 기안</Button>
+                <Button onClick={() => openDialog('new')}>경비 기안</Button>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -84,14 +89,22 @@ export function ExpensePage({ canApprove }: { canApprove: boolean }) {
                 {list.state.status === 'error' && <ErrorState onRetry={list.reload} />}
                 {data &&
                     (data.expenses.length ? (
-                        <ExpenseTable rows={data.expenses} canApprove={canApprove} onPick={setOpen} />
+                        <ExpenseTable rows={data.expenses} canApprove={canApprove} onPick={id => openDialog(id)} />
                     ) : (
                         <EmptyState message="이 달에는 경비가 없어요" />
                     ))}
             </div>
 
             {open !== null && (
-                <ExpenseDialog key={open} target={open} canApprove={canApprove} onClose={() => setOpen(null)} onChanged={list.refresh} />
+                <ExpenseDialog
+                    key={`${open}${copy ? '-copy' : ''}`}
+                    target={open}
+                    canApprove={canApprove}
+                    copyFrom={copy ?? undefined}
+                    onClose={() => openDialog(null)}
+                    onChanged={list.refresh}
+                    onCopy={form => openDialog('new', form)}
+                />
             )}
         </main>
     );
