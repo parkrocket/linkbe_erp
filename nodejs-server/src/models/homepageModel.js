@@ -191,6 +191,12 @@ Homepage.purgeInquiriesOlderThan = async years => {
     }
 };
 
+// 아직 확인하지 않은 문의(상태 new) 건수 — 관리 대시보드·메뉴 배지
+Homepage.newInquiryCount = async () => {
+    const [rows] = await pool.query("SELECT COUNT(*) AS n FROM hp_inquiry WHERE status = 'new'");
+    return Number(rows[0].n);
+};
+
 Homepage.listInquiries = async ({ kind = null, status = null, page = 1, size = 30 } = {}) => {
     const conds = [...(kind ? ['kind = ?'] : []), ...(status ? ['status = ?'] : [])];
     const where = conds.length ? ` WHERE ${conds.join(' AND ')}` : '';

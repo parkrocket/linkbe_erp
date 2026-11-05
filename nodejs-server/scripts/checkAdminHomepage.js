@@ -157,6 +157,10 @@ const post = { title: '공지', bodyHtml: '<p>본문</p>', isVisible: true };
     assert.strictEqual(res.code, 400);
 
     fs.rmSync(process.env.UPLOAD_ROOT, { recursive: true, force: true });
+    // 새 문의 건수(관리 대시보드·메뉴 배지)
+    Homepage.newInquiryCount = async () => 3;
+    assert.deepStrictEqual((await call(ctrl.summary, {})).body, { newInquiries: 3 });
+
     console.log('checkAdminHomepage ✅');
     process.exit(0);
 })().catch(err => {

@@ -188,6 +188,8 @@ exports.savePage = handle(async (req, res) => {
 });
 
 // ── 문의함 ──
+exports.summary = handle(async (req, res) => res.json({ newInquiries: await Homepage.newInquiryCount() }));
+
 exports.listInquiries = handle(async (req, res) => {
     const kind = ['qna', 'estimate'].includes(req.query.kind) ? req.query.kind : null;
     const status = STATUSES.includes(req.query.status) ? req.query.status : null;

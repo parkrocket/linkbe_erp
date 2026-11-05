@@ -80,6 +80,12 @@ const all = () => calls.map(c => c.sql).join('\n');
     // 모든 쿼리에 값 직접 삽입 없음 (따옴표 문자열 리터럴은 상수만)
     assert.ok(!/'\$\{/.test(all()));
 
+    // 새 문의 건수: 상태 new만
+    calls.length = 0;
+    pool.query = async (sql, params) => (calls.push({ sql, params }), [[{ n: '4' }]]);
+    assert.strictEqual(await Homepage.newInquiryCount(), 4);
+    assert.ok(/FROM hp_inquiry/.test(calls[0].sql) && /status = 'new'/.test(calls[0].sql));
+
     console.log('checkHomepageModel ✅');
     process.exit(0);
 })().catch(err => {

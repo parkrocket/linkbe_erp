@@ -29,6 +29,7 @@ router.get('/pages', ctrl.listPages);
 router.get('/pages/:slug', ctrl.getPage);
 router.post('/pages/:slug', ctrl.savePage);
 
+router.get('/summary', ctrl.summary);
 router.get('/inquiries', ctrl.listInquiries);
 router.get('/inquiries/:id', ctrl.getInquiry);
 router.post('/inquiries/:id', ctrl.updateInquiry);

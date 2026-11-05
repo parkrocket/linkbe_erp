@@ -53,6 +53,18 @@ export async function getWorkPendingCount(): Promise<number> {
 }
 
 // 홈페이지 권한자용 입금 대기 주문 수 — 실패해도 헤더는 그려지도록 0
+// 새 문의(상태 new) 건수 — 관리 대시보드·메뉴 배지. 실패하면 0(다른 건수 함수와 같음)
+export async function getNewInquiryCount(): Promise<number> {
+    const token = (await cookies()).get('x_auth')?.value;
+    if (!token) return 0;
+    try {
+        const res = await apiFetch<{ newInquiries: number }>('/api/admin/homepage/summary', { cookie:  });
+        return Number(res.newInquiries) || 0;
+    } catch {
+        return 0;
+    }
+}
+
 export async function getShopAwaitingCount(): Promise<number> {
     const token = (await cookies()).get('x_auth')?.value;
     if (!token) return 0;
