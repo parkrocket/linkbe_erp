@@ -135,6 +135,9 @@ const validateDocTemplate = input => {
     if (!DOC_KINDS.includes(b.kind)) return fail('Invalid kind');
     const name = str(b.name, 100);
     if (!name) return fail('Invalid name');
+    // 그룹(고객사별 양식 묶음 — 로엘·도담 등). 비우면 null = 기본
+    const groupName = str(b.groupName, 50);
+    if (groupName === null) return fail('Invalid groupName');
     if (!isNil(b.categoryId) && !isId(b.categoryId)) return fail('Invalid categoryId');
     // express json 한도(1MB) 안에서 css 등 나머지 칸 여유를 두려고 900,000자까지만 허용
     const bodyHtml = str(b.bodyHtml, 900000, { trim: false });
@@ -143,7 +146,7 @@ const validateDocTemplate = input => {
     if (css === null) return fail('Invalid css');
     const isDefault = isNil(b.isDefault) ? false : b.isDefault;
     if (!isBool(isDefault)) return fail('Invalid isDefault');
-    const value = { kind: b.kind, name, categoryId: isNil(b.categoryId) ? null : b.categoryId, bodyHtml, css, isDefault };
+    const value = { kind: b.kind, name, groupName: groupName || null, categoryId: isNil(b.categoryId) ? null : b.categoryId, bodyHtml, css, isDefault };
     if (b.updatedAt !== undefined) {
         if (typeof b.updatedAt !== 'string') return fail('Invalid updatedAt');
         value.updatedAt = b.updatedAt;

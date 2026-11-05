@@ -258,12 +258,14 @@ const value = (patch = {}) => ({
     reset([[/FROM wk_doc_template/, [[{ id: 1, name: 'a' }]]]]);
     assert.deepStrictEqual(await DocSetting.listDocTemplates(1), [{ id: 1, name: 'a' }]);
     assert.ok(!/body_html|css/.test(last().sql.split(' FROM ')[0]), '목록에는 본문·CSS 없음');
+    assert.ok(last().sql.includes('group_name'));
     assert.deepStrictEqual(await DocSetting.findDocTemplate(1, 1), { id: 1, name: 'a' });
     assert.ok(last().sql.includes('body_html') && last().sql.includes('css') && last().sql.includes('cp_id = ? AND id = ?'));
-    const dt = { kind: 'estimate', name: '양식', categoryId: null, bodyHtml: '<p>a</p>', css: '', isDefault: true, updatedAt: '2026-11-05 10:00:00' };
+    const dt = { kind: 'estimate', name: '양식', groupName: '로엘', categoryId: null, bodyHtml: '<p>a</p>', css: '', isDefault: true, updatedAt: '2026-11-05 10:00:00' };
     reset([[/^INSERT INTO wk_doc_template/, [{ insertId: 3 }]]]);
     assert.strictEqual(await DocSetting.createDocTemplate(1, dt), 3);
-    assert.deepStrictEqual(calls[0].params, [1, 'estimate', '양식', null, '<p>a</p>', '', 1], 'css·body_html 항상 명시');
+    assert.deepStrictEqual(calls[0].params, [1, 'estimate', '양식', '로엘', null, '<p>a</p>', '', 1], 'css·body_html 항상 명시');
+    assert.ok(calls[0].sql.includes('group_name'));
     let off = calls.find(c => c.sql.startsWith('UPDATE wk_doc_template SET is_default = 0'));
     assert.ok(off.sql.includes('category_id <=> ?') && off.sql.includes('kind = ?') && off.sql.includes('cp_id = ?'));
     assert.deepStrictEqual(off.params, [1, 'estimate', null, 3]);
@@ -279,6 +281,7 @@ const value = (patch = {}) => ({
     assert.strictEqual(await DocSetting.updateDocTemplate(1, 3, { ...dt, categoryId: null }), 'ok');
     assert.ok(calls[0].sql.includes("DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s') = ?") && calls[0].sql.includes('cp_id = ? AND id = ?'));
     assert.deepStrictEqual(calls[0].params.slice(-3), [1, 3, '2026-11-05 10:00:00']);
+    assert.ok(calls[0].sql.includes('group_name = ?') && calls[0].params.includes('로엘'));
     off = calls.find(c => c.sql.includes('is_default = 0'));
     assert.ok(off.sql.includes('category_id <=> ?') && off.sql.includes('id <> ?'));
     assert.deepStrictEqual(off.params, [1, 'estimate', null, 3]);

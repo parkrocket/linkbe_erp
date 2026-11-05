@@ -6,6 +6,7 @@ import {
     buildPrintValues,
     contractStatus,
     copyForNew,
+    groupTemplates,
     fillTemplate,
     itemAmount,
     itemsTotal,
@@ -154,7 +155,7 @@ describe('buildPrintValues', () => {
 
 describe('pickTemplate', () => {
     const t = (id: number, kind: 'estimate' | 'contract', categoryId: number | null, isDefault: boolean): DocTemplateSummary => ({
-        id, kind, name: `양식${id}`, categoryId, isDefault, updatedAt: '',
+        id, kind, name: `양식${id}`, groupName: null, categoryId, isDefault, updatedAt: '',
     });
     it('분류 기본 → 공통 기본 → 첫 양식 → null', () => {
         const all = [t(5, 'estimate', null, true), t(3, 'estimate', 7, true), t(2, 'estimate', 7, false), t(9, 'contract', 7, true)];
@@ -217,5 +218,16 @@ describe('copyForNew', () => {
         expect([n.docNo, n.contractDate, n.deliveryDate, n.paidAmount, n.isHold, n.isCancelled, n.isPaidFull, n.invoiceIssued]).toEqual(['', null, null, 0, false, false, false, false]);
         expect([n.companyName, n.total, n.items, n.managers]).toEqual(['가', 1000, c.items, c.managers]);
         expect(c.docNo).toBe('L-1');
+    });
+});
+
+describe('groupTemplates', () => {
+    it('그룹별로 묶음 — 기본(그룹 없음)이 맨 앞, 나머지는 한국어 정렬, 그룹 안은 원래 순서', () => {
+        const t = (id: number, groupName: string | null) => ({ id, kind: 'contract' as const, name: `t${id}`, groupName, categoryId: null, isDefault: false, updatedAt: '' });
+        const groups = groupTemplates([t(1, '로엘'), t(2, null), t(3, 'YK'), t(4, '도담'), t(5, '로엘'), t(6, null)]);
+        expect(groups.map(g => g.group)).toEqual(['기본', '도담', '로엘', 'YK']); // 한국어 정렬: 한글 먼저
+        expect(groups[0].items.map(i => i.id)).toEqual([2, 6]);
+        expect(groups[2].items.map(i => i.id)).toEqual([1, 5]);
+        expect(groupTemplates([])).toEqual([]);
     });
 });

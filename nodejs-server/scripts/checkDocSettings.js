@@ -58,7 +58,7 @@ const call = async (fn, req) => {
 (async () => {
     let res = await call(ctrl.overview);
     assert.deepStrictEqual(Object.keys(res.body), ['categories', 'docTemplates']);
-    assert.deepStrictEqual(Object.keys(res.body.docTemplates[0]), ['id', 'kind', 'name', 'categoryId', 'isDefault', 'updatedAt']);
+    assert.deepStrictEqual(Object.keys(res.body.docTemplates[0]), ['id', 'kind', 'name', 'groupName', 'categoryId', 'isDefault', 'updatedAt']);
 
     res = await call(ctrl.itemTemplates, { query: { categoryId: '1' } });
     assert.strictEqual(calls.itpls[1], 1);

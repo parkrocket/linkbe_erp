@@ -113,7 +113,7 @@ DocSetting.moveItemTemplate = async (cpId, id, dir) => {
 // ---- 양식 ----
 DocSetting.listDocTemplates = async cpId => {
     const [rows] = await pool.query(
-        `SELECT id, kind, name, category_id, is_default, DATE_FORMAT(updated_at, ${DATETIME_F}) AS updated_at FROM wk_doc_template WHERE cp_id = ? ORDER BY kind, id`,
+        `SELECT id, kind, name, group_name, category_id, is_default, DATE_FORMAT(updated_at, ${DATETIME_F}) AS updated_at FROM wk_doc_template WHERE cp_id = ? ORDER BY kind, id`,
         [cpId],
     );
     return rows;
@@ -121,7 +121,7 @@ DocSetting.listDocTemplates = async cpId => {
 
 DocSetting.findDocTemplate = async (cpId, id) => {
     const [rows] = await pool.query(
-        `SELECT id, kind, name, category_id, body_html, css, is_default, DATE_FORMAT(updated_at, ${DATETIME_F}) AS updated_at FROM wk_doc_template WHERE cp_id = ? AND id = ?`,
+        `SELECT id, kind, name, group_name, category_id, body_html, css, is_default, DATE_FORMAT(updated_at, ${DATETIME_F}) AS updated_at FROM wk_doc_template WHERE cp_id = ? AND id = ?`,
         [cpId, id],
     );
     return rows[0];
@@ -147,8 +147,8 @@ DocSetting.createDocTemplate = async (cpId, v) => {
             return null;
         }
         const [result] = await conn.query(
-            'INSERT INTO wk_doc_template (cp_id, kind, name, category_id, body_html, css, is_default) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [cpId, v.kind, v.name, v.categoryId, v.bodyHtml, v.css, v.isDefault ? 1 : 0],
+            'INSERT INTO wk_doc_template (cp_id, kind, name, group_name, category_id, body_html, css, is_default) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [cpId, v.kind, v.name, v.groupName ?? null, v.categoryId, v.bodyHtml, v.css, v.isDefault ? 1 : 0],
         );
         if (v.isDefault) await clearOtherDefaults(conn, cpId, v, result.insertId);
         await conn.commit();
@@ -171,8 +171,8 @@ DocSetting.updateDocTemplate = async (cpId, id, v) => {
             return 'invalid';
         }
         const [result] = await conn.query(
-            `UPDATE wk_doc_template SET kind = ?, name = ?, category_id = ?, body_html = ?, css = ?, is_default = ?, updated_at = NOW() WHERE cp_id = ? AND id = ? AND DATE_FORMAT(updated_at, ${DATETIME_F}) = ?`,
-            [v.kind, v.name, v.categoryId, v.bodyHtml, v.css, v.isDefault ? 1 : 0, cpId, id, v.updatedAt || ''],
+            `UPDATE wk_doc_template SET kind = ?, name = ?, group_name = ?, category_id = ?, body_html = ?, css = ?, is_default = ?, updated_at = NOW() WHERE cp_id = ? AND id = ? AND DATE_FORMAT(updated_at, ${DATETIME_F}) = ?`,
+            [v.kind, v.name, v.groupName ?? null, v.categoryId, v.bodyHtml, v.css, v.isDefault ? 1 : 0, cpId, id, v.updatedAt || ''],
         );
         if (result.affectedRows === 0) {
             const [rows] = await conn.query('SELECT id FROM wk_doc_template WHERE cp_id = ? AND id = ?', [cpId, id]);

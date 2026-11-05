@@ -105,7 +105,20 @@ export type ItemTemplate = {
     kind: ItemKind;
     sort: number;
 };
-export type DocTemplateSummary = { id: number; kind: DocKind; name: string; categoryId: number | null; isDefault: boolean; updatedAt: string };
+export type DocTemplateSummary = { id: number; kind: DocKind; name: string; groupName: string | null; categoryId: number | null; isDefault: boolean; updatedAt: string };
+
+// 양식 그룹(고객사별 묶음) — 그룹 없음 = '기본'(맨 앞), 나머지는 가나다순, 그룹 안은 받은 순서
+export const DEFAULT_GROUP = '기본';
+export function groupTemplates<T extends Pick<DocTemplateSummary, 'groupName'>>(list: T[]): { group: string; items: T[] }[] {
+    const map = new Map<string, T[]>();
+    for (const t of list) {
+        const g = t.groupName || DEFAULT_GROUP;
+        map.set(g, [...(map.get(g) ?? []), t]);
+    }
+    return [...map.entries()]
+        .sort(([a], [b]) => (a === DEFAULT_GROUP ? -1 : b === DEFAULT_GROUP ? 1 : a.localeCompare(b, 'ko')))
+        .map(([group, items]) => ({ group, items }));
+}
 export type DocTemplate = DocTemplateSummary & { bodyHtml: string; css: string };
 
 // ---- 계산 (서버와 같은 값) ----

@@ -96,6 +96,12 @@ assert.strictEqual(validateItemTemplate({ ...it, categoryId: 0 }).error, 'Invali
 assert.strictEqual(validateItemTemplate({ ...it, qty: -1 }).error, 'Invalid item');
 const dt = { kind: 'estimate', name: '기본', categoryId: null, bodyHtml: '<p>x</p>', css: '', isDefault: false };
 assert.ok(validateDocTemplate(dt).ok);
+// 그룹(고객사별 양식 묶음): 앞뒤 공백 제거, 비우면 null(=기본), 50자까지
+assert.strictEqual(validateDocTemplate(dt).value.groupName, null);
+assert.strictEqual(validateDocTemplate({ ...dt, groupName: '  로엘 ' }).value.groupName, '로엘');
+assert.strictEqual(validateDocTemplate({ ...dt, groupName: '  ' }).value.groupName, null);
+assert.strictEqual(validateDocTemplate({ ...dt, groupName: 'a'.repeat(51) }).error, 'Invalid groupName');
+assert.strictEqual(validateDocTemplate({ ...dt, groupName: 3 }).error, 'Invalid groupName');
 assert.ok(validateDocTemplate({ ...dt, kind: 'contract', categoryId: 2, updatedAt: 'x' }).ok);
 assert.strictEqual(validateDocTemplate({ ...dt, bodyHtml: 'a'.repeat(900001) }).error, 'Invalid bodyHtml');
 assert.ok(validateDocTemplate({ ...dt, bodyHtml: 'a'.repeat(900000) }).ok);

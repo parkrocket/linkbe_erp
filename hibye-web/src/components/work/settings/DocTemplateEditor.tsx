@@ -63,26 +63,32 @@ const SAMPLE_CONTRACT: ContractDetail = {
     managers: [{ name: '김담당', phone: '010-0000-0000', email: 'manager@example.com', memo: '' }],
 };
 
-type Form = { name: string; kind: DocKind; categoryId: string; isDefault: boolean; bodyHtml: string; css: string };
-const EMPTY_FORM: Form = { name: '', kind: 'estimate', categoryId: '', isDefault: false, bodyHtml: '', css: '' };
+type Form = { name: string; groupName: string; kind: DocKind; categoryId: string; isDefault: boolean; bodyHtml: string; css: string };
+const EMPTY_FORM: Form = { name: '', groupName: '', kind: 'estimate', categoryId: '', isDefault: false, bodyHtml: '', css: '' };
 
-// 양식 편집 — id가 'new'면 새 양식. 본문은 편집기, 모양(CSS)은 접어 둔 칸, 오른쪽은 자리표시 목록
+// 양식 편집 — id가 'new'면 새 양식(copyFromId가 있으면 그 양식을 복사해 채움). 본문은 편집기, 모양(CSS)은 접어 둔 칸, 오른쪽은 자리표시 목록
 export function DocTemplateEditor({
     id,
+    copyFromId,
     categories,
+    groups,
     onSaved,
     onCreated,
+    onCopy,
     onClose,
 }: {
     id: number | 'new';
+    copyFromId?: number;
     categories: Category[];
+    groups: string[];
     onSaved: () => void;
     onCreated: (id: number) => void;
+    onCopy: (id: number) => void;
     onClose: () => void;
 }) {
     const [form, setForm] = useState<Form>(EMPTY_FORM);
     const [updatedAt, setUpdatedAt] = useState<string | undefined>(undefined); // 동시 수정 검사용
-    const [loadState, setLoadState] = useState<'loading' | 'ok' | 'error'>(id === 'new' ? 'ok' : 'loading');
+    const [loadState, setLoadState] = useState<'loading' | 'ok' | 'error'>(id === 'new' && !copyFromId ? 'ok' : 'loading');
     const [editorKey, setEditorKey] = useState(0); // 새로 불러올 때 편집기를 다시 만듦
     const [notice, setNotice] = useState<Notice>(null);
     const [busy, setBusy] = useState(false);
@@ -94,12 +100,23 @@ export function DocTemplateEditor({
     // 저장된 양식 불러오기 (처음·409 뒤 새로 불러오기). replaceForm=false면 updatedAt만 갱신
     const load = useCallback(
         async (replaceForm: boolean) => {
-            if (id === 'new') return;
+            // 복사: 원본을 불러와 새 양식으로(이름 뒤 '복사', 기본 아님, 수정 시각 없음)
+            const source = id === 'new' ? copyFromId : id;
+            if (!source) return;
             try {
-                const { docTemplate: t } = await apiFetch<{ docTemplate: DocTemplate }>(`${SETTINGS_API}/doc-templates/${id}`);
-                setUpdatedAt(t.updatedAt);
+                const { docTemplate: t } = await apiFetch<{ docTemplate: DocTemplate }>(`${SETTINGS_API}/doc-templates/${source}`);
+                if (id !== 'new') setUpdatedAt(t.updatedAt);
                 if (replaceForm) {
-                    setForm({ name: t.name, kind: t.kind, categoryId: t.categoryId == null ? '' : String(t.categoryId), isDefault: t.isDefault, bodyHtml: t.bodyHtml, css: t.css });
+                    const copying = id === 'new';
+                    setForm({
+                        name: copying ? `${t.name} 복사` : t.name,
+                        groupName: t.groupName ?? '',
+                        kind: t.kind,
+                        categoryId: t.categoryId == null ? '' : String(t.categoryId),
+                        isDefault: copying ? false : t.isDefault,
+                        bodyHtml: t.bodyHtml,
+                        css: t.css,
+                    });
                     setEditorKey(k => k + 1);
                 }
                 setLoadState('ok');
@@ -110,7 +127,7 @@ export function DocTemplateEditor({
                 return false;
             }
         },
-        [id],
+        [id, copyFromId],
     );
 
     useEffect(() => {
@@ -129,6 +146,7 @@ export function DocTemplateEditor({
             const body = {
                 kind: form.kind,
                 name: form.name.trim(),
+                groupName: form.groupName.trim() || null,
                 categoryId: form.categoryId ? Number(form.categoryId) : null,
                 bodyHtml: form.bodyHtml,
                 css: form.css,
@@ -211,6 +229,19 @@ export function DocTemplateEditor({
                 <div className="flex min-w-0 flex-col gap-3">
                     <div className="grid gap-3 sm:grid-cols-2">
                         <TextField label="이름" value={form.name} maxLength={100} onChange={e => set('name', e.target.value)} />
+                        <TextField
+                            label="그룹"
+                            hint="고객사별로 묶을 때 (예: 로엘). 비우면 기본"
+                            value={form.groupName}
+                            maxLength={50}
+                            list="doc-template-groups"
+                            onChange={e => set('groupName', e.target.value)}
+                        />
+                        <datalist id="doc-template-groups">
+                            {groups.map(g => (
+                                <option key={g} value={g} />
+                            ))}
+                        </datalist>
                         <label className="flex flex-col gap-1 text-sm font-medium">
                             종류
                             <select
@@ -263,6 +294,11 @@ export function DocTemplateEditor({
                         <Button variant="secondary" onClick={() => setShowPreview(v => !v)}>
                             {showPreview ? '미리보기 닫기' : '미리보기'}
                         </Button>
+                        {id !== 'new' && (
+                            <Button variant="secondary" disabled={busy} onClick={() => onCopy(id)}>
+                                복사해서 새 양식
+                            </Button>
+                        )}
                         {id !== 'new' && (
                             <Button variant="ghost" className="ml-auto" disabled={busy} onClick={remove}>
                                 삭제

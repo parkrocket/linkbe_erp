@@ -24,7 +24,7 @@ const toItemTemplate = r => ({
     id: r.id, categoryId: r.category_id, groupName: r.group_name, content: r.content, unitPrice: r.unit_price,
     qty: r.qty, period: r.period, note: r.note, kind: r.kind, sort: r.sort,
 });
-const toTemplateSummary = r => ({ id: r.id, kind: r.kind, name: r.name, categoryId: r.category_id, isDefault: !!r.is_default, updatedAt: r.updated_at });
+const toTemplateSummary = r => ({ id: r.id, kind: r.kind, name: r.name, groupName: r.group_name ?? null, categoryId: r.category_id, isDefault: !!r.is_default, updatedAt: r.updated_at });
 
 exports.overview = handle(async (req, res) => {
     const [categories, docTemplates] = await Promise.all([DocSetting.listCategories(req.userCpId), DocSetting.listDocTemplates(req.userCpId)]);
