@@ -132,6 +132,9 @@ function Detail({ c, busy, onEdit, onRemove }: { c: ContractDetail; busy: boolea
                     <Button variant="secondary" disabled={busy} onClick={onEdit}>
                         수정
                     </Button>
+                    <Link href={`/work/contracts/new?from=${c.id}`} className={buttonClass('secondary')}>
+                        복사
+                    </Link>
                     <Button variant="ghost" className="text-rejected-fg" disabled={busy} onClick={onRemove}>
                         삭제
                     </Button>

@@ -5,6 +5,7 @@ import {
     buildPrintDocument,
     buildPrintValues,
     contractStatus,
+    copyForNew,
     fillTemplate,
     itemAmount,
     itemsTotal,
@@ -206,5 +207,15 @@ describe('화면 입력 도우미', () => {
         expect(deliveryDday(r('2026-11-03'), '2026-11-04')).toBe('지남');
         expect(deliveryDday(r(null), '2026-11-04')).toBe('');
         expect(deliveryDday(r('2026-11-07', 'paid'), '2026-11-04')).toBe('');
+    });
+});
+
+describe('copyForNew', () => {
+    it('업체·품목·담당자·금액은 그대로, 번호·날짜·입금·상태는 비움', () => {
+        const c = { id: 7, docNo: 'L-1', contractDate: '2026-01-02', deliveryDate: '2026-02-03', paidAmount: 500, isHold: true, isCancelled: true, isPaidFull: true, invoiceIssued: true, companyName: '가', total: 1000, items: [{ content: 'x' }], managers: [{ name: '나' }] } as unknown as ContractDetail;
+        const n = copyForNew(c);
+        expect([n.docNo, n.contractDate, n.deliveryDate, n.paidAmount, n.isHold, n.isCancelled, n.isPaidFull, n.invoiceIssued]).toEqual(['', null, null, 0, false, false, false, false]);
+        expect([n.companyName, n.total, n.items, n.managers]).toEqual(['가', 1000, c.items, c.managers]);
+        expect(c.docNo).toBe('L-1');
     });
 });

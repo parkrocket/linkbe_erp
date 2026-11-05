@@ -79,6 +79,19 @@ export type ContractDetail = {
     managers: ContractManager[];
 };
 
+// 복사해 새 계약 쓰기 — 업체·품목·담당자·금액은 그대로, 문서 번호·날짜·입금·상태는 새 계약답게 비움
+export const copyForNew = (c: ContractDetail): ContractDetail => ({
+    ...c,
+    docNo: '',
+    contractDate: null,
+    deliveryDate: null,
+    paidAmount: 0,
+    isHold: false,
+    isCancelled: false,
+    isPaidFull: false,
+    invoiceIssued: false,
+});
+
 export type Category = { id: number; name: string; sort: number; used: number };
 export type ItemTemplate = {
     id: number;

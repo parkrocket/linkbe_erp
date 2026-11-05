@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { apiFetch, ApiError } from '@/lib/api';
-import { formatMoneyInput, itemAmount, itemsTotal, parseMoney, receivable, vat, type Category, type ContractDetail, type ContractManager, type ItemTemplate } from '@/lib/contract';
+import { copyForNew, formatMoneyInput, itemAmount, itemsTotal, parseMoney, receivable, vat, type Category, type ContractDetail, type ContractManager, type ItemTemplate } from '@/lib/contract';
 import { fromFormItem, toFormItem, type FormItem, ItemsEditor } from './ItemsEditor';
 
 const MAX_AMOUNT = 2000000000;
@@ -103,8 +103,20 @@ const CONFLICT_TEXT = '다른 사람이 먼저 고쳤어요. 내 입력은 그�
 
 type Company = { companyName: string; bizNo: string; ceoName: string; companyEmail: string; managerName: string; managerPhone: string; managerEmail: string };
 
-// 작성·수정 폼 — 새 계약(initial 없음)과 상세의 수정 모드 공용
-export function ContractForm({ initial, onCancel, onSaved, onReload }: { initial?: ContractDetail; onCancel?: () => void; onSaved?: () => void | Promise<void>; onReload?: () => void | Promise<void> }) {
+// 작성·수정 폼 — 새 계약(initial 없음)과 상세의 수정 모드 공용. copyFromId: 그 계약을 복사해 새 계약으로 채움
+export function ContractForm({
+    initial,
+    copyFromId,
+    onCancel,
+    onSaved,
+    onReload,
+}: {
+    initial?: ContractDetail;
+    copyFromId?: number;
+    onCancel?: () => void;
+    onSaved?: () => void | Promise<void>;
+    onReload?: () => void | Promise<void>;
+}) {
     const router = useRouter();
     const [form, setForm] = useState<FormState>(() => toState(initial));
     const [categories, setCategories] = useState<Category[]>([]);
@@ -113,6 +125,23 @@ export function ContractForm({ initial, onCancel, onSaved, onReload }: { initial
     const [error, setError] = useState('');
     const [conflict, setConflict] = useState(false);
     const [busy, setBusy] = useState(false);
+    const [copied, setCopied] = useState('');
+
+    // 복사할 계약 불러와 채우기 (한 번)
+    useEffect(() => {
+        if (!copyFromId || initial) return;
+        let active = true;
+        apiFetch<{ contract: ContractDetail }>(`/api/work/contracts/${copyFromId}`)
+            .then(r => {
+                if (!active) return;
+                setForm(toState(copyForNew(r.contract)));
+                setCopied(r.contract.companyName);
+            })
+            .catch(() => active && setError('복사할 계약을 불러오지 못했어요. 빈 양식으로 작성하거나 다시 시도해 주세요.'));
+        return () => {
+            active = false;
+        };
+    }, [copyFromId, initial]);
 
     const set = <K extends keyof FormState>(key: K, value: FormState[K]) => setForm(prev => ({ ...prev, [key]: value }));
     const text = (key: 'docNo' | 'bizNo' | 'ceoName' | 'companyEmail' | 'projectName' | 'workPeriod' | 'link1' | 'link2' | 'opsSite') => ({
@@ -248,6 +277,11 @@ export function ContractForm({ initial, onCancel, onSaved, onReload }: { initial
                 void save();
             }}
         >
+            {copied && (
+                <p role="status" className="rounded-lg bg-primary-soft px-3 py-2.5 text-sm text-primary">
+                    {copied} 계약을 복사했어요. 문서 번호·계약일·납품일·입금액·상태는 비워 두었어요. 저장하면 새 계약으로 만들어져요.
+                </p>
+            )}
             {(error || conflict) && (
                 <div role="alert" className="rounded-lg bg-rejected-bg px-3 py-2.5 text-sm text-rejected-fg">
                     {conflict ? (

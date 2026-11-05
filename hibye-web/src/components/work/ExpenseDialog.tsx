@@ -13,6 +13,8 @@ import {
     EXPENSE_BODY_TEMPLATE,
     EXPENSE_CATEGORY_LABEL,
     EXPENSE_STATUS_LABEL,
+    commaWonInText,
+    sumWonInText,
     toExpensePayload,
     validateExpenseForm,
     type ExpenseCategory,
@@ -187,6 +189,7 @@ export function ExpenseDialog({
                         inputMode="numeric"
                         value={form.amount}
                         error={errors.amount}
+                        hint="내용에 적은 '…원' 금액이 자동으로 합산돼요."
                         onChange={e => set('amount', comma(digitsOnly(e.target.value)))}
                     />
                     <TextField label="제목" name="title" maxLength={100} value={form.title} error={errors.title} onChange={e => set('title', e.target.value)} />
@@ -197,7 +200,14 @@ export function ExpenseDialog({
                             maxLength={5000}
                             className={`${FIELD_CLASS} ${errors.body ? 'border-rejected-fg' : 'border-line'}`}
                             value={form.body}
-                            onChange={e => set('body', e.target.value)}
+                            placeholder="금액 뒤에는 '원'을 붙여 주세요 (예: 150,000원)"
+                            onChange={e => {
+                                // 예전 경비 화면처럼 내용의 '…원'을 더해 금액 칸에 (없으면 금액은 그대로)
+                                const body = e.target.value;
+                                const sum = sumWonInText(body);
+                                setForm(f => ({ ...f, body, ...(sum !== null ? { amount: comma(String(sum)) } : {}) }));
+                            }}
+                            onBlur={() => set('body', commaWonInText(form.body))}
                         />
                         {errors.body && <span className="text-xs font-normal text-rejected-fg">{errors.body}</span>}
                     </label>

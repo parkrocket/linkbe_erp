@@ -23,6 +23,15 @@ export type ExpenseStatus = keyof typeof EXPENSE_STATUS_LABEL;
 // 기안 내용 기본값 — 화면이 미리 채움
 export const EXPENSE_BODY_TEMPLATE = '내역 : \n은행 / 계좌 : \n입금액 : \n\n카드 뒷 4자리 : \n결제액 : ';
 
+// 내용의 '숫자(콤마 가능) + 원'을 모두 더함 — 예전 경비 화면과 같은 규칙. '원'이 붙은 금액이 없으면 null(직접 입력한 금액을 지우지 않게)
+const WON_IN_TEXT = /(\d[\d,]*)\s*원/g;
+export function sumWonInText(text: string): number | null {
+    const nums = [...text.matchAll(WON_IN_TEXT)].map(m => Number(m[1].replace(/,/g, '')));
+    return nums.length ? nums.reduce((a, b) => a + b, 0) : null;
+}
+// 내용의 '숫자원'에 천 단위 콤마 (150000원 → 150,000원). 입력 칸을 벗어날 때만 — 입력 중엔 커서가 튀므로
+export const commaWonInText = (text: string) => text.replace(WON_IN_TEXT, (_, n: string) => `${Number(n.replace(/,/g, '')).toLocaleString('ko-KR')}원`);
+
 export type ExpenseItem = {
     id: number;
     spentOn: string; // YYYY-MM-DD
