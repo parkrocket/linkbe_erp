@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { Dashboard } from '@/components/dashboard/Dashboard';
-import { Landing } from '@/components/landing/Landing';
+import { HibyeLanding } from '@/components/landing/HibyeLanding';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { getCurrentUser } from '@/lib/auth';
 
@@ -15,7 +15,7 @@ export default function HomePage() {
 
 async function Home() {
     const user = await getCurrentUser();
-    if (!user) return <Landing />;
+    if (!user) return <HibyeLanding />;
     return <Dashboard user={user} />;
 }
 

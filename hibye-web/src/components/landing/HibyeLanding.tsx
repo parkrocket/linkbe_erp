@@ -3,8 +3,8 @@ import type { CSSProperties, ReactNode } from 'react';
 import { BUSINESS_INFO, COPYRIGHT } from '@/components/layout/Footer';
 import { AdminMock, CalendarMock, SlackApplyMock, WorkMock } from './LandingMockups';
 
-// 새 원페이지 랜딩 (시안 — /landing 어두운 테마, /landing/light 밝은 테마. 확정되면 '/' 로그인 전 화면으로 교체)
-// 색은 globals.css 랜딩 변수(night·mist·lilac·dusk 등) — 테마는 data-landing 값으로 변수만 바꿈
+// 로그인 전 첫 화면('/') — 원페이지 랜딩 (11-05 밝은 테마로 확정, 예전 Landing.tsx 대체)
+// 색은 globals.css 랜딩 변수(lp-bg·lp-text·lilac·dusk 등), 공용 헤더·푸터는 data-landing이 있으면 CSS로 숨김
 // 핵심 장치: hi(출근 인사)와 bye(퇴근 인사)를 잇는 하루 선. 움직임은 첫 화면 이 한 번만(globals.css .day-line)
 
 // 하루 선 위의 일 — at: 가로 위치(%), d: 켜지는 시각(애니메이션 지연)
@@ -30,11 +30,11 @@ const STEPS = [
 
 const linkFocus = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lilac';
 const primaryButton = `inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#6d3ad0] ${linkFocus}`;
-const quietButton = `inline-flex items-center justify-center rounded-xl border border-night-line px-5 py-3 text-sm font-semibold text-mist transition-colors hover:border-haze ${linkFocus}`;
+const quietButton = `inline-flex items-center justify-center rounded-xl border border-lp-line px-5 py-3 text-sm font-semibold text-lp-text transition-colors hover:border-lp-muted ${linkFocus}`;
 
-export function HibyeLanding({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
+export function HibyeLanding() {
     return (
-        <div data-landing={theme} className="flex flex-1 flex-col bg-night text-mist">
+        <div data-landing className="flex flex-1 flex-col bg-lp-bg text-lp-text">
             <LandingNav />
             <main className="flex-1">
                 <Hero />
@@ -50,17 +50,17 @@ export function HibyeLanding({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
 
 function LandingNav() {
     return (
-        <header className="sticky top-0 z-20 border-b border-night-line/60 bg-night/80 backdrop-blur">
+        <header className="sticky top-0 z-20 border-b border-lp-line/60 bg-lp-bg/80 backdrop-blur">
             <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-8 px-4">
-                <Link href="/" className={`shrink-0 text-xl font-extrabold tracking-tight text-mist ${linkFocus}`}>
+                <Link href="/" className={`shrink-0 text-xl font-extrabold tracking-tight text-lp-text ${linkFocus}`}>
                     LinkBe<span className="sr-only"> hibye 홈</span>
                 </Link>
-                <nav aria-label="랜딩 메뉴" className="hidden gap-6 text-sm text-haze md:flex">
-                    <a href="#features" className={`hover:text-mist ${linkFocus}`}>기능</a>
-                    <a href="#rules" className={`hover:text-mist ${linkFocus}`}>자동 규칙</a>
-                    <a href="#start" className={`hover:text-mist ${linkFocus}`}>시작하기</a>
+                <nav aria-label="랜딩 메뉴" className="hidden gap-6 text-sm text-lp-muted md:flex">
+                    <a href="#features" className={`hover:text-lp-text ${linkFocus}`}>기능</a>
+                    <a href="#rules" className={`hover:text-lp-text ${linkFocus}`}>자동 규칙</a>
+                    <a href="#start" className={`hover:text-lp-text ${linkFocus}`}>시작하기</a>
                 </nav>
-                <Link href="/login" className={`ml-auto rounded-lg bg-mist px-4 py-2 text-sm font-semibold text-night hover:opacity-90 ${linkFocus}`}>
+                <Link href="/login" className={`ml-auto rounded-lg bg-lp-text px-4 py-2 text-sm font-semibold text-lp-bg hover:opacity-90 ${linkFocus}`}>
                     로그인
                 </Link>
             </div>
@@ -89,7 +89,7 @@ function Hero() {
                         <br />
                         링크비의 하루가 여기 있어요
                     </h1>
-                    <p className="mt-5 text-base leading-7 text-haze md:text-lg md:leading-8">
+                    <p className="mt-5 text-base leading-7 text-lp-muted md:text-lg md:leading-8">
                         근태 신청과 팀 일정, 경비와 견적까지. Slack과 웹 어디서 해도 같은 규칙으로 처리돼요.
                     </p>
                     <div className="mt-8 flex flex-wrap gap-3">
@@ -121,10 +121,10 @@ function DayLine() {
                         className="day-event flex items-center gap-4 md:absolute md:top-0 md:left-(--at) md:block md:w-44 md:-translate-x-1/2"
                         style={{ '--d': e.d, '--at': `${e.at}%` } as CSSProperties}
                     >
-                        <span aria-hidden className="relative z-10 block size-[11px] shrink-0 rounded-full border-2 border-night bg-mist shadow-[0_0_0_4px_rgba(185,163,240,0.25)] md:mx-auto md:mt-[17px]" />
+                        <span aria-hidden className="relative z-10 block size-[11px] shrink-0 rounded-full border-2 border-lp-bg bg-lp-text shadow-[0_0_0_4px_rgba(185,163,240,0.25)] md:mx-auto md:mt-[17px]" />
                         <span className="md:mt-3 md:block md:text-center">
                             <span className="block text-xs tabular-nums text-lilac md:text-sm">{e.time}</span>
-                            <span className="block text-sm text-mist">{e.text}</span>
+                            <span className="block text-sm text-lp-text">{e.text}</span>
                         </span>
                     </li>
                 ))}
@@ -135,7 +135,7 @@ function DayLine() {
 
 function Features() {
     return (
-        <section id="features" aria-labelledby="features-title" className="scroll-mt-16 border-t border-night-line/60 bg-night-2/40">
+        <section id="features" aria-labelledby="features-title" className="scroll-mt-16 border-t border-lp-line/60 bg-lp-surface/40">
             <div className="mx-auto w-full max-w-6xl px-4 py-20 md:py-28">
                 <h2 id="features-title" className="max-w-xl text-2xl font-extrabold tracking-tight text-balance break-keep text-strong md:text-4xl">
                     하루 동안 쓰는 것들이 한곳에
@@ -154,7 +154,7 @@ function Features() {
                         <AdminMock />
                     </Feature>
                 </div>
-                <p className="mt-6 text-sm text-haze">회사 홈페이지(linkbe.kr)의 문의와 주문, 공지·포트폴리오도 hibye에서 관리해요.</p>
+                <p className="mt-6 text-sm text-lp-muted">회사 홈페이지(linkbe.kr)의 문의와 주문, 공지·포트폴리오도 hibye에서 관리해요.</p>
             </div>
         </section>
     );
@@ -162,10 +162,10 @@ function Features() {
 
 function Feature({ title, text, className, big = false, children }: { title: string; text: string; className: string; big?: boolean; children: ReactNode }) {
     return (
-        <article className={`flex flex-col gap-6 border border-night-line bg-night-2 p-6 md:p-7 ${big ? 'rounded-[28px]' : 'rounded-2xl'} ${className}`}>
+        <article className={`flex flex-col gap-6 border border-lp-line bg-lp-surface p-6 md:p-7 ${big ? 'rounded-[28px]' : 'rounded-2xl'} ${className}`}>
             <div>
                 <h3 className={`font-bold text-strong ${big ? 'text-2xl' : 'text-lg'}`}>{title}</h3>
-                <p className="mt-2 max-w-md text-sm leading-6 text-haze">{text}</p>
+                <p className="mt-2 max-w-md text-sm leading-6 text-lp-muted">{text}</p>
             </div>
             <div className="mt-auto">{children}</div>
         </article>
@@ -180,13 +180,13 @@ function Rules() {
                     <h2 id="rules-title" className="text-2xl font-extrabold tracking-tight text-balance break-keep text-strong md:text-4xl">
                         사람이 기억하지 않아도 되는 규칙
                     </h2>
-                    <p className="mt-4 text-sm leading-6 text-haze">웹에서 신청하든 Slack에서 신청하든 서버가 같은 규칙으로 확인해요.</p>
+                    <p className="mt-4 text-sm leading-6 text-lp-muted">웹에서 신청하든 Slack에서 신청하든 서버가 같은 규칙으로 확인해요.</p>
                 </div>
-                <dl className="divide-y divide-night-line border-y border-night-line">
+                <dl className="divide-y divide-lp-line border-y border-lp-line">
                     {RULES.map(r => (
                         <div key={r.value} className="grid gap-1 py-6 sm:grid-cols-[9rem_1fr] sm:gap-6">
                             <dt className="text-2xl font-extrabold tracking-tight text-lilac">{r.value}</dt>
-                            <dd className="self-center text-[15px] leading-7 text-mist/90">{r.text}</dd>
+                            <dd className="self-center text-[15px] leading-7 text-lp-text/90">{r.text}</dd>
                         </div>
                     ))}
                 </dl>
@@ -197,7 +197,7 @@ function Rules() {
 
 function Steps() {
     return (
-        <section id="start" aria-labelledby="start-title" className="scroll-mt-16 border-t border-night-line/60 bg-night-2/40">
+        <section id="start" aria-labelledby="start-title" className="scroll-mt-16 border-t border-lp-line/60 bg-lp-surface/40">
             <div className="mx-auto w-full max-w-6xl px-4 py-20 md:py-28">
                 <h2 id="start-title" className="text-2xl font-extrabold tracking-tight text-balance break-keep text-strong md:text-4xl">
                     시작하는 방법
@@ -207,11 +207,11 @@ function Steps() {
                         <li key={s.title} className="border-t-2 border-primary pt-5">
                             <span className="text-sm font-bold tabular-nums text-lilac">{i + 1}단계</span>
                             <h3 className="mt-2 text-lg font-bold text-strong">{s.title}</h3>
-                            <p className="mt-2 text-sm leading-6 text-haze">{s.text}</p>
+                            <p className="mt-2 text-sm leading-6 text-lp-muted">{s.text}</p>
                         </li>
                     ))}
                 </ol>
-                <p className="mt-12 text-sm text-haze">승인된 계정만 들어올 수 있고, 계정이 비활성화되면 그 즉시 막혀요. 민감한 정보는 암호화해 보관해요.</p>
+                <p className="mt-12 text-sm text-lp-muted">승인된 계정만 들어올 수 있고, 계정이 비활성화되면 그 즉시 막혀요. 민감한 정보는 암호화해 보관해요.</p>
             </div>
         </section>
     );
@@ -248,8 +248,8 @@ function Closing() {
 
 function LandingFooter() {
     return (
-        <footer className="border-t border-night-line/60">
-            <div className="mx-auto w-full max-w-6xl px-4 py-10 text-xs leading-6 text-haze">
+        <footer className="border-t border-lp-line/60">
+            <div className="mx-auto w-full max-w-6xl px-4 py-10 text-xs leading-6 text-lp-muted">
                 {BUSINESS_INFO.map(line => (
                     <p key={line}>{line}</p>
                 ))}

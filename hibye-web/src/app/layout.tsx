@@ -5,7 +5,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
     title: 'hibye — 링크비 구성원 관리 플랫폼',
-    description: '링크비 구성원을 위한 근태·휴가·결재 관리',
+    description: '링크비 구성원을 위한 근태·일정·업무·관리 플랫폼',
 };
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
