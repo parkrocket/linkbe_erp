@@ -54,4 +54,19 @@ rules.validateProfile = (body = {}) => {
     return { value: { name, phone, doe, gender, birth, deptId, positionId, employmentType } };
 };
 
+
+// 마이페이지 본인 수정 — 이름·연락처(필수), 성별·생년월일(null 허용)만. 입사일·부서·직급·고용형태는 관리자만
+rules.validateSelfProfile = (body = {}) => {
+    const name = typeof body.name === 'string' ? body.name.trim() : '';
+    const phone = typeof body.phone === 'string' ? body.phone.trim() : '';
+    const { gender = null, birth = null } = body;
+
+    if (!name || name.length > NAME_MAX) return { error: 'Invalid name' };
+    if (!PHONE_RULE.test(phone)) return { error: 'Invalid phone' };
+    if (!orNull(rules.isGender)(gender)) return { error: 'Invalid gender' };
+    if (!orNull(rules.isBirth)(birth)) return { error: 'Invalid birth' };
+
+    return { value: { name, phone, gender, birth } };
+};
+
 module.exports = rules;

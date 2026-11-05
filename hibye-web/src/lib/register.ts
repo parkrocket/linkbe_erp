@@ -16,7 +16,7 @@ export type RegisterForm = {
 export type RegisterErrors = Partial<Record<keyof RegisterForm, string>>;
 
 const EMAIL_RULE = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-const PASSWORD_RULE = /^(?=.*[A-Za-z])(?=.*\d|.*[\p{P}\p{S}])[A-Za-z\d\p{P}\p{S}]{8,15}$/u;
+export const PASSWORD_RULE = /^(?=.*[A-Za-z])(?=.*\d|.*[\p{P}\p{S}])[A-Za-z\d\p{P}\p{S}]{8,15}$/u;
 
 export function validateRegisterForm(form: RegisterForm, today = todayLocal()): RegisterErrors {
     const errors: RegisterErrors = {};

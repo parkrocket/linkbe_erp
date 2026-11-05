@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, LogOut, Menu, X } from 'lucide-react';
+import { ChevronDown, LogOut, Menu, UserRound, X } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -70,6 +70,15 @@ export function HeaderView({ userName, manageHref, pendingCount = 0, workBadge =
                             </button>
                             {userMenuOpen && (
                                 <div role="menu" className="absolute right-0 mt-2 w-40 rounded-lg border border-line bg-white p-1 shadow-lg">
+                                    <Link
+                                        href="/mypage"
+                                        role="menuitem"
+                                        onClick={() => setUserMenuOpen(false)}
+                                        className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-ink hover:bg-surface"
+                                    >
+                                        <UserRound aria-hidden className="size-4" />
+                                        마이페이지
+                                    </Link>
                                     <button
                                         type="button"
                                         role="menuitem"
@@ -122,6 +131,15 @@ export function HeaderView({ userName, manageHref, pendingCount = 0, workBadge =
                             <CountBadge count={'badge' in item ? item.badge : 0} unit={'unit' in item ? item.unit : undefined} />
                         </Link>
                     ))}
+                    <Link
+                        href="/mypage"
+                        onClick={() => setMenuOpen(false)}
+                        aria-current={isActive(pathname, '/mypage') ? 'page' : undefined}
+                        className={`mt-1 flex items-center gap-2 rounded-md px-3 py-3 text-sm ${isActive(pathname, '/mypage') ? 'bg-primary-soft font-bold text-primary' : 'text-ink'}`}
+                    >
+                        <UserRound aria-hidden className="size-4" />
+                        마이페이지
+                    </Link>
                     <button
                         type="button"
                         onClick={logout}

@@ -28,4 +28,4 @@ function validateRegister(body = {}) {
     return { ok: true, value: { email, password, name, phone, cpId, doe: body.doe, gender: body.gender, birth: body.birth } };
 }
 
-module.exports = { validateRegister };
+module.exports = { validateRegister, PASSWORD_RULE }; // PASSWORD_RULE: 마이페이지 비밀번호 변경도 같은 규칙

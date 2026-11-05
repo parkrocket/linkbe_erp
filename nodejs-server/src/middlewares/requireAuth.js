@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
+const { clearLoginCookie, isRevoked } = require('../utils/authCookie');
 
 // 로그인 없이 호출 가능한 API (경로는 /api 기준)
 // - users: 로그인·가입·인증확인·로그아웃
@@ -40,6 +41,7 @@ function requireAuth(req, res, next) {
 
     jwt.verify(token, process.env.JWT_SECRET_KEY, async (err, decoded) => {
         if (err) {
+            clearLoginCookie(res); // 만료·위조 쿠키도 지움
             return res.status(401).json({ isAuth: false, error: 'Invalid token' });
         }
         // 매 요청 계정 상태 확인 — 비활성화·거절되면 토큰 만료(24시간·30일)를 기다리지 않고 다음 요청부터 차단
@@ -50,9 +52,16 @@ function requireAuth(req, res, next) {
             console.error('requireAuth status lookup failed:', e.message);
             return res.status(500).json({ isAuth: false, error: 'Database query error' });
         }
+        // 비활성·거절·없는 계정, 비밀번호 변경 전에 발급된 로그인(다른 기기) → 401 + 쿠키 삭제(그 브라우저는 완전히 로그아웃)
         if (!account || account.user_status !== 'approved') {
+            clearLoginCookie(res);
             return res.status(401).json({ isAuth: false, error: 'Account not active' });
         }
+        if (isRevoked(decoded.iat, account.pw_changed_sec)) {
+            clearLoginCookie(res);
+            return res.status(401).json({ isAuth: false, error: 'Session expired' });
+        }
+        req.tokenExp = decoded.exp; // 비밀번호 변경 후 지금 기기의 새 로그인을 같은 만료로 발급할 때 사용
         req.userId = decoded.userId;
         req.userRole = account.user_role;
         req.userCpId = account.cp_id;
