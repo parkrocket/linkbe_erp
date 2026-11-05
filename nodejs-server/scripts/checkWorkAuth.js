@@ -125,6 +125,24 @@ const call = async (fn, req) => {
     flags = { workDoc: true };
     assert.notStrictEqual(await status('GET', '/doc-settings/item-templates'), 403, '권한자가 막힘'); // 권한 통과 후 입력 오류(400)
 
+    // ── 업무 설정(분류·품목 문구·양식·계정과목) 쓰기는 관리자만(11-05) — 읽기는 업무 문서 권한자에게 그대로(견적 작성·장부가 씀) ──
+    const settingWrites = [
+        ['POST', '/doc-settings/categories'], ['POST', '/doc-settings/categories/1'], ['POST', '/doc-settings/categories/1/move'], ['DELETE', '/doc-settings/categories/1'],
+        ['POST', '/doc-settings/item-templates'], ['POST', '/doc-settings/item-templates/1'], ['POST', '/doc-settings/item-templates/1/move'], ['DELETE', '/doc-settings/item-templates/1'],
+        ['POST', '/doc-settings/doc-templates'], ['POST', '/doc-settings/doc-templates/1'], ['DELETE', '/doc-settings/doc-templates/1'],
+        ['POST', '/accounts'], ['POST', '/accounts/1'], ['DELETE', '/accounts/1'],
+    ];
+    flags = { workDoc: true, userRole: 'member' };
+    for (const [method, p] of settingWrites) {
+        const res = await fetch(`http://127.0.0.1:${port}/api/work${p}`, { method, headers: { 'content-type': 'application/json' }, body: method === 'GET' ? undefined : '{}' });
+        assert.deepStrictEqual([res.status, (await res.json()).error], [403, 'Admin only'], `${method} ${p} 관리자 아닌 업무 문서 권한자에게 열려 있음`);
+    }
+    for (const p of ['/doc-settings', '/doc-settings/item-templates', '/doc-settings/doc-templates/1', '/accounts']) {
+        assert.notStrictEqual(await status('GET', p), 403, `GET ${p} 읽기가 막힘`);
+    }
+    flags = { workDoc: true, userRole: 'admin' };
+    for (const [method, p] of settingWrites) assert.notStrictEqual(await status(method, p), 403, `${method} ${p} 관리자가 막힘`);
+
     // ── 거래처 접속정보: 업무 문서 권한만·경비 승인만 있는 직원은 전 경로 403(첨부 받기·내려받기 포함) ──
     const clientPaths = [
         ['GET', '/clients'], ['POST', '/clients'], ['GET', '/clients/1'], ['POST', '/clients/1'], ['DELETE', '/clients/1'],

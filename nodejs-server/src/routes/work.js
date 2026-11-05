@@ -8,6 +8,7 @@ const client = require('../controllers/workClientController');
 const board = require('../controllers/workBoardController');
 const { requireWorkDoc } = require('../middlewares/requireWorkDoc');
 const { requireClientSecret } = require('../middlewares/requireClientSecret');
+const { requireAdmin } = require('../middlewares/requireAdmin');
 const router = express.Router();
 
 // /api/work/* — index.js에서 requireAuth(/api 전체) 뒤에 연결. 경비 권한은 컨트롤러에서 확인
@@ -36,9 +37,9 @@ router.get('/ledger/:id', ledger.detail);
 router.post('/ledger/:id', ledger.update);
 router.delete('/ledger/:id', ledger.remove);
 router.get('/accounts', ledger.accounts);
-router.post('/accounts', ledger.createAccount);
-router.post('/accounts/:id', ledger.updateAccount);
-router.delete('/accounts/:id', ledger.removeAccount);
+router.post('/accounts', requireAdmin, ledger.createAccount);
+router.post('/accounts/:id', requireAdmin, ledger.updateAccount);
+router.delete('/accounts/:id', requireAdmin, ledger.removeAccount);
 
 // 바이럴 게시판(게시판 이름 viral 고정)
 router.get('/boards/viral', board.list);
@@ -49,20 +50,21 @@ router.delete('/boards/viral/:id', board.remove);
 router.post('/boards/viral/:id/comments', board.createComment);
 router.delete('/boards/viral/:id/comments/:cid', board.removeComment);
 
+// 설정 쓰기(분류·품목 문구·양식·계정과목)는 관리자만(11-05 — 설정 화면이 관리자 페이지로 옮겨감). 읽기는 업무 문서 권한자(견적 작성·장부가 씀)
 router.get('/doc-settings', docSetting.overview);
-router.post('/doc-settings/categories', docSetting.createCategory);
-router.post('/doc-settings/categories/:id', docSetting.renameCategory);
-router.post('/doc-settings/categories/:id/move', docSetting.moveCategory);
-router.delete('/doc-settings/categories/:id', docSetting.removeCategory);
+router.post('/doc-settings/categories', requireAdmin, docSetting.createCategory);
+router.post('/doc-settings/categories/:id', requireAdmin, docSetting.renameCategory);
+router.post('/doc-settings/categories/:id/move', requireAdmin, docSetting.moveCategory);
+router.delete('/doc-settings/categories/:id', requireAdmin, docSetting.removeCategory);
 router.get('/doc-settings/item-templates', docSetting.itemTemplates);
-router.post('/doc-settings/item-templates', docSetting.createItemTemplate);
-router.post('/doc-settings/item-templates/:id', docSetting.updateItemTemplate);
-router.post('/doc-settings/item-templates/:id/move', docSetting.moveItemTemplate);
-router.delete('/doc-settings/item-templates/:id', docSetting.removeItemTemplate);
-router.post('/doc-settings/doc-templates', docSetting.createDocTemplate);
+router.post('/doc-settings/item-templates', requireAdmin, docSetting.createItemTemplate);
+router.post('/doc-settings/item-templates/:id', requireAdmin, docSetting.updateItemTemplate);
+router.post('/doc-settings/item-templates/:id/move', requireAdmin, docSetting.moveItemTemplate);
+router.delete('/doc-settings/item-templates/:id', requireAdmin, docSetting.removeItemTemplate);
+router.post('/doc-settings/doc-templates', requireAdmin, docSetting.createDocTemplate);
 router.get('/doc-settings/doc-templates/:id', docSetting.docTemplateDetail);
-router.post('/doc-settings/doc-templates/:id', docSetting.updateDocTemplate);
-router.delete('/doc-settings/doc-templates/:id', docSetting.removeDocTemplate);
+router.post('/doc-settings/doc-templates/:id', requireAdmin, docSetting.updateDocTemplate);
+router.delete('/doc-settings/doc-templates/:id', requireAdmin, docSetting.removeDocTemplate);
 
 // 거래처 접속정보 — 접속정보 권한자만(업무 문서 권한과 별개). 권한 확인이 첨부 받기(multer)보다 먼저
 router.use('/clients', requireClientSecret);
