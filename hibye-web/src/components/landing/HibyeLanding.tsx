@@ -77,8 +77,8 @@ function Hero() {
 
             <div className="relative mx-auto w-full max-w-6xl px-4 pt-14 pb-20 md:pt-20 md:pb-28">
                 <div aria-hidden className="flex items-end justify-between text-[clamp(5.5rem,20vw,15rem)] leading-[0.8] font-black tracking-[-0.07em] select-none">
-                    <span className="bg-gradient-to-b from-hi-from to-lilac bg-clip-text text-transparent">hi</span>
-                    <span className="bg-gradient-to-b from-bye-from to-dusk bg-clip-text text-transparent">bye</span>
+                    <span className="-mb-[0.28em] pr-[0.1em] pb-[0.28em] bg-gradient-to-b from-hi-from to-lilac bg-clip-text text-transparent">hi</span>
+                    <span className="-mr-[0.1em] -mb-[0.28em] pr-[0.1em] pb-[0.28em] bg-gradient-to-b from-bye-from to-dusk bg-clip-text text-transparent">bye</span>
                 </div>
 
                 <DayLine />
@@ -238,7 +238,7 @@ function Closing() {
                         </Link>
                     </div>
                 </div>
-                <span aria-hidden className="bg-gradient-to-b from-bye-from to-dusk bg-clip-text text-[clamp(4rem,12vw,9rem)] leading-none font-black tracking-[-0.07em] text-transparent select-none">
+                <span aria-hidden className="-mr-[0.1em] pr-[0.1em] pb-[0.28em] bg-gradient-to-b from-bye-from to-dusk bg-clip-text text-[clamp(4rem,12vw,9rem)] leading-none font-black tracking-[-0.07em] text-transparent select-none">
                     bye
                 </span>
             </div>
