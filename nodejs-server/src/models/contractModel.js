@@ -54,7 +54,7 @@ Contract.list = async (cpId, { categoryId, status, from, to, q, page = 1, size =
     companyLike(conds, params, q);
     const where = ` WHERE ${conds.join(' AND ')}`;
     const [rows] = await pool.query(
-        `SELECT ${LIST_COLUMNS} FROM wk_contract${where} ORDER BY contract_date DESC, id DESC LIMIT ? OFFSET ?`,
+        `SELECT ${LIST_COLUMNS} FROM wk_contract${where} ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?`,
         [...params, size, (page - 1) * size],
     );
     const [[count]] = await pool.query(`SELECT COUNT(*) AS n FROM wk_contract${where}`, params);

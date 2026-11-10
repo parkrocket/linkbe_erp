@@ -152,7 +152,10 @@ export function ContractList() {
             </div>
 
             {data && data.total > data.size && (
-                <nav aria-label="페이지 이동" className="mt-4 flex items-center justify-center gap-3 text-sm">
+                <nav aria-label="페이지 이동" className="mt-4 flex flex-wrap items-center justify-center gap-2 text-sm sm:gap-3">
+                    <Button variant="secondary" disabled={page <= 1} onClick={() => setPage(1)}>
+                        처음
+                    </Button>
                     <Button variant="secondary" disabled={page <= 1} onClick={() => setPage(page - 1)}>
                         이전
                     </Button>
@@ -161,6 +164,9 @@ export function ContractList() {
                     </span>
                     <Button variant="secondary" disabled={page >= lastPage} onClick={() => setPage(page + 1)}>
                         다음
+                    </Button>
+                    <Button variant="secondary" disabled={page >= lastPage} onClick={() => setPage(lastPage)}>
+                        마지막
                     </Button>
                 </nav>
             )}

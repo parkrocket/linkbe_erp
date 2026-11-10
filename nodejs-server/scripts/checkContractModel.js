@@ -47,7 +47,8 @@ const value = (patch = {}) => ({
     assert.deepStrictEqual(await Contract.list(1, {}), { rows: [{ id: 1 }], total: 7 });
     let { sql, params } = calls[0];
     assert.ok(sql.includes('cp_id = ?') && sql.includes("DATE_FORMAT(contract_date, '%Y-%m-%d')") && sql.includes('AS receivable') && sql.includes('AS category_name'));
-    assert.ok(sql.includes('ORDER BY contract_date DESC, id DESC LIMIT ? OFFSET ?'));
+    // 목록은 작성일 최신순(11-10 — 예전엔 계약일), 같은 시각이면 나중에 넣은 것 먼저
+    assert.ok(sql.includes('ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?'));
     assert.deepStrictEqual(params, [1, 50, 0]);
     assert.ok(calls[1].sql.includes('cp_id = ?') && !calls[1].sql.includes('LIMIT'));
 
