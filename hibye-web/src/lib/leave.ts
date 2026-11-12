@@ -53,6 +53,31 @@ export function fromLocalDay(day: string) {
 // 공휴일(대체·임시 포함) — GET /api/holidays?from&to (서버가 특일정보 API로 매일 갱신)
 export type Holiday = { date: string; name: string };
 
+// 팀원 근태(본인 제외) — GET /api/vacation/team?from&to
+export type TeamLeaveDay = { date: string; type: LeaveType; name: string };
+
+// 날짜별로 묶기 — 같은 날 안에서는 종류 순서(연차→반차→휴가→재택) → 이름 순
+export function groupTeamByDate(rows: TeamLeaveDay[]) {
+    const map = new Map<string, TeamLeaveDay[]>();
+    for (const r of rows) {
+        if (!isLeaveType(r.type)) continue;
+        map.set(r.date, [...(map.get(r.date) ?? []), r]);
+    }
+    for (const list of map.values()) {
+        list.sort((a, b) => (ORDER.get(a.type) ?? 0) - (ORDER.get(b.type) ?? 0) || a.name.localeCompare(b.name, 'ko'));
+    }
+    return map;
+}
+
+// 그 달 1일 ~ 말일 'YYYY-MM-DD' (달력에 보이는 달의 팀 근태 조회 범위)
+export function monthBounds(month: Date) {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const y = month.getFullYear();
+    const m = month.getMonth() + 1;
+    const last = new Date(y, m, 0).getDate();
+    return { from: `${y}-${pad(m)}-01`, to: `${y}-${pad(m)}-${pad(last)}` };
+}
+
 // 오늘 이후 내 근태를 날짜순으로 최대 limit개
 export function upcomingLeaves(list: VacationRecord[], today: string, limit = 5): VacationRecord[] {
     return list

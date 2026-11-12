@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from './api';
-import { applyErrorMessage, balanceAfter, summarizeTeamLeave, upcomingLeaves } from './leave';
+import { applyErrorMessage, balanceAfter, groupTeamByDate, monthBounds, summarizeTeamLeave, upcomingLeaves } from './leave';
 import type { GtwRecord, VacationRecord } from './types';
 
 const member = (user_id: string, user_name: string, type: string | null): GtwRecord => ({
@@ -102,5 +102,26 @@ describe('여러 날 신청', () => {
 
     it('주말 신청 거절 안내', () => {
         expect(applyErrorMessage(new ApiError(400, 'Weekend not allowed'))).toBe('주말은 신청할 수 없어요.');
+    });
+});
+
+describe('팀원 근태 (근태 신청 달력)', () => {
+    it('날짜별로 묶고 종류 → 이름 순, 모르는 종류는 뺌', () => {
+        const map = groupTeamByDate([
+            { date: '2026-11-18', type: 'home', name: '가직원' },
+            { date: '2026-11-18', type: 'day', name: '하직원' },
+            { date: '2026-11-18', type: 'day', name: '나직원' },
+            { date: '2026-11-19', type: 'gtw' as never, name: '다직원' },
+            { date: '2026-11-20', type: 'half', name: '라직원' },
+        ]);
+        expect(map.get('2026-11-18')?.map(r => r.name)).toEqual(['나직원', '하직원', '가직원']);
+        expect(map.has('2026-11-19')).toBe(false);
+        expect(map.get('2026-11-20')?.length).toBe(1);
+    });
+
+    it('보이는 달의 1일 ~ 말일', () => {
+        expect(monthBounds(new Date(2026, 10, 12))).toEqual({ from: '2026-11-01', to: '2026-11-30' });
+        expect(monthBounds(new Date(2028, 1, 1))).toEqual({ from: '2028-02-01', to: '2028-02-29' });
+        expect(monthBounds(new Date(2026, 11, 31))).toEqual({ from: '2026-12-01', to: '2026-12-31' });
     });
 });

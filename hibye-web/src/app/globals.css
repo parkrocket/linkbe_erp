@@ -115,6 +115,39 @@ html:has(dialog[open]) {
     color: var(--color-rejected-fg);
     font-weight: 700;
 }
+/* 팀원 근태: 날짜 아래 작은 점(사람 수, 최대 3 + N) — 고른 날(채운 원)에서는 흰 점 */
+.hibye-team-dot {
+    display: inline-block;
+    width: 4px;
+    height: 4px;
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--color-primary) 45%, transparent);
+}
+.rdp-root.hibye-calendar .rdp-day_button {
+    position: relative;
+}
+.rdp-root.hibye-calendar .hibye-team-dots {
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    pointer-events: none;
+}
+.rdp-root.hibye-calendar .hibye-team-more {
+    font-size: 8px;
+    line-height: 1;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+.rdp-root.hibye-calendar .rdp-selected .hibye-team-dot {
+    background: rgb(255 255 255 / 0.85);
+}
+.rdp-root.hibye-calendar .rdp-selected .hibye-team-more {
+    color: #fff;
+}
 /* 이미 신청한 날: 회색 + 주황 점 */
 .rdp-root.hibye-calendar .hibye-taken .rdp-day_button {
     background: var(--color-neutral-bg);

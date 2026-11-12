@@ -49,6 +49,32 @@ Vacation.findByIdAsync = async id => {
     assert.deepStrictEqual(cancelArgs, { id: 7, userId: 'me@linkbe' }, '본인 근태 취소만, 바디의 일수·사용자 무시');
     assert.strictEqual(body.vacationCancelSuccess, true);
 
+    // vacation/team: 같은 회사(토큰)·본인 제외·기간, 이름·종류·날짜만, 기간 62일 이하
+    const pool = require('../src/config/dbPromise');
+    let teamQuery;
+    pool.query = async (q, p) => ((teamQuery = { q, p }), [[{ date: '2026-11-18', type: 'day', name: '김직원' }]]);
+    const call = async query => {
+        const r = { code: 200 };
+        r.status = c => ((r.code = c), r);
+        r.json = b => ((r.body = b), r);
+        await controller.team({ query, userId: 'me@linkbe', userCpId: 3 }, r);
+        return r;
+    };
+    let teamRes = await call({ from: '2026-11-01', to: '2026-11-30' });
+    assert.deepStrictEqual([teamRes.code, teamRes.body], [200, { leaves: [{ date: '2026-11-18', type: 'day', name: '김직원' }] }]);
+    assert.deepStrictEqual(teamQuery.p, [3, 'me@linkbe', '2026-11-01', '2026-11-30'], '토큰의 회사·본인 제외·기간');
+    assert.ok(/u\.cp_id = \?/.test(teamQuery.q) && /v\.user_id <> \?/.test(teamQuery.q));
+    assert.ok(!/SELECT \*|u\.\*|user_password|user_birth|user_id AS/.test(teamQuery.q), '이름·종류·날짜만');
+    for (const query of [{}, { from: 'x', to: 'y' }, { from: '2026-11-30', to: '2026-11-01' }, { from: '2026-01-01', to: '2026-06-01' }]) {
+        teamQuery = null;
+        teamRes = await call(query);
+        assert.deepStrictEqual([teamRes.code, teamRes.body.error, teamQuery], [400, 'Invalid range', null], JSON.stringify(query));
+    }
+    pool.query = async () => {
+        throw new Error('db down');
+    };
+    assert.strictEqual((await call({ from: '2026-11-01', to: '2026-11-30' })).code, 500);
+
     console.log('checkVacationList ✅');
     process.exit(0);
 })().catch(err => {
