@@ -117,6 +117,15 @@ function reset(user = { mb_no: 5, cp_id: 1, user_name: '홍길동', user_stip: 5
     assert.strictEqual(await statusOf(Apply.insertMany({ userId: 'me', dates: ['2026-11-18', '2026-11-18'], type: 'day' })), 400);
     assert.deepStrictEqual(calendarCalls, []);
 
+    // 공휴일(lk_holiday)이 하루라도 끼면 전체 거절 — 잔여 검사보다 먼저, 캘린더 일정 만들지 않음
+    reset({ user_name: '홍길동', user_stip: 0, user_vaca: 0 }, [[/FROM lk_holiday/, [{ 1: 1 }]]]);
+    const holiday = await Apply.insertMany({ userId: 'me', dates: ['2026-11-19', '2026-11-18'], type: 'day' }).catch(e => e);
+    assert.deepStrictEqual([holiday.status, holiday.message], [400, 'Holiday not allowed']);
+    const holidayQuery = queries.find(q => q.sql && /FROM lk_holiday/.test(q.sql));
+    assert.deepStrictEqual(holidayQuery.params, [['2026-11-18', '2026-11-19']], '선택한 날짜 전체로 조회');
+    assert.ok(queries.includes('ROLLBACK'));
+    assert.deepStrictEqual(calendarCalls, []);
+
     // 잔여는 선택한 날 전체 합으로 검사 — 연차 2일인데 3일 신청 → 409, 아무것도 만들지 않음
     reset({ user_name: '홍길동', user_stip: 2, user_vaca: 0 });
     assert.strictEqual(await statusOf(Apply.insertMany({ userId: 'me', dates: ['2026-11-18', '2026-11-19', '2026-11-20'], type: 'day' })), 409);

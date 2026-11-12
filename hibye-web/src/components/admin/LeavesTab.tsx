@@ -24,7 +24,7 @@ import {
     type LeaveFilter,
 } from '@/lib/adminLeaves';
 import { adminErrorMessage } from '@/lib/authMessages';
-import { LEAVE_TYPES, leaveLabel } from '@/lib/leave';
+import { LEAVE_TYPES, leaveLabel, type Holiday } from '@/lib/leave';
 import { todayLocal } from '@/lib/profile';
 import type { LeaveType } from '@/lib/types';
 import { cancelLeaveByAdmin, type AdminUser, type OrgLists } from './adminApi';
@@ -54,6 +54,11 @@ export function LeavesTab() {
 
     const range = period === 'month' ? monthRange(ym) : yearRange(Number(ym.slice(0, 4)));
     const leaves = useApiData<{ leaves?: AdminLeave[] }>(`/api/admin/leaves?from=${range.from}&to=${range.to}`, undefined, 'GET');
+    // 공휴일 — 달력 칸에 이름 표시 (못 불러와도 근태는 그대로 보임)
+    const holidayData = useApiData<{ holidays?: Holiday[] }>(`/api/holidays?from=${range.from}&to=${range.to}`, undefined, 'GET');
+    const holidays = new Map(
+        holidayData.state.status === 'ok' ? (holidayData.state.data.holidays ?? []).map(h => [h.date, h.name] as const) : [],
+    );
     const users = useApiData<{ users?: AdminUser[] }>('/api/admin/users', undefined, 'GET');
     const org = useApiData<Partial<OrgLists>>('/api/admin/org', undefined, 'GET');
 
@@ -170,7 +175,7 @@ export function LeavesTab() {
                 {leaves.state.status === 'error' && <ErrorState onRetry={leaves.reload} />}
                 {leaves.state.status === 'ok' &&
                     (shownView === 'calendar' ? (
-                        <MonthCalendar ym={ym} today={today} rows={rows} onPick={setDay} />
+                        <MonthCalendar ym={ym} today={today} rows={rows} holidays={holidays} onPick={setDay} />
                     ) : (
                         <LeaveList rows={rows} today={today} deptName={deptName} onCancel={setCanceling} />
                     ))}
@@ -205,7 +210,19 @@ export function LeavesTab() {
     );
 }
 
-function MonthCalendar({ ym, today, rows, onPick }: { ym: string; today: string; rows: AdminLeave[]; onPick: (date: string) => void }) {
+function MonthCalendar({
+    ym,
+    today,
+    rows,
+    holidays,
+    onPick,
+}: {
+    ym: string;
+    today: string;
+    rows: AdminLeave[];
+    holidays: Map<string, string>;
+    onPick: (date: string) => void;
+}) {
     const byDate = groupByDate(rows);
     return (
         <div className="overflow-hidden rounded-lg border border-line">
@@ -223,21 +240,30 @@ function MonthCalendar({ ym, today, rows, onPick }: { ym: string; today: string;
                         const cell = cellLeaves(byDate, date, ym);
                         const items = cell ?? [];
                         const inMonth = cell !== null;
+                        // 공휴일 이름은 이번 달 칸에만 (이웃 달은 조회 범위 밖)
+                        const holiday = inMonth ? holidays.get(date) : undefined;
                         return (
                             <button
                                 key={date}
                                 type="button"
                                 disabled={!items.length}
                                 onClick={() => onPick(date)}
-                                aria-label={`${md(date)} ${items.map(r => `${r.user_name} ${leaveLabel(r.type)}`).join(', ') || '근태 없음'}`}
+                                aria-label={`${md(date)} ${holiday ? `${holiday} ` : ''}${items.map(r => `${r.user_name} ${leaveLabel(r.type)}`).join(', ') || '근태 없음'}`}
                                 className={`flex min-h-20 flex-col gap-1 border-r border-line p-1.5 text-left last:border-r-0 enabled:hover:bg-surface focus-visible:outline-2 focus-visible:outline-primary sm:min-h-24 ${
                                     inMonth ? 'bg-white' : 'bg-surface/60'
                                 }`}
                             >
-                                <span
-                                    className={`text-xs ${date === today ? 'flex size-5 items-center justify-center rounded-full bg-primary font-bold text-white' : inMonth ? 'text-ink' : 'text-muted/60'}`}
-                                >
-                                    {Number(date.slice(8))}
+                                <span className="flex w-full items-center gap-1">
+                                    <span
+                                        className={`shrink-0 text-xs ${date === today ? 'flex size-5 items-center justify-center rounded-full bg-primary font-bold text-white' : holiday ? 'font-bold text-rejected-fg' : inMonth ? 'text-ink' : 'text-muted/60'}`}
+                                    >
+                                        {Number(date.slice(8))}
+                                    </span>
+                                    {holiday && (
+                                        <span title={holiday} className="truncate text-[11px] text-rejected-fg">
+                                            {holiday}
+                                        </span>
+                                    )}
                                 </span>
                                 {items.slice(0, MAX_IN_CELL).map(r => (
                                     <span

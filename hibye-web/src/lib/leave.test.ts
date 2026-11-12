@@ -96,6 +96,10 @@ describe('여러 날 신청', () => {
         expect(applyErrorMessage(new ApiError(400, 'Past date not allowed'))).toBe('오늘 이전 날짜는 신청할 수 없어요.');
     });
 
+    it('공휴일 신청 거절 안내', () => {
+        expect(applyErrorMessage(new ApiError(400, 'Holiday not allowed'))).toBe('공휴일은 신청할 수 없어요.');
+    });
+
     it('주말 신청 거절 안내', () => {
         expect(applyErrorMessage(new ApiError(400, 'Weekend not allowed'))).toBe('주말은 신청할 수 없어요.');
     });

@@ -96,6 +96,9 @@ Apply.insertMany = async ({ userId, dates, type }) => {
         if (!user) throw new ApplyError(404, 'User not found');
         // 승인된 계정만 신청 (웹은 requireAuth가 먼저 막지만 Slack 경로는 여기서 막아야 함)
         if (user.user_status !== 'approved') throw new ApplyError(403, 'Account not approved');
+        // 공휴일(대체·임시 포함, lk_holiday — 특일정보 API로 매일 갱신)은 신청 불가 — 쉬는 날에 연차가 차감되지 않게
+        const [holidays] = await conn.query('SELECT 1 FROM lk_holiday WHERE holiday_date IN (?) LIMIT 1', [sorted]);
+        if (holidays.length) throw new ApplyError(400, 'Holiday not allowed');
         const totalDays = leave.days * sorted.length;
         if (leave.column && Number(user[leave.column]) < totalDays) {
             throw new ApplyError(409, 'Insufficient balance');

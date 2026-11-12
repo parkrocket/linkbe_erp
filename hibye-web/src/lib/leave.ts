@@ -44,6 +44,15 @@ export function localDay(iso: string) {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+// 'YYYY-MM-DD' → 로컬 자정 Date (달력 비교용)
+export function fromLocalDay(day: string) {
+    const [y, m, d] = day.split('-').map(Number);
+    return new Date(y, m - 1, d);
+}
+
+// 공휴일(대체·임시 포함) — GET /api/holidays?from&to (서버가 특일정보 API로 매일 갱신)
+export type Holiday = { date: string; name: string };
+
 // 오늘 이후 내 근태를 날짜순으로 최대 limit개
 export function upcomingLeaves(list: VacationRecord[], today: string, limit = 5): VacationRecord[] {
     return list
@@ -86,6 +95,7 @@ export function applyErrorMessage(error: unknown) {
         if (error.reason === 'Insufficient balance') return '남은 일수가 부족해요.';
         if (error.reason === 'Already applied on this date') return '이미 근태를 신청한 날짜예요. 한 날짜에 하나만 신청할 수 있어요.';
         if (error.reason === 'Weekend not allowed') return '주말은 신청할 수 없어요.';
+        if (error.reason === 'Holiday not allowed') return '공휴일은 신청할 수 없어요.';
         if (error.reason === 'Past date not allowed') return '오늘 이전 날짜는 신청할 수 없어요.';
         if (error.status === 400) return '날짜와 종류를 확인해 주세요.';
     }

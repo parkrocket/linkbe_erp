@@ -27,6 +27,7 @@ if (process.env.NODE_ENV === 'production') {
     require('./controllers/userCron.js');
     require('./controllers/homepageCron.js'); // 홈페이지 문의 3년 보관 후 삭제
     require('./controllers/shopCron.js'); // 개인결제 주문 5년 보관·결제 대기 7일 후 삭제
+    require('./controllers/holidayCron.js'); // 공휴일(특일정보 API) 매일 갱신
 }
 
 app.use(requestIp.mw());
@@ -76,6 +77,9 @@ app.use('/api/vacation', vacationRoutes);
 app.use('/api/apply', applyRoutes);
 
 app.use('/api/calendar', calendarRoutes);
+
+// 공휴일 목록 — 로그인한 직원 누구나 (근태 신청 달력·관리 근태 달력 표시용)
+app.get('/api/holidays', require('./controllers/holidayController').list);
 
 // 회사 홈페이지(linkbe.kr) 공개 API — 로그인 없음
 app.use('/api/public/homepage', require('./routes/publicHomepage'));

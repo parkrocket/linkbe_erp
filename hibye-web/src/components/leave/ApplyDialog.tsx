@@ -6,10 +6,10 @@ import { useState } from 'react';
 import { DayPicker } from 'react-day-picker';
 import { ko } from 'react-day-picker/locale';
 import 'react-day-picker/style.css';
-import { todayString } from '@/components/dashboard/useApiData';
+import { todayString, useApiData } from '@/components/dashboard/useApiData';
 import { Button } from '@/components/ui/Button';
 import { apiFetch, ApiError } from '@/lib/api';
-import { applyErrorMessage, balanceAfter, HOME_LIMIT_PER_MONTH, LEAVE_TYPES, leaveLabel } from '@/lib/leave';
+import { applyErrorMessage, balanceAfter, fromLocalDay, HOME_LIMIT_PER_MONTH, LEAVE_TYPES, leaveLabel, type Holiday } from '@/lib/leave';
 import type { LeaveType, User } from '@/lib/types';
 import { Modal } from './Modal';
 
@@ -44,6 +44,12 @@ export function ApplyDialog({ open, user, takenDates, onClose, onApplied }: Prop
     const [selected, setSelected] = useState<Date[]>([]);
     const [error, setError] = useState('');
     const [submitting, setSubmitting] = useState(false);
+
+    // 공휴일(오늘부터 1년) — 달력에 빨갛게 표시·선택 불가. 못 불러와도 신청은 가능(서버가 다시 검사)
+    const start = startOfToday();
+    const holidayRange = `from=${todayString(start)}&to=${todayString(new Date(start.getFullYear() + 1, start.getMonth(), start.getDate()))}`;
+    const holidays = useApiData<{ holidays?: Holiday[] }>(`/api/holidays?${holidayRange}`, undefined, 'GET');
+    const holidayDates = holidays.state.status === 'ok' ? (holidays.state.data.holidays ?? []).map(h => fromLocalDay(h.date)) : [];
 
     const dates = [...selected].sort((a, b) => a.getTime() - b.getTime());
     const preview = balanceAfter(user, type, Math.max(dates.length, 1));
@@ -115,12 +121,12 @@ export function ApplyDialog({ open, user, takenDates, onClose, onApplied }: Prop
                             max={MAX_DATES}
                             selected={selected}
                             onSelect={days => setSelected(days ?? [])}
-                            // 주말·오늘 이전·이미 신청한 날은 선택 불가 (서버도 같은 규칙으로 다시 검사)
-                            disabled={[{ dayOfWeek: [0, 6] }, { before: startOfToday() }, ...takenDates]}
+                            // 주말·공휴일·오늘 이전·이미 신청한 날은 선택 불가 (서버도 같은 규칙으로 다시 검사)
+                            disabled={[{ dayOfWeek: [0, 6] }, { before: startOfToday() }, ...takenDates, ...holidayDates]}
                             // 지난 달로는 이동하지 않음
                             startMonth={startOfToday()}
-                            modifiers={{ taken: takenDates }}
-                            modifiersClassNames={{ taken: 'hibye-taken' }}
+                            modifiers={{ taken: takenDates, holiday: holidayDates }}
+                            modifiersClassNames={{ taken: 'hibye-taken', holiday: 'hibye-holiday' }}
                         />
                         <p className="mt-1 flex gap-3 text-xs text-muted">
                             <span>
@@ -131,7 +137,11 @@ export function ApplyDialog({ open, user, takenDates, onClose, onApplied }: Prop
                                 <span aria-hidden className="mr-1 inline-block size-2 rounded-full bg-pending-fg" />
                                 이미 신청
                             </span>
-                            <span>주말·지난 날짜 선택 불가</span>
+                            <span>
+                                <span aria-hidden className="mr-1 inline-block size-2 rounded-full bg-rejected-fg" />
+                                공휴일
+                            </span>
+                            <span>주말·공휴일·지난 날짜 선택 불가</span>
                         </p>
                     </div>
 

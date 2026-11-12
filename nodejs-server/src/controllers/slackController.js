@@ -29,6 +29,7 @@ const SLACK_LEAVE_ERRORS = {
     'Insufficient balance': ['input_c', '남은 일수가 부족해요.'],
     'Already applied on this date': ['input_date', '이미 근태를 신청한 날짜예요. 한 날짜에 하나만 신청할 수 있어요.'],
     'Weekend not allowed': ['input_date', '주말은 신청할 수 없어요.'],
+    'Holiday not allowed': ['input_date', '공휴일은 신청할 수 없어요.'],
     'Past date not allowed': ['input_date', '오늘 이전 날짜는 신청할 수 없어요.'],
     'Invalid leave type': ['input_c', '근태 종류를 다시 선택해 주세요.'],
     'Invalid date': ['input_date', '날짜를 다시 선택해 주세요.'],

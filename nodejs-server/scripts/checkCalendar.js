@@ -59,7 +59,7 @@ const KST = 'Asia/Seoul';
     let calls, store, leaveCalendarIds;
     google.calendar = () => ({
         events: {
-            list: async ({ calendarId }) => (calls.push(['list', calendarId]), { data: { items: calendarId.includes('holiday') ? store.holidays : store.events } }),
+            list: async ({ calendarId }) => (calls.push(['list', calendarId]), { data: { items: store.events } }),
             get: async ({ eventId }) => {
                 calls.push(['get', eventId]);
                 const e = store.events.find(x => x.id === eventId);
@@ -73,6 +73,7 @@ const KST = 'Asia/Seoul';
         },
     });
     pool.query = async (sql, params) => {
+        if (/FROM lk_holiday/.test(sql)) return (calls.push(['holidays', ...params]), [store.holidays]);
         if (/FROM lk_vacation/.test(sql)) return [params[0].filter(id => leaveCalendarIds.includes(id)).map(calendar_id => ({ calendar_id }))];
         if (/FROM lk_user/.test(sql)) return [[{ mb_no: 3, user_name: '김직원' }, { mb_no: 1, user_name: '관리자' }].filter(u => params[1].includes(u.mb_no))];
         return [[]];
@@ -94,7 +95,7 @@ const KST = 'Asia/Seoul';
     const timed = { id: 'e4', summary: '주간회의', start: { dateTime: '2026-11-09T10:00:00+09:00' }, end: { dateTime: '2026-11-09T11:00:00+09:00' }, extendedProperties: { private: { hibyeCreator: '1' } } };
     const reset = () => {
         calls = [];
-        store = { events: [mine, legacy, leaveEvent, timed], holidays: [{ id: 'h1', summary: '개천절', start: { date: '2026-10-03' }, end: { date: '2026-10-04' } }] };
+        store = { events: [mine, legacy, leaveEvent, timed], holidays: [{ date: '2026-11-03', name: '임시공휴일' }] };
         leaveCalendarIds = ['e3'];
     };
     const range = { timeMin: '2026-10-26T00:00:00+09:00', timeMax: '2026-12-07T00:00:00+09:00' };
@@ -120,10 +121,17 @@ const KST = 'Asia/Seoul';
     assert.deepStrictEqual([byId.e2.kind, byId.e2.canEdit, byId.e2.creatorName, byId.e2.description, byId.e2.endDate], ['event', false, null, '', '2026-11-10']);
     assert.deepStrictEqual([byId.e3.kind, byId.e3.canEdit, byId.e3.description], ['leave', false, ''], '근태 일정은 보기만, 종류 코드 노출 안 함');
     assert.deepStrictEqual([byId.e4.kind, byId.e4.canEdit, byId.e4.allDay, byId.e4.creatorName], ['event', false, false, '관리자']);
-    assert.deepStrictEqual([byId.h1.kind, byId.h1.canEdit, byId.h1.className], ['holiday', false, 'holiday-event']);
+    // 공휴일은 lk_holiday(특일정보 API)에서 — Google 공휴일 캘린더는 부르지 않음, 조회 범위는 한국 날짜
+    const h1 = byId['holiday-2026-11-03'];
+    assert.deepStrictEqual(
+        [h1.title, h1.kind, h1.canEdit, h1.className, h1.allDay, h1.start, h1.end, h1.startDate, h1.endDate],
+        ['임시공휴일', 'holiday', false, 'holiday-event', true, '2026-11-03', '2026-11-04', '2026-11-03', '2026-11-03'],
+    );
+    assert.deepStrictEqual(calls.filter(c => c[0] === 'list').length, 1, 'Google 조회는 회사 캘린더 1번만');
+    assert.deepStrictEqual(calls.find(c => c[0] === 'holidays'), ['holidays', '2026-10-26', '2026-12-07']);
     // 관리자는 기존(만든 사람 없음) 일정도 수정 가능, 근태 일정은 불가
     res = await call(cal.events, { query: range, userId: 'admin@x', userRole: 'admin' });
-    assert.deepStrictEqual(Object.fromEntries(res.body.map(e => [e.id, e.canEdit])), { e1: true, e2: true, e3: false, e4: true, h1: false });
+    assert.deepStrictEqual(Object.fromEntries(res.body.map(e => [e.id, e.canEdit])), { e1: true, e2: true, e3: false, e4: true, 'holiday-2026-11-03': false });
     // 범위: 62일 이하, 올바른 시각
     const badRanges = [
         {},

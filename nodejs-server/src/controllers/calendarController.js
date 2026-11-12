@@ -17,7 +17,9 @@ const auths = new google.auth.JWT(
 );
 const calendar = () => google.calendar({ version: 'v3', auth: auths }); // 호출 시점 생성 (점검 스크립트에서 가짜 교체)
 
-const HOLIDAY_CALENDAR_ID = 'ko.south_korea#holiday@group.v.calendar.google.com';
+const Holiday = require('../models/holidayModel');
+// 시각 → 한국 날짜 'YYYY-MM-DD' (공휴일 조회 범위)
+const kstDate = ms => new Date(ms + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
 const MAX_RANGE_DAYS = 62; // 조회 최대 기간 (월 달력 6주 + 여유)
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -42,7 +44,7 @@ const handle = fn => async (req, res) => {
     }
 };
 
-// 조회 — 회사 일정 + 한국 공휴일
+// 조회 — 회사 일정 + 공휴일(lk_holiday — 특일정보 API. 예전 Google 공휴일 캘린더는 쉬지 않는 기념일이 섞여 있어 교체)
 exports.events = handle(async (req, res) => {
     const { timeMin, timeMax } = req.query;
     const min = Date.parse(timeMin);
@@ -52,9 +54,9 @@ exports.events = handle(async (req, res) => {
     }
 
     const list = calendarId => calendar().events.list({ calendarId, timeMin, timeMax, singleEvents: true, orderBy: 'startTime' });
-    const [user, holiday, me] = await Promise.all([
+    const [user, holidays, me] = await Promise.all([
         list(process.env.GOOGLE_CALENDAR_ID),
-        list(HOLIDAY_CALENDAR_ID),
+        Holiday.list(kstDate(min), kstDate(max)),
         Admin.findByUserId(req.userCpId, req.userId),
     ]);
     const events = user.data.items ?? [];
@@ -94,7 +96,8 @@ exports.events = handle(async (req, res) => {
 
     res.status(200).json([
         ...events.map(e => toItem(e, leaves.has(e.id) ? 'leave' : 'event')),
-        ...(holiday.data.items ?? []).map(e => toItem(e, 'holiday')),
+        // Google 일정과 같은 모양(끝 날짜 미포함)으로 맞춰 화면 코드는 그대로
+        ...holidays.map(h => toItem({ id: `holiday-${h.date}`, summary: h.name, start: { date: h.date }, end: { date: addDays(h.date, 1) } }, 'holiday')),
     ]);
 });
 

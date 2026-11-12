@@ -92,12 +92,13 @@ function fakeRes() {
         ['Insufficient balance', 'input_c', '남은 일수가 부족'],
         ['Already applied on this date', 'input_date', '이미 근태를 신청한 날짜'],
         ['Weekend not allowed', 'input_date', '주말'],
+        ['Holiday not allowed', 'input_date', '공휴일'],
         ['Past date not allowed', 'input_date', '오늘 이전'],
         ['User not found', 'input_c', 'hibye 계정'],
         ['Account not approved', 'input_c', '승인된 계정만'],
     ];
     for (const [reason, block, text] of cases) {
-        applyResult = new Apply.ApplyError(reason === 'User not found' ? 404 : reason === 'Account not approved' ? 403 : reason.includes('date') || reason.includes('Weekend') ? 400 : 409, reason);
+        applyResult = new Apply.ApplyError(reason === 'User not found' ? 404 : reason === 'Account not approved' ? 403 : reason.includes('date') || reason.includes('Weekend') || reason.includes('Holiday') ? 400 : 409, reason);
         sentMessages = [];
         res = fakeRes();
         await handleInteractions(submission('home', '2026-11-18'), res);

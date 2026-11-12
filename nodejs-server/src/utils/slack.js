@@ -207,7 +207,7 @@ const openModal = async (trigger_id, user) => {
                         elements: [
                             {
                                 type: 'mrkdwn',
-                                text: '재택은 한 달에 최대 2회 · 주말·지난 날짜·이미 신청한 날은 신청할 수 없어요.',
+                                text: '재택은 한 달에 최대 2회 · 주말·공휴일·지난 날짜·이미 신청한 날은 신청할 수 없어요.',
                             },
                         ],
                     },

@@ -110,6 +110,11 @@ html:has(dialog[open]) {
     color: #fff;
     border-color: var(--color-primary);
 }
+/* 공휴일: 빨간 글자 (선택 불가라 흐려지는 기본 스타일 위에서도 구분되게) */
+.rdp-root.hibye-calendar .hibye-holiday .rdp-day_button {
+    color: var(--color-rejected-fg);
+    font-weight: 700;
+}
 /* 이미 신청한 날: 회색 + 주황 점 */
 .rdp-root.hibye-calendar .hibye-taken .rdp-day_button {
     background: var(--color-neutral-bg);
