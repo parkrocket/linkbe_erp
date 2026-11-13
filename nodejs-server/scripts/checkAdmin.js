@@ -38,11 +38,20 @@ const call = async (fn, req) => {
     const res = { code: 200 };
     res.status = c => ((res.code = c), res);
     res.json = b => ((res.body = b), res);
+    res.set = (k, v) => ((res.headers = { ...res.headers, [k]: v }), res);
     await fn({ ...me, params: {}, query: {}, body: {}, ...req }, res);
     return res;
 };
 
 (async () => {
+    // 기념일: 로그인한 회사 범위, 입사일·생일(월-일)만 — 태어난 해·연락처 등 다른 칸 없음, 저장 금지 헤더
+    let asked;
+    Admin.listAnniversaries = async cpId => ((asked = cpId), [{ mb_no: 3, user_name: '김직원', dept_id: 2, user_doe: '2024-07-05', birth_md: '11-20', user_birth: '1990-11-20', user_phone: '010' }]);
+    let ann = await call(admin.anniversaries, {});
+    assert.strictEqual(asked, 1);
+    assert.deepStrictEqual(ann.body, { users: [{ mbNo: 3, name: '김직원', deptId: 2, joinDate: '2024-07-05', birthMd: '11-20' }] });
+    assert.strictEqual(ann.headers['Cache-Control'], 'no-store');
+
     // 목록: 같은 회사만, 비밀번호 해시 없음, 상태 필터
     reset();
     let res = await call(admin.listUsers, {});

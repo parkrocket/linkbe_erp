@@ -6,6 +6,7 @@ const router = express.Router();
 // /api/admin/* — index.js에서 requireAuth(/api 전체) 뒤에 requireAdmin과 함께 연결
 router.get('/users', admin.listUsers);
 router.get('/summary', admin.summary);
+router.get('/anniversaries', admin.anniversaries);
 router.get('/users/:mbNo', admin.getUser);
 router.post('/users/:mbNo/profile', admin.updateProfile);
 router.post('/users/:mbNo/status', admin.changeStatus);

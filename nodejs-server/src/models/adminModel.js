@@ -53,6 +53,16 @@ Admin.findDetail = async (cpId, mbNo) => {
     return rows[0];
 };
 
+// 대시보드 기념일용 — 승인된 직원의 입사일과 생일(월-일만, 태어난 해는 내보내지 않음)
+Admin.listAnniversaries = async cpId => {
+    const [rows] = await pool.query(
+        `SELECT mb_no, user_name, dept_id, DATE_FORMAT(user_doe, '%Y-%m-%d') AS user_doe, DATE_FORMAT(user_birth, '%m-%d') AS birth_md
+         FROM lk_user WHERE cp_id = ? AND user_status = 'approved' ORDER BY user_name`,
+        [cpId],
+    );
+    return rows;
+};
+
 // 인사 정보 전체 덮어쓰기 (값은 profileValidation으로 검증된 것)
 Admin.updateProfile = (cpId, mbNo, v) =>
     pool.query(

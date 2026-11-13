@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { AdminHeading } from '@/components/admin/AdminHeading';
+import { DashboardPanels } from '@/components/admin/DashboardPanels';
 import { type TodoItem, TodoCards } from '@/components/admin/TodoCards';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { HOMEPAGE_HOME, legacyAdminPath } from '@/lib/adminNav';
@@ -11,7 +12,7 @@ import { canApproveExpense } from '@/lib/work';
 
 export const metadata: Metadata = { title: '관리 — hibye' };
 
-// /admin — 대시보드(처리할 일). 예전 주소 /admin?tab=<탭>은 새 주소로
+// /admin — 대시보드(처리할 일 + 현황 카드: 이번 주 근태·연차 사용·공휴일/일정·직원/기념일·계약 만료). 예전 주소 /admin?tab=<탭>은 새 주소로
 export default function AdminRoute({ searchParams }: PageProps<'/admin'>) {
     return (
         <Suspense fallback={<Skeleton className="h-64 w-full" />}>
@@ -40,8 +41,9 @@ async function Dashboard({ searchParams }: { searchParams: PageProps<'/admin'>['
     ];
     return (
         <>
-            <AdminHeading title="처리할 일" desc="관리자가 확인해야 할 일을 모아 봐요." />
+            <AdminHeading title="대시보드" desc="처리할 일과 회사 현황을 한눈에 봐요." />
             <TodoCards items={items} />
+            <DashboardPanels />
         </>
     );
 }

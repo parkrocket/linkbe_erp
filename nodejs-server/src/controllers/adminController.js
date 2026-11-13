@@ -76,6 +76,14 @@ exports.listUsers = handle(async (req, res) => {
     res.json({ users: await Admin.listUsers(req.userCpId, status) });
 });
 
+// 대시보드 기념일 — 입사일·생일(월-일)만. 개인정보라 관리자 API에서만, 저장하지 않게 no-store
+exports.anniversaries = handle(async (req, res) => {
+    const rows = await Admin.listAnniversaries(req.userCpId);
+    res.set('Cache-Control', 'no-store').json({
+        users: rows.map(r => ({ mbNo: r.mb_no, name: r.user_name, deptId: r.dept_id, joinDate: r.user_doe, birthMd: r.birth_md })),
+    });
+});
+
 exports.summary = handle(async (req, res) => {
     res.json({ pendingCount: await Admin.pendingCount(req.userCpId) });
 });
