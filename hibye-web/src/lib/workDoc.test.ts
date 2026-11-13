@@ -6,6 +6,7 @@ const CLIENTS = { href: '/work/clients', label: '거래처 접속정보' };
 const DOCS = [
     { href: '/work/contracts', label: '견적·계약서' },
     { href: '/work/ledger', label: '매출/매입' },
+    { href: '/work/site-contracts', label: '계약 관리' },
 ];
 
 describe('workDoc', () => {

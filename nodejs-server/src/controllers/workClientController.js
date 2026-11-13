@@ -1,7 +1,7 @@
 const { Client, Credential, ClientFile, CredentialLog } = require('../models/clientModel');
 const Admin = require('../models/adminModel');
 const box = require('../utils/secretBox'); // box.encrypt 형태로 호출 — 점검에서 가짜로 바꿀 수 있게
-const { validateClient, validateCredential, validateReveal, CLIENT_KINDS, REVEAL_FIELDS } = require('../utils/clientValidation');
+const { validateClient, validateClientMemo, validateCredential, validateReveal, CLIENT_KINDS, REVEAL_FIELDS } = require('../utils/clientValidation');
 const { WORK_UPLOAD_ROOT, isAllowedFile, saveWorkFile, removeWorkFile, attachmentHeader, isStoredName } = require('../utils/workUploads');
 
 // 거래처 접속정보 API — requireAuth·requireClientSecret 뒤. 모든 조회·변경은 req.userCpId 범위(모델이 업체 cp_id로 확인)
@@ -72,12 +72,12 @@ const discard = storedName => {
 
 // ---- 업체 ----
 
-// 항목 메모는 상세에 바로 보이는 값(11-04 결정)이라 검색 대상. 예전 메모·비밀번호는 열람 기록이 필요해 검색하지 않음
+// 항목 메모·업체 메모는 상세에 바로 보이는 값(11-04 결정)이라 검색 대상. 예전 메모·비밀번호는 열람 기록이 필요해 검색하지 않음
 // ponytail: 검색마다 회사 전체 메모를 풀어 봄(수백 개 기준) — 수만 개가 되면 검색용 색인을 따로 고민
 const memoMatches = async (cpId, q) => {
     const needle = q.toLowerCase();
     const ids = new Set();
-    for (const r of await Credential.memosOf(cpId)) {
+    for (const r of [...(await Credential.memosOf(cpId)), ...(await Client.memosOf(cpId))]) {
         const { memo } = memoOf(r.memo_enc);
         if (memo && memo.toLowerCase().includes(needle)) ids.add(r.client_id);
     }
@@ -94,6 +94,7 @@ exports.list = handle(async (req, res) => {
             id: r.id,
             kind: r.kind,
             name: r.name,
+            starred: Boolean(r.starred),
             credentialCount: Number(r.credential_count),
             fileCount: Number(r.file_count),
             hasLegacyMemo: Boolean(r.has_legacy_memo),
@@ -118,6 +119,7 @@ exports.detail = handle(async (req, res) => {
             name: client.name,
             hasLegacyMemo: client.legacy_memo_enc !== null && client.legacy_memo_enc !== undefined,
             legacyMemoUnreadable: isUnreadable(client.legacy_memo_enc),
+            ...memoOf(client.memo_enc), // 업체 메모 — 항목 메모처럼 바로 보이는 칸
         },
         credentials: credentials.map(c => ({
             id: c.id,
@@ -160,6 +162,28 @@ exports.update = handle(async (req, res) => {
     const actor = await actorOf(req);
     if (!actor) return noActor(res);
     if (!(await Client.update(req.userCpId, id, checked.value, actor))) return notFound(res);
+    res.json({ ok: true });
+});
+
+// 업체 메모 저장('' = 지움) — 암호화해 저장, 기록은 '메모 수정'
+exports.updateMemo = handle(async (req, res) => {
+    const id = parseId(req.params.id);
+    if (!id) return notFound(res);
+    const checked = validateClientMemo(req.body);
+    if (!checked.ok) return fail(res, 400, checked.error);
+    const memoEnc = encOrKeep(checked.value.memo);
+    const actor = await actorOf(req);
+    if (!actor) return noActor(res);
+    if (!(await Client.setMemo(req.userCpId, id, memoEnc, actor))) return notFound(res);
+    res.json({ ok: true });
+});
+
+// 별표 켜기·끄기(회사 공용)
+exports.setStar = handle(async (req, res) => {
+    const id = parseId(req.params.id);
+    if (!id) return notFound(res);
+    if (typeof (req.body || {}).starred !== 'boolean') return fail(res, 400, 'Invalid starred');
+    if (!(await Client.setStar(req.userCpId, id, req.body.starred))) return notFound(res);
     res.json({ ok: true });
 });
 

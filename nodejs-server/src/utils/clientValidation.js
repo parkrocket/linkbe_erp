@@ -25,12 +25,22 @@ const secretField = (v, max) => {
     return typeof v === 'string' && v.length <= max ? v : false;
 };
 
+// 업체 메모: 항목 메모와 같은 규칙(null·'' = 지움), 1만 자까지. 키가 없으면(undefined) 오류
+const validateClientMemo = input => {
+    const memo = secretField((input || {}).memo, 10000);
+    return memo === undefined || memo === false ? fail('Invalid memo') : { ok: true, value: { memo } };
+};
+
 // url: 빈 값 또는 http(s)·ftp(s)·sftp만 — javascript: 등은 화면 링크로 쓰일 수 있어 거절
 const URL_RE = /^(https?|ftps?|sftp):\/\//i;
 // 주소 안의 아이디·비밀번호(user:pass@host)는 거절 — 평문이 암호화되지 않고 목록·기록에 그대로 남음 (화면 lib/clients.ts와 같은 규칙)
 const URL_USERINFO_RE = /^[a-z][a-z0-9+.-]*:\/\/[^/?#]*@/i;
 
 const isUrl = url => url === '' || (URL_RE.test(url) && !URL_USERINFO_RE.test(url));
+// 세트가 아닌 항목의 주소 칸: 위 형식 또는 앞머리 없는 주소(아이피·도메인·localhost:3306 등 — FTP·DB는 http가 없음, 11-13)
+// 앞머리 없는 값은 화면에서 링크가 아니라 글자로만 보임(링크는 http(s)만). 모르는 앞머리(file:// 등)·javascript: 류·@(아이디 섞임)는 거절
+const PLAIN_ADDRESS_RE = /^(?!(javascript|data|vbscript):)[^@]*$/i;
+const isAddress = url => isUrl(url) || (!url.includes('://') && PLAIN_ADDRESS_RE.test(url));
 // 세트가 아닌 항목은 세트 칸을 비움
 const NO_SITE = { port: null, adminUrl: '', adminId: '', adminSecret: null, dbHost: '', dbName: '', dbId: '', dbSecret: null };
 
@@ -57,7 +67,7 @@ const validateCredential = input => {
     const label = str(b.label, 100);
     if (label === null) return fail('Invalid label');
     const url = str(b.url, 500);
-    if (url === null || !isUrl(url)) return fail('Invalid url');
+    if (url === null || !isAddress(url)) return fail('Invalid url'); // 세트(site)는 아래 siteFields가 ftp·sftp만으로 다시 검사
     const loginId = str(b.loginId, 200);
     if (loginId === null) return fail('Invalid loginId');
     const secret = secretField(b.secret, 500);
@@ -77,4 +87,4 @@ const validateReveal = (input, withField) => {
     return { ok: true, value: { field: withField ? b.field : null, action: b.action } };
 };
 
-module.exports = { validateClient, validateCredential, validateReveal, CLIENT_KINDS, CREDENTIAL_KINDS, REVEAL_FIELDS };
+module.exports = { validateClient, validateClientMemo, validateCredential, validateReveal, CLIENT_KINDS, CREDENTIAL_KINDS, REVEAL_FIELDS };

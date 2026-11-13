@@ -12,10 +12,11 @@ import { useClearOnHide } from '@/lib/clearOnHide';
 import { clientErrorText, CLIENT_KIND_LABEL, logText, REVEAL_MS, type ClientDetailData, type Credential } from '@/lib/clients';
 import { ClientFiles } from './ClientFiles';
 import { ClientFormDialog } from './ClientList';
+import { ClientMemo } from './ClientMemo';
 import { CredentialDialog } from './CredentialDialog';
 import { CredentialRow } from './CredentialRow';
 
-// 업체 상세 — 항목·예전 메모·첨부·최근 기록
+// 업체 상세 — 항목·예전 메모·첨부·메모·최근 기록
 export function ClientDetail({ id }: { id: string }) {
     const router = useRouter();
     const valid = /^[1-9]\d{0,14}$/.test(id);
@@ -168,6 +169,8 @@ export function ClientDetail({ id }: { id: string }) {
             )}
 
             <ClientFiles clientId={clientId} files={files} onChanged={refresh} />
+
+            <ClientMemo clientId={clientId} memo={client.memo} unreadable={client.memoUnreadable} onChanged={refresh} />
 
             <section aria-labelledby="client-logs" className="mt-8">
                 <h2 id="client-logs" className="mb-2 text-lg font-bold">

@@ -9,6 +9,9 @@ describe('clients', () => {
         expect(validateCredentialForm(emptyCredentialForm())).toEqual({});
         expect(validateCredentialForm({ ...f, url: 'javascript:alert(1)' }).url).toBeTruthy();
         expect(validateCredentialForm({ ...f, url: 'sftp://a.example' }).url).toBeUndefined();
+        // 앞머리 없는 주소(아이피·도메인·포트)도 받음 — 모르는 앞머리·아이디 섞임은 거절
+        for (const url of ['192.168.0.10', 'example.com', 'localhost:3306']) expect(validateCredentialForm({ ...f, url }).url).toBeUndefined();
+        for (const url of ['file://a', 'user@1.2.3.4', 'data:text/html,x']) expect(validateCredentialForm({ ...f, url }).url).toBeTruthy();
         expect(validateCredentialForm({ ...f, url: 'ftp://user:pw@a.example' }).url).toBe('주소에 아이디·비밀번호를 넣지 말고 아이디·비밀번호 칸에 넣어 주세요');
         expect(validateCredentialForm({ ...f, url: 'https://user@a.example/x' }).url).toBeTruthy();
         expect(validateCredentialForm({ ...f, url: 'https://a.example/x?mail=a@b.kr' }).url).toBeUndefined();

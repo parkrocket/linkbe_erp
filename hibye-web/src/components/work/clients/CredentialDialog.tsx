@@ -163,7 +163,7 @@ export function CredentialDialog({ clientId, credential, onClose, onChanged }: {
                     </>
                 ) : (
                     <>
-                        {text('url', '주소', 500, { placeholder: 'https://' })}
+                        {text('url', '주소', 500, { placeholder: 'https://… 또는 아이피·도메인' })}
                         {text('loginId', '아이디', 200)}
                         {secret('secret', '비밀번호', Boolean(credential?.hasSecret))}
                     </>

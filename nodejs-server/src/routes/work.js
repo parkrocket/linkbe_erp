@@ -4,6 +4,7 @@ const work = require('../controllers/workExpenseController');
 const contract = require('../controllers/workContractController');
 const docSetting = require('../controllers/workDocSettingController');
 const ledger = require('../controllers/workLedgerController');
+const siteContract = require('../controllers/workSiteContractController');
 const client = require('../controllers/workClientController');
 const board = require('../controllers/workBoardController');
 const { requireWorkDoc } = require('../middlewares/requireWorkDoc');
@@ -21,7 +22,13 @@ router.delete('/expenses/:id', work.remove);
 router.post('/expenses/:id/status', work.changeStatus);
 
 // 견적·계약서·양식 설정 — 업무 문서 권한자만(경비와 별개)
-router.use(['/contracts', '/doc-settings', '/ledger', '/accounts', '/boards'], requireWorkDoc);
+router.use(['/contracts', '/doc-settings', '/ledger', '/accounts', '/boards', '/site-contracts'], requireWorkDoc);
+
+// 계약 관리(업체별 홈페이지 계약 기간)
+router.get('/site-contracts', siteContract.list);
+router.post('/site-contracts', siteContract.create);
+router.post('/site-contracts/:id', siteContract.update);
+router.delete('/site-contracts/:id', siteContract.remove);
 
 router.get('/contracts', contract.list);
 router.get('/contracts/companies', contract.companies); // :id보다 먼저
@@ -82,6 +89,8 @@ router.post('/clients', client.create);
 router.get('/clients/:id', client.detail);
 router.post('/clients/:id', client.update);
 router.delete('/clients/:id', client.remove);
+router.post('/clients/:id/memo', client.updateMemo);
+router.post('/clients/:id/star', client.setStar);
 router.post('/clients/:id/credentials', client.createCredential);
 router.post('/clients/:id/credentials/:cid', client.updateCredential);
 router.delete('/clients/:id/credentials/:cid', client.removeCredential);

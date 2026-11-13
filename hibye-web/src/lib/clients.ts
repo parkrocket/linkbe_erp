@@ -19,11 +19,13 @@ export const maskedLabel = '••••••';
 // 보기로 받은 평문을 화면에 두는 시간
 export const REVEAL_MS = 30000;
 export const MAX_FILE_MB = 50;
+export const MAX_CLIENT_MEMO = 10000;
 
 export type ClientRow = {
     id: number;
     kind: ClientKind;
     name: string;
+    starred: boolean; // 별표(회사 공용) — 목록 위로
     credentialCount: number;
     fileCount: number;
     hasLegacyMemo: boolean;
@@ -67,7 +69,8 @@ export type AccessLog = {
 };
 
 export type ClientDetailData = {
-    client: { id: number; kind: ClientKind; name: string; hasLegacyMemo: boolean; legacyMemoUnreadable: boolean };
+    // memo: 업체 메모 — 항목 메모처럼 화면에 바로 보이는 칸(저장은 암호화)
+    client: { id: number; kind: ClientKind; name: string; hasLegacyMemo: boolean; legacyMemoUnreadable: boolean; memo: string | null; memoUnreadable: boolean };
     credentials: Credential[];
     files: ClientFileRow[];
     logs: AccessLog[];
@@ -182,8 +185,14 @@ const URL_USERINFO_RE = /^[a-z][a-z0-9+.-]*:\/\/[^/?#]*@/i;
 type ErrorKey = 'label' | 'url' | 'loginId' | 'secret' | 'memo' | 'host' | 'port' | 'adminUrl' | 'adminId' | 'adminSecret' | 'dbHost' | 'dbName' | 'dbId' | 'dbSecret';
 export type CredentialErrors = Partial<Record<ErrorKey, string>>;
 
-const urlError = (url: string): string | undefined => {
+// allowPlain: 세트가 아닌 항목의 주소 칸 — 앞머리 없는 주소(아이피·도메인·localhost:3306 등)도 받음(서버 isAddress와 같은 규칙, 화면에는 글자로만 보임)
+const urlError = (url: string, allowPlain = false): string | undefined => {
     if (url.length > 500) return '주소는 500자까지예요';
+    if (allowPlain && url && !url.includes('://')) {
+        if (/^(javascript|data|vbscript):/i.test(url)) return '쓸 수 없는 주소예요';
+        if (url.includes('@')) return '주소에 아이디·비밀번호를 넣지 말고 아이디·비밀번호 칸에 넣어 주세요';
+        return;
+    }
     if (url && !URL_RE.test(url)) return 'http://, https://, ftp://, sftp:// 로 시작해야 해요';
     if (URL_USERINFO_RE.test(url)) return '주소에 아이디·비밀번호를 넣지 말고 아이디·비밀번호 칸에 넣어 주세요';
 };
@@ -198,7 +207,7 @@ export function validateCredentialForm(f: CredentialForm): CredentialErrors {
     tooLong('secret', f.secret, 500, '비밀번호는');
     tooLong('memo', f.memo, 5000, '메모는');
     if (f.kind !== 'site') {
-        const err = urlError(f.url.trim());
+        const err = urlError(f.url.trim(), true);
         if (err) e.url = err;
         return e;
     }

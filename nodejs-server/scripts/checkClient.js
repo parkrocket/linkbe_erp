@@ -48,9 +48,12 @@ CredentialLog.insert = async (db, entry) => {
     logs.push(entry);
 };
 CredentialLog.recent = rec('recent', [{ action: 'view', target: 'secret', credential_label: '메인', actor_name: '홍길동', created_at: '2026-11-04 10:00:00' }]);
-Client.list = rec('list', [{ id: 5, kind: 'client', name: '테스트업체', credential_count: 2, file_count: 1, has_legacy_memo: 1, updated_at: '2026-11-04 10:00:00', legacy_memo_enc: `v1:${LEGACY}` }]);
+Client.list = rec('list', [{ id: 5, kind: 'client', name: '테스트업체', credential_count: 2, file_count: 1, starred: 1, has_legacy_memo: 1, updated_at: '2026-11-04 10:00:00', legacy_memo_enc: `v1:${LEGACY}` }]);
 Credential.memosOf = rec('memosOf', [{ client_id: 5, memo_enc: 'v1:FTP 포트 2121' }, { client_id: 6, memo_enc: 'v1:깨짐' }, { client_id: 7, memo_enc: 'v1:ftp 백업' }]);
-const clientRow = { id: 5, kind: 'client', name: '테스트업체', legacy_memo_enc: `v1:${LEGACY}` };
+const clientRow = { id: 5, kind: 'client', name: '테스트업체', legacy_memo_enc: `v1:${LEGACY}`, memo_enc: 'v1:업체 메모' };
+Client.memosOf = rec('clientMemosOf', [{ client_id: 9, memo_enc: 'v1:FTP는 월말 점검' }]);
+Client.setMemo = rec('setMemo', (cp, id) => (id === 5 ? true : null));
+Client.setStar = rec('setStar', (cp, id) => (id === 5 ? true : null));
 let clientFind = clientRow;
 Client.find = rec('find', (cp, id) => (cp === 1 && id === 5 ? clientFind : undefined));
 let clientCreate = 11;
@@ -97,12 +100,12 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 (async () => {
     // ---- 목록 ----
     let res = await call(ctrl.list, { query: { q: ' 테스 ', kind: 'client' } });
-    assert.deepStrictEqual(res.body, { clients: [{ id: 5, kind: 'client', name: '테스트업체', credentialCount: 2, fileCount: 1, hasLegacyMemo: true, updatedAt: '2026-11-04 10:00:00' }] });
+    assert.deepStrictEqual(res.body, { clients: [{ id: 5, kind: 'client', name: '테스트업체', starred: true, credentialCount: 2, fileCount: 1, hasLegacyMemo: true, updatedAt: '2026-11-04 10:00:00' }] });
     assert.deepStrictEqual(calls.list, [1, { q: '테스', kind: 'client', memoIds: [] }]);
     // 항목 메모 검색: 풀어서 대소문자 무시, 못 읽는 메모는 건너뜀
     unreadable = new Set(['v1:깨짐']);
     await call(ctrl.list, { query: { q: 'Ftp' } });
-    assert.deepStrictEqual(calls.list, [1, { q: 'Ftp', kind: null, memoIds: [5, 7] }]);
+    assert.deepStrictEqual(calls.list, [1, { q: 'Ftp', kind: null, memoIds: [5, 7, 9] }]); // 9 = 업체 메모가 맞은 업체
     unreadable = new Set();
     calls.memosOf = undefined;
     noPlain(res.body, '목록');
@@ -114,7 +117,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
     // ---- 상세: 칸 이름 정확히, 평문 없음 ----
     res = await call(ctrl.detail, { params: { id: '5' } });
     assert.deepStrictEqual(Object.keys(res.body), ['client', 'credentials', 'files', 'logs']);
-    assert.deepStrictEqual(res.body.client, { id: 5, kind: 'client', name: '테스트업체', hasLegacyMemo: true, legacyMemoUnreadable: false });
+    assert.deepStrictEqual(res.body.client, { id: 5, kind: 'client', name: '테스트업체', hasLegacyMemo: true, legacyMemoUnreadable: false, memo: '업체 메모', memoUnreadable: false });
     assert.deepStrictEqual(res.body.credentials, [{ id: 3, kind: 'ftp', label: '메인', url: 'ftp://example.com', loginId: 'user', hasSecret: true, port: null, adminUrl: '', adminId: '', hasAdminSecret: false, dbHost: '', dbName: '', dbId: '', hasDbSecret: false, hasMemo: true, memo: MEMO, memoUnreadable: false, sort: 0, updatedAt: '2026-11-04 10:00:00' }]);
     assert.deepStrictEqual(res.body.files, [{ id: 8, originalName: '견적.pdf', size: 10, createdAt: '2026-11-04 10:00:00' }]);
     assert.deepStrictEqual(res.body.logs, [{ action: 'view', target: 'secret', credentialLabel: '메인', actorName: '홍길동', createdAt: '2026-11-04 10:00:00' }]);
@@ -339,6 +342,24 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
     clientRemove = null;
     expect(await call(ctrl.remove, { params: { id: '5' } }), 404, 'Not found');
     server.close();
+
+    // ---- 업체 메모: 암호화해 저장, '' = 지움, 기록은 모델이 남김(요청자 전달) ----
+    assert.deepStrictEqual((await call(ctrl.updateMemo, { params: { id: '5' }, body: { memo: '새 메모' } })).body, { ok: true });
+    assert.deepStrictEqual(calls.setMemo, [1, 5, 'v1:새 메모', { no: 7, name: '홍길동' }]);
+    await call(ctrl.updateMemo, { params: { id: '5' }, body: { memo: '' } });
+    assert.strictEqual(calls.setMemo[2], null);
+    expect(await call(ctrl.updateMemo, { params: { id: '5' }, body: {} }), 400, 'Invalid memo');
+    expect(await call(ctrl.updateMemo, { params: { id: '5' }, body: { memo: 'a'.repeat(10001) } }), 400, 'Invalid memo');
+    expect(await call(ctrl.updateMemo, { params: { id: '6' }, body: { memo: 'x' } }), 404, 'Not found');
+    keyReady = false;
+    expect(await call(ctrl.updateMemo, { params: { id: '5' }, body: { memo: 'x' } }), 503, 'Secret key missing');
+    keyReady = true;
+    // ---- 별표: boolean만, 회사 범위(모델) ----
+    assert.deepStrictEqual((await call(ctrl.setStar, { params: { id: '5' }, body: { starred: true } })).body, { ok: true });
+    assert.deepStrictEqual(calls.setStar, [1, 5, true]);
+    expect(await call(ctrl.setStar, { params: { id: '5' }, body: { starred: 1 } }), 400, 'Invalid starred');
+    expect(await call(ctrl.setStar, { params: { id: '6' }, body: { starred: false } }), 404, 'Not found');
+    expect(await call(ctrl.setStar, { params: { id: 'x' }, body: { starred: false } }), 404, 'Not found');
 
     // ---- 콘솔에 평문 없음 ----
     for (const line of printed) for (const p of [PLAIN, MEMO, LEGACY]) assert.ok(!line.includes(p), `콘솔에 평문: ${line.slice(0, 80)}`);

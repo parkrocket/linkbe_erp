@@ -35,6 +35,21 @@ export function ClientList() {
         setApplied({ q, kind });
     };
 
+    // 별표 켜기·끄기(회사 공용) — 저장 뒤 목록을 다시 받아 별표한 업체가 위로
+    const [starBusy, setStarBusy] = useState(false);
+    const [message, setMessage] = useState('');
+    const toggleStar = async (c: ClientRow) => {
+        setStarBusy(true);
+        setMessage('');
+        try {
+            await apiFetch(`/api/work/clients/${c.id}/star`, { method: 'POST', body: { starred: !c.starred } });
+            list.refresh();
+        } catch (e) {
+            setMessage(clientErrorText(e));
+        }
+        setStarBusy(false);
+    };
+
     return (
         <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -58,6 +73,11 @@ export function ClientList() {
                 </Button>
             </form>
 
+            {message && (
+                <p role="alert" className="mt-4 rounded-lg bg-rejected-bg px-3 py-2.5 text-sm text-rejected-fg">
+                    {message}
+                </p>
+            )}
             {list.state.status === 'loading' && <Skeleton className="mt-4 h-72 w-full" />}
             {list.state.status === 'error' && (
                 <div className="mt-4">
@@ -71,6 +91,9 @@ export function ClientList() {
                             <caption className="sr-only">업체 목록</caption>
                             <thead className="bg-surface text-xs text-muted">
                                 <tr>
+                                    <th scope="col" className="w-10 px-3 py-2">
+                                        <span className="sr-only">별표</span>
+                                    </th>
                                     {['업체', '구분', '항목', '첨부', '예전 메모'].map(h => (
                                         <th key={h} scope="col" className="whitespace-nowrap px-3 py-2 font-semibold">
                                             {h}
@@ -81,6 +104,19 @@ export function ClientList() {
                             <tbody className="divide-y divide-line">
                                 {clients.map(c => (
                                     <tr key={c.id} className="hover:bg-surface">
+                                        <td className="py-1 pl-3">
+                                            <button
+                                                type="button"
+                                                aria-pressed={c.starred}
+                                                aria-label={`${c.name} 별표`}
+                                                title={c.starred ? '별표 끄기' : '별표 — 목록 위로 올리기'}
+                                                disabled={starBusy}
+                                                className={`rounded px-1.5 py-1 text-lg leading-none hover:bg-line focus-visible:outline-2 focus-visible:outline-primary ${c.starred ? 'text-pending-fg' : 'text-muted'}`}
+                                                onClick={() => toggleStar(c)}
+                                            >
+                                                {c.starred ? '★' : '☆'}
+                                            </button>
+                                        </td>
                                         <td className="px-3 py-2.5">
                                             <Link href={`/work/clients/${c.id}`} className="font-semibold text-primary hover:underline">
                                                 {c.name}

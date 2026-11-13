@@ -66,18 +66,18 @@ Client.list = async (cpId, { q, kind, memoIds = [] } = {}) => {
         if (memoIds.length) params.push(memoIds);
     }
     const [rows] = await pool.query(
-        `SELECT c.id, c.kind, c.name, c.legacy_memo_enc IS NOT NULL AS has_legacy_memo, ${KST('c.updated_at')} AS updated_at,
+        `SELECT c.id, c.kind, c.name, c.starred, c.legacy_memo_enc IS NOT NULL AS has_legacy_memo, ${KST('c.updated_at')} AS updated_at,
          (SELECT COUNT(*) FROM wk_client_credential cr WHERE cr.client_id = c.id) AS credential_count,
          (SELECT COUNT(*) FROM wk_file f WHERE f.cp_id = c.cp_id AND f.owner_type = 'client' AND f.owner_id = c.id) AS file_count
-         FROM wk_client c WHERE ${conds.join(' AND ')} ORDER BY c.name, c.id`,
+         FROM wk_client c WHERE ${conds.join(' AND ')} ORDER BY c.starred DESC, c.name, c.id`, // 별표한 업체가 위로
         params,
     );
     return rows;
 };
 
-// 상세용 — legacy_memo_enc(암호문)는 읽을 수 있는지 확인용으로만 컨트롤러에 넘김
+// 상세용 — legacy_memo_enc(암호문)는 읽을 수 있는지 확인용으로만, memo_enc(업체 메모)는 컨트롤러가 풀어 상세에 바로 표시
 Client.find = async (cpId, id) => {
-    const [rows] = await pool.query('SELECT id, kind, name, legacy_memo_enc FROM wk_client WHERE cp_id = ? AND id = ?', [cpId, id]);
+    const [rows] = await pool.query('SELECT id, kind, name, legacy_memo_enc, memo_enc FROM wk_client WHERE cp_id = ? AND id = ?', [cpId, id]);
     return rows[0];
 };
 
@@ -101,6 +101,28 @@ Client.update = (cpId, id, value, actor) =>
     withClient(cpId, id, async conn => {
         await conn.query('UPDATE wk_client SET kind = ?, name = ? WHERE cp_id = ? AND id = ?', [value.kind, value.name, cpId, id]);
         await CredentialLog.insert(conn, { cpId, clientId: id, target: 'client', action: 'update', actor });
+        return true;
+    });
+
+// 목록 검색용 — 회사 전체 업체 메모 암호문(평문은 컨트롤러 메모리에서만)
+Client.memosOf = async cpId => {
+    const [rows] = await pool.query('SELECT id AS client_id, memo_enc FROM wk_client WHERE cp_id = ? AND memo_enc IS NOT NULL', [cpId]);
+    return rows;
+};
+
+// 업체 메모 — memoEnc는 컨트롤러가 암호화한 값(null = 지움). 반환: true | null(업체 없음)
+// ponytail: 두 사람이 동시에 고치면 나중 저장이 덮어씀(짧은 메모·소수 사용자) — 문제가 되면 updated_at 비교 409 추가
+Client.setMemo = (cpId, id, memoEnc, actor) =>
+    withClient(cpId, id, async conn => {
+        await conn.query('UPDATE wk_client SET memo_enc = ? WHERE cp_id = ? AND id = ?', [memoEnc, cpId, id]);
+        await CredentialLog.insert(conn, { cpId, clientId: id, target: 'memo', action: 'update', actor });
+        return true;
+    });
+
+// 별표(회사 공용 — 목록 위로). 내용 변경이 아니라 수정 시각은 그대로, 기록도 남기지 않음. 반환: true | null(업체 없음)
+Client.setStar = (cpId, id, starred) =>
+    withClient(cpId, id, async conn => {
+        await conn.query('UPDATE wk_client SET starred = ?, updated_at = updated_at WHERE cp_id = ? AND id = ?', [starred ? 1 : 0, cpId, id]);
         return true;
     });
 
