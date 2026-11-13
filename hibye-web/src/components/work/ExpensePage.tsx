@@ -36,7 +36,7 @@ export function ExpensePage({ canApprove }: { canApprove: boolean }) {
     const categories = data ? (Object.entries(data.summary.byCategory) as [ExpenseCategory, number][]).filter(([, sum]) => sum > 0) : [];
 
     return (
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
+        <main className="mx-auto w-full max-w-page flex-1 px-4 py-10">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                 <h1 className="flex flex-wrap items-baseline gap-x-3 text-2xl font-bold">
                     경비

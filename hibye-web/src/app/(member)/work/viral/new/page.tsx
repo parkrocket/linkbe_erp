@@ -14,7 +14,7 @@ export default function NewViralRoute() {
     return (
         <Suspense
             fallback={
-                <Skeleton className="mx-auto mt-10 h-96 w-full max-w-5xl" />
+                <Skeleton className="mx-auto mt-10 h-96 w-full max-w-page" />
             }
         >
             <NewViral />
@@ -29,7 +29,7 @@ async function NewViral() {
     return (
         <>
             <WorkTabs user={user} />
-            <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+            <main className="mx-auto w-full max-w-page flex-1 px-4 py-8">
                 <h1 className="mb-5 text-2xl font-bold">새 글</h1>
                 <BoardForm />
             </main>

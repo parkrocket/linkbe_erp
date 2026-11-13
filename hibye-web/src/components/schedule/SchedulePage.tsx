@@ -7,7 +7,7 @@ import { LEAVE_TONE } from '@/components/dashboard/LeaveBadge';
 import { useApiData } from '@/components/dashboard/useApiData';
 import { Modal } from '@/components/leave/Modal';
 import { Badge, TONE_CLASS } from '@/components/ui/Badge';
-import { Button, buttonClass } from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
@@ -73,7 +73,7 @@ export function SchedulePage() {
     };
 
     return (
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 md:py-10">
+        <main className="mx-auto w-full max-w-page flex-1 px-4 py-8 md:py-10">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <h1 className="text-2xl font-extrabold tracking-tight">일정</h1>
                 <Button onClick={() => setEditing({ mode: 'add', date: ym === today.slice(0, 7) ? today : `${ym}-01` })}>
@@ -295,7 +295,8 @@ export function SchedulePage() {
             {/* 근태 신청 바로가기 — 근태는 일정 추가가 아니라 근태 화면에서 */}
             <p className="mt-4 text-center text-xs text-muted">
                 연차·반차·휴가·재택은{' '}
-                <Link href="/vaca" className={buttonClass('ghost', 'px-1 py-0 text-xs text-primary')}>
+                {/* 문장 속 링크 — 버튼 모양(안쪽 여백)을 쓰면 앞뒤가 벌어져 보임 */}
+                <Link href="/vaca" className="font-semibold text-primary hover:underline focus-visible:outline-2 focus-visible:outline-primary">
                     근태 화면
                 </Link>
                 에서 신청해요.

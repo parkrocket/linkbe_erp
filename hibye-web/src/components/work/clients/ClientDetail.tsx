@@ -58,10 +58,10 @@ export function ClientDetail({ id }: { id: string }) {
     useEffect(() => () => setDialog(null), []);
 
     if (!valid || state.status === 'missing') return <Missing />;
-    if (state.status === 'loading') return <Skeleton className="mx-auto mt-10 h-96 w-full max-w-5xl" />;
+    if (state.status === 'loading') return <Skeleton className="mx-auto mt-10 h-96 w-full max-w-page" />;
     if (state.status === 'error')
         return (
-            <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+            <main className="mx-auto w-full max-w-page flex-1 px-4 py-8">
                 <ErrorState onRetry={reload} />
             </main>
         );
@@ -104,7 +104,7 @@ export function ClientDetail({ id }: { id: string }) {
     };
 
     return (
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+        <main className="mx-auto w-full max-w-page flex-1 px-4 py-8">
             <Link href="/work/clients" className="text-sm text-muted hover:text-ink hover:underline">
                 ← 업체 목록
             </Link>
@@ -200,7 +200,7 @@ export function ClientDetail({ id }: { id: string }) {
 
 function Missing() {
     return (
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+        <main className="mx-auto w-full max-w-page flex-1 px-4 py-8">
             <EmptyState message="업체를 찾을 수 없어요." />
             <Link href="/work/clients" className="block text-center text-sm text-primary hover:underline">
                 업체 목록으로

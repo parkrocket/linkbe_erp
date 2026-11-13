@@ -21,7 +21,7 @@ async function Home() {
 
 function HomeFallback() {
     return (
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
+        <main className="mx-auto w-full max-w-page flex-1 px-4 py-10">
             <Skeleton className="mb-3 h-5 w-48" />
             <Skeleton className="mb-8 h-8 w-80" />
             <div className="grid gap-4 md:grid-cols-2">

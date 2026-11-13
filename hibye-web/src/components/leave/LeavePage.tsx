@@ -36,7 +36,7 @@ export function LeavePage({ user, openApply }: { user: User; openApply: boolean 
     const list = state.status === 'ok' ? [...(state.data.vacationList ?? [])].sort((a, b) => a.date.localeCompare(b.date)) : [];
 
     return (
-        <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8 md:py-10">
+        <main className="mx-auto w-full max-w-page flex-1 px-4 py-8 md:py-10">
             <div className="flex flex-wrap items-end justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-extrabold tracking-tight">내 근태</h1>

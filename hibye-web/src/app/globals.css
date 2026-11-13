@@ -2,6 +2,8 @@
 
 /* 디자인 토큰 — 대표색·여백·모서리를 한 곳에서 관리 (bg-primary, text-muted 등으로 사용) */
 @theme {
+    /* 본문 바깥 폭 — 헤더·푸터·모든 화면이 max-w-page 하나로 맞춤(왼쪽 시작선 통일). 내용이 적은 화면은 안쪽에서만 좁힘 */
+    --container-page: 72rem;
     --color-primary: #5e2bb8;
     --color-primary-hover: #4c2296;
     --color-primary-soft: #f3eefc;

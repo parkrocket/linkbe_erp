@@ -54,7 +54,7 @@ export function ContractList() {
     const set = (key: keyof Filters, value: string) => setDraft(prev => ({ ...prev, [key]: value }));
 
     return (
-        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8">
+        <main className="mx-auto w-full max-w-page flex-1 px-4 py-8">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                 <h1 className="text-2xl font-bold">견적·계약서</h1>
                 <Link href="/work/contracts/new" className={buttonClass('primary')}>
@@ -107,6 +107,7 @@ export function ContractList() {
             <div className="mt-4">
                 {list.state.status === 'loading' && <Skeleton className="h-72 w-full" />}
                 {list.state.status === 'error' && <ErrorState onRetry={list.reload} />}
+                {/* 칸이 11개라 본문 폭(max-w-page) 안에 들어가도록 칸 여백·긴 글 칸 폭을 줄임 — 더 좁은 화면은 표 안에서만 가로로 밀림 */}
                 {data &&
                     (data.contracts.length ? (
                         <div className="overflow-x-auto rounded-lg border border-line">
@@ -115,7 +116,7 @@ export function ContractList() {
                                 <thead className="bg-surface text-xs text-muted">
                                     <tr>
                                         {['문서번호', '분류', '업체명', '프로젝트명', '계약일', '총액(VAT 포함)', '입금', '미수', '상태', '계산서', '납품'].map(h => (
-                                            <th key={h} scope="col" className="whitespace-nowrap px-3 py-2 font-semibold">
+                                            <th key={h} scope="col" className="whitespace-nowrap px-1.5 py-2 first:pl-3 last:pr-3 font-semibold">
                                                 {h}
                                             </th>
                                         ))}
@@ -124,23 +125,23 @@ export function ContractList() {
                                 <tbody className="divide-y divide-line">
                                     {data.contracts.map(r => (
                                         <tr key={r.id} className="hover:bg-surface">
-                                            <td className="whitespace-nowrap px-3 py-2.5 tabular-nums">
+                                            <td className="whitespace-nowrap px-1.5 py-2 first:pl-3 last:pr-3.5 tabular-nums">
                                                 <Link href={`/work/contracts/${r.id}`} className="font-semibold text-primary hover:underline">
                                                     {r.docNo}
                                                 </Link>
                                             </td>
-                                            <td className="max-w-36 truncate whitespace-nowrap px-3 py-2.5 text-muted" title={r.categoryName || undefined}>{r.categoryName || '-'}</td>
-                                            <td className="max-w-48 truncate whitespace-nowrap px-3 py-2.5 font-semibold" title={r.companyName}>{r.companyName}</td>
-                                            <td className="max-w-64 truncate whitespace-nowrap px-3 py-2.5" title={r.projectName}>{r.projectName}</td>
-                                            <td className="whitespace-nowrap px-3 py-2.5 tabular-nums">{r.contractDate || '-'}</td>
-                                            <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums">{formatWon(r.total + vat(r.total))}</td>
-                                            <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums">{formatWon(r.paidAmount)}</td>
-                                            <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums">{formatWon(r.receivable)}</td>
-                                            <td className="whitespace-nowrap px-3 py-2.5">
+                                            <td className="max-w-28 truncate whitespace-nowrap px-1.5 py-2 first:pl-3 last:pr-3.5 text-xs text-muted" title={r.categoryName || undefined}>{r.categoryName || '-'}</td>
+                                            <td className="max-w-40 truncate whitespace-nowrap px-1.5 py-2 first:pl-3 last:pr-3.5 font-semibold" title={r.companyName}>{r.companyName}</td>
+                                            <td className="max-w-48 truncate whitespace-nowrap px-1.5 py-2 first:pl-3 last:pr-3.5" title={r.projectName}>{r.projectName}</td>
+                                            <td className="whitespace-nowrap px-1.5 py-2 first:pl-3 last:pr-3.5 tabular-nums">{r.contractDate || '-'}</td>
+                                            <td className="whitespace-nowrap px-1.5 py-2 first:pl-3 last:pr-3.5 text-right tabular-nums">{formatWon(r.total + vat(r.total))}</td>
+                                            <td className="whitespace-nowrap px-1.5 py-2 first:pl-3 last:pr-3.5 text-right tabular-nums">{formatWon(r.paidAmount)}</td>
+                                            <td className="whitespace-nowrap px-1.5 py-2 first:pl-3 last:pr-3.5 text-right tabular-nums">{formatWon(r.receivable)}</td>
+                                            <td className="whitespace-nowrap px-1.5 py-2 first:pl-3 last:pr-3.5">
                                                 <Badge tone={STATUS_TONE[r.status]}>{CONTRACT_STATUS_LABEL[r.status]}</Badge>
                                             </td>
-                                            <td className="whitespace-nowrap px-3 py-2.5">{r.invoiceIssued ? '발행' : '-'}</td>
-                                            <td className="whitespace-nowrap px-3 py-2.5 tabular-nums">{deliveryDday(r, today)}</td>
+                                            <td className="whitespace-nowrap px-1.5 py-2 first:pl-3 last:pr-3.5">{r.invoiceIssued ? '발행' : '-'}</td>
+                                            <td className="whitespace-nowrap px-1.5 py-2 first:pl-3 last:pr-3.5 tabular-nums">{deliveryDday(r, today)}</td>
                                         </tr>
                                     ))}
                                 </tbody>

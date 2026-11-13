@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: '거래처 접속정보 — hibye' };
 // /work/clients — 업체 목록 (접속정보 권한자만)
 export default function ClientsRoute() {
     return (
-        <Suspense fallback={<Skeleton className="mx-auto mt-10 h-96 w-full max-w-5xl" />}>
+        <Suspense fallback={<Skeleton className="mx-auto mt-10 h-96 w-full max-w-page" />}>
             <Clients />
         </Suspense>
     );

@@ -9,7 +9,7 @@ import { TeamLeaveCard } from './TeamLeaveCard';
 // 로그인 후 '/' — 근태 중심: 인사말 + [근태 신청] → [내 근태 | 오늘 팀 근태]
 export function Dashboard({ user }: { user: User }) {
     return (
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 md:py-10">
+        <main className="mx-auto w-full max-w-page flex-1 px-4 py-8 md:py-10">
             <div className="flex flex-wrap items-end justify-between gap-4">
                 <Greeting name={user.user_name} now={new Date()} />
                 {/* 화면의 핵심 행동 1개 — 근태 페이지(전환 예정)로 이동 */}

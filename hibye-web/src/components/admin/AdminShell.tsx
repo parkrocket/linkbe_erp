@@ -17,7 +17,7 @@ export function AdminShell({ groups, badges, children }: Props) {
     const current = groups.flatMap(g => g.items).find(i => isActive(pathname, i.href))?.href ?? '';
 
     return (
-        <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-6 md:flex-row md:py-10">
+        <div className="mx-auto flex w-full max-w-page flex-1 flex-col gap-6 px-4 py-6 md:flex-row md:py-10">
             <div className="md:hidden">
                 <select
                     aria-label="관리 메뉴"

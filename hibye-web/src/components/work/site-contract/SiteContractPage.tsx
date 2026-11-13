@@ -37,7 +37,7 @@ export function SiteContractPage() {
     }).length;
 
     return (
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+        <main className="mx-auto w-full max-w-page flex-1 px-4 py-8">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                 <h1 className="text-2xl font-bold">계약 관리</h1>
                 <Button disabled={!all} onClick={() => setDialog('new')}>

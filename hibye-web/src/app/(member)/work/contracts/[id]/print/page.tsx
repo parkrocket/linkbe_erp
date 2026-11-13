@@ -17,7 +17,7 @@ type Props = {
 // /work/contracts/[id]/print?kind=estimate|contract&template=양식id — 양식 미리보기·인쇄
 export default function PrintRoute({ params, searchParams }: Props) {
     return (
-        <Suspense fallback={<Skeleton className="mx-auto mt-10 h-96 w-full max-w-5xl" />}>
+        <Suspense fallback={<Skeleton className="mx-auto mt-10 h-96 w-full max-w-page" />}>
             <Print params={params} searchParams={searchParams} />
         </Suspense>
     );

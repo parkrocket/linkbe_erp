@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: '견적·계약서 — hibye' };
 // /work/contracts/[id] — 상세(보기·수정·삭제)
 export default function ContractRoute({ params }: { params: Promise<{ id: string }> }) {
     return (
-        <Suspense fallback={<Skeleton className="mx-auto mt-10 h-96 w-full max-w-5xl" />}>
+        <Suspense fallback={<Skeleton className="mx-auto mt-10 h-96 w-full max-w-page" />}>
             <Contract params={params} />
         </Suspense>
     );

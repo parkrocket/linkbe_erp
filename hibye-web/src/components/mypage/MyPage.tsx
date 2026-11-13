@@ -32,10 +32,10 @@ export function MyPage() {
     const { state, reload, refresh } = useApiData<{ me: MyInfo }>('/api/users/me', undefined, 'GET');
 
     return (
-        <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10">
+        <main className="mx-auto w-full max-w-page flex-1 px-4 py-10">
             <h1 className="text-2xl font-extrabold tracking-tight text-ink">마이페이지</h1>
             <p className="mt-1 text-sm text-muted">내 정보를 확인하고 바꿀 수 있어요.</p>
-            <div className="mt-6 flex flex-col gap-4">
+            <div className="mt-6 flex max-w-3xl flex-col gap-4">
                 {state.status === 'loading' && (
                     <>
                         <Skeleton className="h-72" />

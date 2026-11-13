@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: '거래처 접속정보 — hibye' };
 // /work/clients/[id] — 업체 상세 (항목·첨부·기록)
 export default function ClientRoute({ params }: { params: Promise<{ id: string }> }) {
     return (
-        <Suspense fallback={<Skeleton className="mx-auto mt-10 h-96 w-full max-w-5xl" />}>
+        <Suspense fallback={<Skeleton className="mx-auto mt-10 h-96 w-full max-w-page" />}>
             <Client params={params} />
         </Suspense>
     );

@@ -45,7 +45,7 @@ export function HeaderView({ userName, manageHref, pendingCount = 0, workBadge =
 
     return (
         <header className="sticky top-0 z-20 border-b border-line bg-white/95 backdrop-blur">
-            <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-8 px-4">
+            <div className="mx-auto flex h-16 w-full max-w-page items-center gap-8 px-4">
                 <Logo />
 
                 {userName ? (

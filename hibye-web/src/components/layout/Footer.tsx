@@ -9,7 +9,7 @@ export const COPYRIGHT = 'Copyright 2026. Linkbe. All rights reserved.';
 export function Footer() {
     return (
         <footer className="mt-auto border-t border-line bg-white">
-            <div className="mx-auto w-full max-w-6xl px-4 py-8 text-xs leading-6 text-muted">
+            <div className="mx-auto w-full max-w-page px-4 py-8 text-xs leading-6 text-muted">
                 {BUSINESS_INFO.map(line => (
                     <p key={line}>{line}</p>
                 ))}

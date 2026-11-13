@@ -18,7 +18,7 @@ export default function ViralPostRoute({
     return (
         <Suspense
             fallback={
-                <Skeleton className="mx-auto mt-10 h-96 w-full max-w-5xl" />
+                <Skeleton className="mx-auto mt-10 h-96 w-full max-w-page" />
             }
         >
             <ViralPost params={params} />

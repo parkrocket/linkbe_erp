@@ -24,7 +24,7 @@ async function Calendar() {
 
 function CalendarFallback() {
     return (
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
+        <main className="mx-auto w-full max-w-page flex-1 px-4 py-10">
             <Skeleton className="mb-6 h-8 w-40" />
             <Skeleton className="h-[32rem] w-full" />
         </main>

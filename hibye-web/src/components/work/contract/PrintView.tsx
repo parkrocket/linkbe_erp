@@ -132,7 +132,7 @@ export function PrintView({ id, kind, templateId }: { id: string; kind: DocKind;
     const choose = (tid: string) => router.replace(`/work/contracts/${encodeURIComponent(id)}/print?kind=${kind}&template=${tid}`);
 
     return (
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+        <main className="mx-auto w-full max-w-page flex-1 px-4 py-8">
             <p className="mb-3 text-sm">
                 <Link href={`/work/contracts/${encodeURIComponent(id)}`} className="text-muted hover:text-ink hover:underline">
                     ← 돌아가기

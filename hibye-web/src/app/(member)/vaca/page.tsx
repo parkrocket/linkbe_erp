@@ -25,7 +25,7 @@ async function Vaca({ searchParams }: { searchParams: PageProps<'/vaca'>['search
 
 function VacaFallback() {
     return (
-        <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-10">
+        <main className="mx-auto w-full max-w-page flex-1 px-4 py-10">
             <Skeleton className="mb-6 h-8 w-40" />
             <div className="grid grid-cols-2 gap-3">
                 <Skeleton className="h-24" />
