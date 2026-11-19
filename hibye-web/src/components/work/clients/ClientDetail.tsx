@@ -16,6 +16,9 @@ import { ClientMemo } from './ClientMemo';
 import { CredentialDialog } from './CredentialDialog';
 import { CredentialRow } from './CredentialRow';
 
+// 접속정보 항목 정렬 — 이름 가나다순(숫자는 크기순: 2번 → 10번), 이름 없는 항목은 맨 뒤
+const byLabel = (a: Credential, b: Credential) => (a.label ? (b.label ? a.label.localeCompare(b.label, 'ko', { numeric: true }) : -1) : b.label ? 1 : 0);
+
 // 업체 상세 — 항목·예전 메모·첨부·메모·최근 기록
 export function ClientDetail({ id }: { id: string }) {
     const router = useRouter();
@@ -137,7 +140,8 @@ export function ClientDetail({ id }: { id: string }) {
                 <p className="mb-2 text-xs text-muted">비밀번호·메모는 평소 가려져 있고, 보기·복사하면 기록이 남아요. 보기는 {REVEAL_MS / 1000}초 뒤 다시 가려져요.</p>
                 {credentials.length ? (
                     <ul className="flex flex-col gap-2">
-                        {credentials.map(c => (
+                        {/* 이름 가나다순(숫자는 크기순), 이름 없는 항목은 맨 뒤 */}
+                        {[...credentials].sort(byLabel).map(c => (
                             <CredentialRow key={`${c.id}-${c.updatedAt}`} clientId={clientId} credential={c} onEdit={() => setDialog(c)} onDelete={() => removeCredential(c)} />
                         ))}
                     </ul>

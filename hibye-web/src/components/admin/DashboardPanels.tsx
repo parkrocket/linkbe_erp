@@ -123,15 +123,15 @@ function LeaveUsage() {
                                             사용 {usage.used} · 예정 {usage.planned} · <strong className="text-ink">남음 {usage.left}</strong>
                                         </span>
                                     </div>
-                                    {/* 막대: 진한 색 = 사용, 연한 색 = 예정, 바탕 = 남음 (숫자는 위 글자로도 표시) */}
+                                    {/* 막대: 연보라 = 사용, 더 옅은 색 = 예정, 바탕 = 남음 (숫자는 위 글자로도 표시). 대표색 그대로면 너무 쨍해 시선이 쏠려서 옅게 */}
                                     <div className="mt-1.5 flex h-2 overflow-hidden rounded-full bg-surface" aria-hidden>
-                                        <span className="bg-primary" style={{ width: `${usage.usedPct}%` }} />
-                                        <span className="bg-primary/35" style={{ width: `${usage.plannedPct}%` }} />
+                                        <span className="bg-primary/45" style={{ width: `${usage.usedPct}%` }} />
+                                        <span className="bg-primary/20" style={{ width: `${usage.plannedPct}%` }} />
                                     </div>
                                 </li>
                             ))}
                         </ul>
-                        <p className="mt-3 text-xs text-muted">올해 기준 · 진한 색 사용, 연한 색 예정, 바탕 남음 (일)</p>
+                        <p className="mt-3 text-xs text-muted">올해 기준 · 연보라 사용, 옅은 색 예정, 바탕 남음 (일)</p>
                     </>
                 );
             }}

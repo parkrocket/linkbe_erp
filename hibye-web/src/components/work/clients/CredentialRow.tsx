@@ -123,7 +123,8 @@ export function CredentialRow({ clientId, credential: c, onEdit, onDelete }: { c
     const server = splitServer(c.url);
 
     return (
-        <li className="rounded-lg border border-line p-3 text-sm">
+        // 항목끼리 잘 나뉘어 보이게 기본 선(border-line)보다 진한 테두리
+        <li className="rounded-lg border border-[#cfcbdb] p-3 text-sm">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span className="rounded bg-surface px-1.5 py-0.5 text-xs font-semibold text-muted">{CREDENTIAL_KIND_LABEL[c.kind]}</span>
                 <strong>{c.label || '(이름 없음)'}</strong>
