@@ -76,7 +76,7 @@ const validateContract = input => {
         if (s === null) return fail(`Invalid ${key}`);
         value[key] = s;
     }
-    for (const key of ['contractDate', 'deliveryDate']) {
+    for (const key of ['docDate', 'contractDate', 'deliveryDate']) {
         const d = date(b[key]);
         if (d === undefined) return fail(`Invalid ${key}`);
         value[key] = d;

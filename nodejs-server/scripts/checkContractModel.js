@@ -111,7 +111,7 @@ const value = (patch = {}) => ({
     const ins = calls.find(c => c.sql.startsWith('INSERT INTO wk_contract ('));
     assert.ok(ins.sql.includes('cp_id, doc_no, created_by') && ins.sql.includes('memo') && ins.sql.includes('ops_server1') && ins.sql.includes('ops_spend'));
     assert.deepStrictEqual(ins.params.slice(0, 3), [1, '20261105103000', 7], '문서번호 비면 자동');
-    assert.strictEqual(ins.params.length, 3 + 24);
+    assert.strictEqual(ins.params.length, 3 + 25); // 작성일(doc_date) 포함
     assert.ok(ins.params.includes(1) && !ins.params.includes(true), '불리언은 숫자로');
     const itemIns = calls.find(c => c.sql.startsWith('INSERT INTO wk_contract_item'));
     assert.deepStrictEqual(itemIns.params[0].map(r => [r[0], r[1]]), [[42, 0], [42, 1], [42, 2]]);

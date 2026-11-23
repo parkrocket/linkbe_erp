@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { apiFetch, ApiError } from '@/lib/api';
+import { kstDate } from '@/lib/schedule';
 import { copyForNew, formatMoneyInput, itemAmount, itemsTotal, parseMoney, receivable, vat, type Category, type ContractDetail, type ContractManager, type ItemTemplate } from '@/lib/contract';
 import { fromFormItem, toFormItem, type FormItem, ItemsEditor } from './ItemsEditor';
 
@@ -19,6 +20,7 @@ type FormState = {
     ceoName: string;
     companyEmail: string;
     projectName: string;
+    docDate: string;
     contractDate: string;
     deliveryDate: string;
     workPeriod: string;
@@ -52,6 +54,8 @@ const toState = (c?: ContractDetail): FormState => ({
     ceoName: c?.ceoName ?? '',
     companyEmail: c?.companyEmail ?? '',
     projectName: c?.projectName ?? '',
+    // 작성일: 저장된 값 → 예전 문서는 등록 날짜 → 새 문서·복사(번호 없음)는 오늘
+    docDate: c?.docDate ?? (c?.docNo ? c.createdAt.slice(0, 10) : kstDate(Date.now())),
     contractDate: c?.contractDate ?? '',
     deliveryDate: c?.deliveryDate ?? '',
     workPeriod: c?.workPeriod ?? '',
@@ -228,6 +232,7 @@ export function ContractForm({
             ceoName: form.ceoName.trim(),
             companyEmail: form.companyEmail.trim(),
             projectName: form.projectName.trim(),
+            docDate: form.docDate || null,
             contractDate: form.contractDate || null,
             deliveryDate: form.deliveryDate || null,
             workPeriod: form.workPeriod.trim(),
@@ -352,6 +357,9 @@ export function ContractForm({
                 </Field>
                 <Field label="프로젝트명" wide>
                     <input maxLength={200} className={INPUT} {...text('projectName')} />
+                </Field>
+                <Field label="작성일">
+                    <input type="date" className={INPUT} value={form.docDate} onChange={e => set('docDate', e.target.value)} />
                 </Field>
                 <Field label="계약일">
                     <input type="date" className={INPUT} value={form.contractDate} onChange={e => set('contractDate', e.target.value)} />

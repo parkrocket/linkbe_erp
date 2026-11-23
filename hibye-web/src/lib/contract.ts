@@ -54,6 +54,7 @@ export type ContractDetail = {
     ceoName: string;
     companyEmail: string;
     projectName: string;
+    docDate: string | null; // 문서에 찍는 작성일 — 예전 문서는 null(등록 날짜로 대신)
     contractDate: string | null;
     deliveryDate: string | null;
     workPeriod: string;
@@ -83,6 +84,7 @@ export type ContractDetail = {
 export const copyForNew = (c: ContractDetail): ContractDetail => ({
     ...c,
     docNo: '',
+    docDate: null, // 작성 화면이 오늘로 채움
     contractDate: null,
     deliveryDate: null,
     paidAmount: 0,
@@ -193,7 +195,7 @@ export const PLACEHOLDERS: { key: string; label: string }[] = [
 const won = (n: number) => Number(n).toLocaleString('ko-KR');
 
 // 'YYYY-MM-DD'(뒤에 시각이 붙어도 앞 10자) → 'YYYY.MM.DD', 아니면 ''
-export const dotDate = (v: string | null | undefined): string => {
+const dotDate = (v: string | null | undefined): string => {
     const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(v || '');
     return m ? `${m[1]}.${m[2]}.${m[3]}` : '';
 };
@@ -213,7 +215,7 @@ export function buildPrintValues(c: ContractDetail, today: string): Record<strin
         계약일: dotDate(c.contractDate),
         납품일: dotDate(c.deliveryDate),
         작업기간: c.workPeriod,
-        작성일: dotDate(c.createdAt),
+        작성일: dotDate(c.docDate || c.createdAt),
         오늘: dotDate(today),
         합계: won(c.total),
         부가세: won(vat(c.total)),

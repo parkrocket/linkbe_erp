@@ -123,7 +123,7 @@ describe('fillTemplate', () => {
 
 const detail = (p: Partial<ContractDetail> = {}): ContractDetail => ({
     id: 1, docNo: '20261105-1000', categoryId: 1, categoryName: '웹', companyName: '테스트업체', bizNo: '', ceoName: '홍길동',
-    companyEmail: '', projectName: '', contractDate: '2026-11-05', deliveryDate: null, workPeriod: '', memo: '', link1: '', link2: '',
+    companyEmail: '', projectName: '', docDate: null, contractDate: '2026-11-05', deliveryDate: null, workPeriod: '', memo: '', link1: '', link2: '',
     total: 1000000, deposit: 500000, balance: 500000, paidAmount: 0, isHold: false, isCancelled: false, isPaidFull: false,
     invoiceIssued: false, opsServer1: '', opsServer2: '', opsSpend: '', opsSite: '', createdAt: '2026-11-04 09:00:00',
     updatedAt: '2026-11-04 09:00:00', updatedAtKst: '2026-11-04 09:00:00', items: [], managers: [], ...p,

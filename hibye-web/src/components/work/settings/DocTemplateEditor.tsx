@@ -34,6 +34,7 @@ const SAMPLE_CONTRACT: ContractDetail = {
     ceoName: '홍길동',
     companyEmail: 'test@example.com',
     projectName: '샘플 프로젝트',
+    docDate: null,
     contractDate: '2000-01-01',
     deliveryDate: '2000-02-01',
     workPeriod: '30일',

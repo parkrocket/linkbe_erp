@@ -27,7 +27,7 @@ const STATUS_SQL = {
 // [DB 칸, 입력 키] — 계약 본문 칸(문서번호·작성자 제외)
 const FIELDS = [
     ['category_id', 'categoryId'], ['company_name', 'companyName'], ['biz_no', 'bizNo'], ['ceo_name', 'ceoName'],
-    ['company_email', 'companyEmail'], ['project_name', 'projectName'], ['contract_date', 'contractDate'],
+    ['company_email', 'companyEmail'], ['project_name', 'projectName'], ['doc_date', 'docDate'], ['contract_date', 'contractDate'],
     ['delivery_date', 'deliveryDate'], ['work_period', 'workPeriod'], ['memo', 'memo'], ['link1', 'link1'], ['link2', 'link2'],
     ['total', 'total'], ['deposit', 'deposit'], ['balance', 'balance'], ['paid_amount', 'paidAmount'],
     ['is_hold', 'isHold'], ['is_cancelled', 'isCancelled'], ['is_paid_full', 'isPaidFull'], ['invoice_issued', 'invoiceIssued'],
@@ -74,7 +74,7 @@ Contract.companyTotals = async (cpId, q) => {
 
 Contract.findById = async (cpId, id) => {
     const [rows] = await pool.query(
-        `SELECT id, cp_id, doc_no, category_id, company_name, biz_no, ceo_name, company_email, project_name, DATE_FORMAT(contract_date, ${DATE_F}) AS contract_date, DATE_FORMAT(delivery_date, ${DATE_F}) AS delivery_date, work_period, memo, link1, link2, total, deposit, balance, paid_amount, is_hold, is_cancelled, is_paid_full, invoice_issued, ops_server1, ops_server2, ops_spend, ops_site, created_by, ${KST('created_at')} AS created_at, DATE_FORMAT(updated_at, ${DATETIME_F}) AS updated_at, ${KST('updated_at')} AS updated_at_kst FROM wk_contract WHERE cp_id = ? AND id = ?`,
+        `SELECT id, cp_id, doc_no, category_id, company_name, biz_no, ceo_name, company_email, project_name, DATE_FORMAT(doc_date, ${DATE_F}) AS doc_date, DATE_FORMAT(contract_date, ${DATE_F}) AS contract_date, DATE_FORMAT(delivery_date, ${DATE_F}) AS delivery_date, work_period, memo, link1, link2, total, deposit, balance, paid_amount, is_hold, is_cancelled, is_paid_full, invoice_issued, ops_server1, ops_server2, ops_spend, ops_site, created_by, ${KST('created_at')} AS created_at, DATE_FORMAT(updated_at, ${DATETIME_F}) AS updated_at, ${KST('updated_at')} AS updated_at_kst FROM wk_contract WHERE cp_id = ? AND id = ?`,
         [cpId, id],
     );
     const contract = rows[0];

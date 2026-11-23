@@ -54,6 +54,7 @@ const toDetail = (r, categoryName) => ({
     ceoName: r.ceo_name,
     companyEmail: r.company_email,
     projectName: r.project_name,
+    docDate: r.doc_date,
     contractDate: r.contract_date,
     deliveryDate: r.delivery_date,
     workPeriod: r.work_period,
