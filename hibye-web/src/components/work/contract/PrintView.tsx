@@ -11,6 +11,7 @@ import { kstDate } from '@/lib/schedule';
 import {
     buildPrintDocument,
     buildPrintValues,
+    dotDate,
     fillTemplate,
     groupTemplates,
     pickTemplate,
@@ -121,11 +122,14 @@ export function PrintView({ id, kind, templateId }: { id: string; kind: DocKind;
 
     // 화면을 연 시점의 한국 날짜
     const [today] = useState(() => kstDate(Date.now()));
+    // 문서에 찍을 작성일 — 기본 오늘, 인쇄 전에 바꿀 수 있음(저장하지 않음, 비우면 오늘)
+    const [written, setWritten] = useState(today);
     const html = useMemo(() => {
         if (!contract || !body || body.id !== pickedId) return '';
-        const filled = fillTemplate(body.tpl.bodyHtml, buildPrintValues(contract, today), renderItemTable(contract.items));
+        const values = { ...buildPrintValues(contract, today), 작성일: dotDate(written || today) };
+        const filled = fillTemplate(body.tpl.bodyHtml, values, renderItemTable(contract.items));
         return buildPrintDocument(body.tpl.css, filled, `${contract.docNo} ${body.tpl.name}`);
-    }, [contract, body, pickedId, today]);
+    }, [contract, body, pickedId, today, written]);
 
     const kindLabel = kind === 'estimate' ? '견적서' : '계약서';
     // 양식을 바꾸면 주소만 바꿈(새로 불러오지 않고 쿼리로 다시 그림)
@@ -148,6 +152,15 @@ export function PrintView({ id, kind, templateId }: { id: string; kind: DocKind;
                             {kindLabel} — {contract.companyName}
                         </h1>
                         <div className="flex flex-wrap items-center gap-2">
+                            <label className="flex items-center gap-2 text-sm text-muted">
+                                작성일
+                                <input
+                                    type="date"
+                                    value={written}
+                                    onChange={e => setWritten(e.target.value)}
+                                    className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink"
+                                />
+                            </label>
                             {sameKind.length > 0 && (
                                 <select
                                     aria-label="양식 고르기"

@@ -193,7 +193,7 @@ export const PLACEHOLDERS: { key: string; label: string }[] = [
 const won = (n: number) => Number(n).toLocaleString('ko-KR');
 
 // 'YYYY-MM-DD'(뒤에 시각이 붙어도 앞 10자) → 'YYYY.MM.DD', 아니면 ''
-const dotDate = (v: string | null | undefined): string => {
+export const dotDate = (v: string | null | undefined): string => {
     const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(v || '');
     return m ? `${m[1]}.${m[2]}.${m[3]}` : '';
 };
