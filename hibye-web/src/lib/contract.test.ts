@@ -114,6 +114,11 @@ describe('fillTemplate', () => {
             '<p>&lt;가&gt;<br>나 <table></table> {모름}</p>',
         );
     });
+    it('글자로 남은 <br>은 줄바꿈, 빈 값은 only-이름 요소 숨김', () => {
+        const h = fillTemplate('<td class="only-운영비용">{운영비용}</td><td>{메모}</td>', { 운영비용: ' ', 메모: '가<br />나<BR>다' }, '');
+        expect(h).toBe('<style>.only-운영비용{display:none!important}</style><td class="only-운영비용"> </td><td>가<br>나<br>다</td>');
+        expect(renderItemTable([item({ note: '가<br>나<script>' })])).toContain('가<br>나&lt;script&gt;');
+    });
 });
 
 const detail = (p: Partial<ContractDetail> = {}): ContractDetail => ({

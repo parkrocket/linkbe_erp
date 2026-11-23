@@ -244,6 +244,9 @@ export function buildPrintValues(c: ContractDetail, today: string): Record<strin
 const escapeHtml = (s: string) =>
     String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
+// 글 칸 → 인쇄용 HTML: 예전 사이트에서 옮긴 글에 '<br>'이 글자로 남아 있음(품목 1천여 건) → 줄바꿈으로 보고 이스케이프
+const textHtml = (s: string) => escapeHtml(String(s).replace(/<br\s*\/?>/gi, '\n')).replace(/\r?\n/g, '<br>');
+
 // 0은 '-', 음수는 빨강
 const moneyCell = (n: number, extra = '') =>
     `<td class="right${n < 0 ? ' red' : ''}"${extra}>${n === 0 ? '-' : won(n)}</td>`;
@@ -291,7 +294,7 @@ export function renderItemTable(items: ContractItem[]): string {
             groupCell = `<td class="center"${span > 1 ? ` rowspan="${span}"` : ''}>${escapeHtml(it.groupName)}</td>`;
         }
         rows.push(
-            `<tr>${groupCell}<td>${escapeHtml(it.content).replace(/\n/g, '<br>')}</td>${moneyCell(it.unitPrice)}${countCell(it.qty)}${countCell(it.period)}${moneyCell(amount)}<td>${escapeHtml(it.note).replace(/\n/g, '<br>')}</td></tr>`,
+            `<tr>${groupCell}<td>${textHtml(it.content)}</td>${moneyCell(it.unitPrice)}${countCell(it.qty)}${countCell(it.period)}${moneyCell(amount)}<td>${textHtml(it.note)}</td></tr>`,
         );
     });
     if (inMaint) rows.push(sumRow('유지보수 합계', maintSum));
@@ -306,11 +309,17 @@ export function renderItemTable(items: ContractItem[]): string {
 }
 
 // 양식 본문의 {이름}을 값으로 — 값은 이스케이프 + 줄바꿈 <br>, {품목표}만 HTML 그대로, 모르는 {…}는 그대로
+// 값이 빈 칸은 양식에서 class="only-이름"을 단 요소(칸·제목·묶음)를 숨김 — 예: 자원 칸·운용 사이트 표
 export function fillTemplate(bodyHtml: string, values: Record<string, string>, itemTableHtml: string): string {
-    return bodyHtml.replace(/\{([^{}]+)\}/g, (whole, key: string) => {
+    const filled = bodyHtml.replace(/\{([^{}]+)\}/g, (whole, key: string) => {
         if (key === '품목표') return itemTableHtml;
-        return Object.prototype.hasOwnProperty.call(values, key) ? escapeHtml(values[key]).replace(/\r?\n/g, '<br>') : whole;
+        return Object.prototype.hasOwnProperty.call(values, key) ? textHtml(values[key]) : whole;
     });
+    // 키는 PLACEHOLDERS 이름(한글·숫자)만 — CSS 선택자로 안전한 것만 씀
+    const hide = Object.keys(values)
+        .filter(k => /^[가-힣A-Za-z0-9]+$/.test(k) && !String(values[k] ?? '').trim())
+        .map(k => `.only-${k}`);
+    return hide.length ? `<style>${hide.join(',')}{display:none!important}</style>${filled}` : filled;
 }
 
 // 양식 고르기: 분류 기본 → 공통(분류 없음) 기본 → 그 종류 첫 양식(id 순) → null
