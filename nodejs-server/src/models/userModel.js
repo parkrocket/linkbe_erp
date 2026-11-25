@@ -5,6 +5,10 @@ const bcrypt = require('bcrypt');
 const User = {};
 
 // 회원가입 저장 — 관리자 승인 전까지 pending (입력값은 registerValidation으로 검증·정규화된 값)
+// 마지막 접속(가입·로그인) IP·시각 — 관리자 화면 IP 차단용. IP를 못 읽었으면('') 시각만
+User.recordAccess = (userId, ip) =>
+    pool.query('UPDATE lk_user SET last_login_ip = COALESCE(NULLIF(?, \'\'), last_login_ip), last_login_at = NOW() WHERE user_id = ?', [ip, userId]);
+
 User.create = async ({ email, password, name, phone, cpId, doe, gender, birth }) => {
     const hash = await bcrypt.hash(password, 10);
     const [result] = await pool.query(

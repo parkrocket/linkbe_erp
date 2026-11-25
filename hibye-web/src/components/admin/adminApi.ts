@@ -15,7 +15,17 @@ export type AdminUser = {
     user_datetime: string;
     dept_id: number | null;
     position_id: number | null;
+    last_login_ip: string | null; // 마지막 가입·로그인 IP (IP 차단용)
+    last_login_at: string | null;
 };
+
+// 승인 안 된 가입 신청(대기·거절)만 완전 삭제
+export const deleteApplicant = (mbNo: number) => apiFetch(`/api/admin/users/${mbNo}`, { method: 'DELETE' });
+
+// hibye.kr 접속 차단 IP
+export type BlockedIp = { id: number; ip: string; reason: string; mbNo: number | null; targetName: string | null; creatorName: string; createdAt: string };
+export const blockIp = (ip: string, reason: string, mbNo?: number) => apiFetch('/api/admin/blocked-ips', { method: 'POST', body: { ip, reason, mbNo } });
+export const unblockIp = (id: number) => apiFetch(`/api/admin/blocked-ips/${id}`, { method: 'DELETE' });
 
 export const STATUS_LABEL: Record<AdminUser['user_status'], string> = {
     pending: '승인 대기',

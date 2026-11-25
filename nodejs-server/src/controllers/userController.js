@@ -6,6 +6,7 @@ const { toSafeUser } = require('../utils/safeUser');
 const { validateRegister } = require('../utils/registerValidation');
 const { escapeSlack } = require('../utils/slackEscape');
 const Company = require('../models/companyModel');
+const { normalizeIp } = require('../utils/ipBlock');
 const slack = require('../utils/slack'); // 호출 시점에 slack.sendSlackMessage 참조 (점검 스크립트에서 가짜 교체 가능)
 
 const ADMIN_URL = 'https://hibye.kr/admin/pending'; // 가입 승인 화면
@@ -55,6 +56,8 @@ exports.login = (req, res) => {
             // remember는 true일 때만 30일 (문자열 'false' 등은 기본 24시간)
             const ttlMs = req.body.remember === true ? REMEMBER_TTL_MS : TOKEN_TTL_MS;
             issueLoginCookie(res, user.user_id, ttlMs);
+            // 마지막 접속 IP 기록(관리 화면 IP 차단용) — 실패해도 로그인은 그대로
+            User.recordAccess(user.user_id, normalizeIp(req.ip)).catch(e => console.error('login ip record failed:', e.message));
 
             // 토큰은 쿠키로만 (본문에 실으면 화면 스크립트가 읽을 수 있음)
             return res.json({ loginSuccess: true, message: 'Login successful', user: toSafeUser(user) });
@@ -80,6 +83,8 @@ exports.register = async (req, res) => {
             return res.status(409).json({ registerSuccess: false, error });
         }
         await User.create(input);
+        // 관리 화면 IP 차단용(가입 신청자도) — 실패해도 가입은 그대로
+        await User.recordAccess(input.email, normalizeIp(req.ip)).catch(e => console.error('register ip record failed:', e.message));
     } catch (error) {
         // 동시 가입으로 고유키 충돌 시에도 중복으로 안내
         if (error.code === 'ER_DUP_ENTRY') {

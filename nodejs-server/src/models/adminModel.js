@@ -4,12 +4,15 @@ const pool = require('../config/dbPromise');
 const Admin = {};
 
 // dept_id·position_id: 조직 탭 소속 명단용 (개인정보 아님)
-const SAFE_COLUMNS = 'mb_no, user_id, user_name, user_phone, user_role, user_status, user_datetime, dept_id, position_id, homepage_access, work_doc_access, expense_approver, client_secret_access';
+// last_login_ip·at: 가입·로그인 때 기록한 마지막 접속(관리자 화면의 IP 차단용 — 관리자 API에서만)
+const SAFE_COLUMNS = "mb_no, user_id, user_name, user_phone, user_role, user_status, user_datetime, dept_id, position_id, homepage_access, work_doc_access, expense_approver, client_secret_access, last_login_ip, DATE_FORMAT(last_login_at, '%Y-%m-%d %H:%i') AS last_login_at";
+// 직원 관리 목록 순서: 승인 대기 → 승인 → 비활성 → 거절
+const STATUS_ORDER = "FIELD(user_status, 'pending', 'approved', 'inactive', 'rejected')";
 
 Admin.listUsers = async (cpId, status) => {
     const [rows] = status
         ? await pool.query(`SELECT ${SAFE_COLUMNS} FROM lk_user WHERE cp_id = ? AND user_status = ? ORDER BY mb_no DESC`, [cpId, status])
-        : await pool.query(`SELECT ${SAFE_COLUMNS} FROM lk_user WHERE cp_id = ? ORDER BY mb_no DESC`, [cpId]);
+        : await pool.query(`SELECT ${SAFE_COLUMNS} FROM lk_user WHERE cp_id = ? ORDER BY ${STATUS_ORDER}, mb_no DESC`, [cpId]);
     return rows;
 };
 
@@ -79,6 +82,12 @@ Admin.listLeaves = async (cpId, from, to) => {
         [cpId, from, to],
     );
     return rows;
+};
+
+// 승인 안 된 가입 신청(대기·거절)만 완전 삭제 — 승인된 적 없어 근태·장부 등 묶인 기록이 없음. 조건을 DELETE에 넣어 그 사이 승인돼도 안 지움
+Admin.deleteApplicant = async (cpId, mbNo) => {
+    const [r] = await pool.query("DELETE FROM lk_user WHERE cp_id = ? AND mb_no = ? AND user_status IN ('pending', 'rejected')", [cpId, mbNo]);
+    return r.affectedRows > 0;
 };
 
 Admin.updateStatus = (mbNo, status) => pool.query('UPDATE lk_user SET user_status = ? WHERE mb_no = ?', [status, mbNo]);

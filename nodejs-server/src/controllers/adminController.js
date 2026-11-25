@@ -102,6 +102,16 @@ exports.changeStatus = handle(async (req, res) => {
     res.json({ ok: true });
 });
 
+// 승인 안 된 가입 신청(대기·거절) 완전 삭제 — 승인된 직원은 지울 수 없음(근태·장부 등 기록 보존, 비활성화로 대신)
+exports.deleteApplicant = handle(async (req, res) => {
+    const target = await loadTarget(req, res);
+    if (!target) return;
+    if (!['pending', 'rejected'].includes(target.user_status)) return fail(res, 409, 'Not applicant');
+    if (!(await Admin.deleteApplicant(req.userCpId, target.mb_no))) return fail(res, 409, 'Not applicant');
+    await record(req, target, '가입 신청 삭제');
+    res.json({ ok: true });
+});
+
 // 직원별 권한(홈페이지·업무 문서·경비 승인) 부여·해제 (hibye 관리자만 — requireAdmin)
 exports.changePermission = handle(async (req, res) => {
     const target = await loadTarget(req, res);

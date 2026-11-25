@@ -56,7 +56,13 @@ export function adminNavFor(isAdmin: boolean): AdminNavGroup[] {
         },
         HOMEPAGE_GROUP,
         { title: '업무 설정', items: WORK_SETTINGS.map(m => ({ href: `/admin/work/${m.key}`, label: m.label })) },
-        { title: '보안', items: [{ href: '/admin/security', label: '암호화 키' }] },
+        {
+            title: '보안',
+            items: [
+                { href: '/admin/security', label: '암호화 키' },
+                { href: '/admin/blocked-ips', label: '차단 IP' },
+            ],
+        },
     ];
 }
 

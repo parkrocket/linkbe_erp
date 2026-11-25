@@ -6,14 +6,15 @@ import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import type { RunAction } from './useAdminUsers';
 import { MemberDialog } from './MemberDialog';
-import { changeRole, changeStatus, joinedAt, STATUS_LABEL, STATUS_TONE, type AdminUser } from './adminApi';
+import { Ban, Trash2 } from 'lucide-react';
+import { blockIp, changeRole, changeStatus, deleteApplicant, joinedAt, STATUS_LABEL, STATUS_TONE, type AdminUser } from './adminApi';
 
 const FILTERS: { value: AdminUser['user_status'] | 'all'; label: string }[] = [
     { value: 'all', label: '전체' },
+    { value: 'pending', label: '승인 대기' },
     { value: 'approved', label: '승인' },
     { value: 'inactive', label: '비활성' },
     { value: 'rejected', label: '거절' },
-    { value: 'pending', label: '승인 대기' },
 ];
 
 
@@ -52,6 +53,45 @@ export function MembersTab({ users, myUserId, run, onChanged }: { users: AdminUs
             )}
             {opened !== null && <MemberDialog mbNo={opened} onClose={() => setOpened(null)} onChanged={onChanged} />}
         </>
+    );
+}
+
+const ICON_BTN = 'rounded-md p-1.5 text-muted hover:bg-surface focus-visible:outline-2 focus-visible:outline-primary';
+
+// 작은 아이콘 버튼 — IP 차단(마지막 접속 IP가 있을 때), 가입 신청 완전 삭제(승인 대기·거절만)
+function IconActions({ user: u, run }: { user: AdminUser; run: RunAction }) {
+    const block = () => {
+        const reason = window.prompt(
+            `${u.user_name}님의 마지막 접속 IP ${u.last_login_ip}을(를) 차단할까요?\n이 IP에서는 hibye.kr에 들어올 수 없어요(같은 IP를 쓰는 다른 사람도).\n\n사유(선택, 200자까지):`,
+            '',
+        );
+        if (reason === null) return;
+        void run(() => blockIp(u.last_login_ip ?? '', reason.trim().slice(0, 200), u.mb_no), `IP ${u.last_login_ip}을(를) 차단했어요. '차단 IP' 메뉴에서 해제할 수 있어요.`);
+    };
+    const remove = () => {
+        const typed = window.prompt(`${u.user_name}님(${u.user_id})의 가입 신청을 완전히 삭제할까요? 되돌릴 수 없어요.\n\n계속하려면 "삭제"를 입력해 주세요.`, '');
+        if (typed === null) return;
+        if (typed.trim() !== '삭제') {
+            window.alert('"삭제"를 정확히 입력해야 삭제돼요.');
+            return;
+        }
+        void run(() => deleteApplicant(u.mb_no), `${u.user_name}님의 가입 신청을 삭제했어요.`);
+    };
+    const canDelete = u.user_status === 'pending' || u.user_status === 'rejected';
+    if (!u.last_login_ip && !canDelete) return null;
+    return (
+        <div className="flex gap-0.5">
+            {u.last_login_ip && (
+                <button type="button" onClick={block} className={`${ICON_BTN} hover:text-rejected-fg`} aria-label={`${u.user_name}님 IP 차단`} title={`IP 차단 (${u.last_login_ip})`}>
+                    <Ban size={16} aria-hidden />
+                </button>
+            )}
+            {canDelete && (
+                <button type="button" onClick={remove} className={`${ICON_BTN} hover:text-rejected-fg`} aria-label={`${u.user_name}님 가입 신청 삭제`} title="가입 신청 삭제">
+                    <Trash2 size={16} aria-hidden />
+                </button>
+            )}
+        </div>
     );
 }
 
@@ -98,10 +138,11 @@ function MemberRow({ user: u, isMe, run, onOpen }: { user: AdminUser; isMe: bool
                     {u.user_role === 'admin' && <Badge tone="info">관리자</Badge>}
                 </span>
                 <span className="block truncate text-xs text-muted">
-                    {u.user_id} · {joinedAt(u.user_datetime)} 가입
+                    {u.user_id} · {joinedAt(u.user_datetime)} 가입{u.last_login_ip ? ` · 접속 IP ${u.last_login_ip}` : ''}
                 </span>
             </button>
             {actions ?? <span className="text-xs text-muted">자기 자신은 변경할 수 없어요</span>}
+            {!isMe && <IconActions user={u} run={run} />}
         </li>
     );
 }

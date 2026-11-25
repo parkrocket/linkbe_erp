@@ -53,7 +53,8 @@ export function AdminShell({ groups, badges, children }: Props) {
                 <nav className="sticky top-6 flex flex-col gap-5">
                     {groups.map((g, gi) => (
                         <div key={g.title ?? gi}>
-                            {g.title && <p className="mb-1.5 px-3 text-xs font-semibold text-muted">{g.title}</p>}
+                            {/* 묶음 제목(누르는 메뉴 아님) — 배경으로 메뉴와 구분 */}
+                            {g.title && <p className="mb-1 rounded-md bg-neutral-bg px-3 py-1.5 text-xs font-bold text-muted">{g.title}</p>}
                             <ul className="flex flex-col gap-0.5">
                                 {g.items.map(i => {
                                     const active = isActive(pathname, i.href);

@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { adminNavFor, HOMEPAGE_MENUS, isHomepageMenu, isWorkSettingsTab, legacyAdminPath } from './adminNav';
 
 describe('adminNavFor', () => {
-    it('관리자: 대시보드·직원·홈페이지·업무 설정·보안, 링크 20개', () => {
+    it('관리자: 대시보드·직원·홈페이지·업무 설정·보안, 링크 21개', () => {
         const groups = adminNavFor(true);
         expect(groups.map(g => g.title)).toEqual([null, '직원', '홈페이지', '업무 설정', '보안']);
-        expect(groups.flatMap(g => g.items).length).toBe(1 + 5 + 9 + 4 + 1);
+        expect(groups.flatMap(g => g.items).length).toBe(1 + 5 + 9 + 4 + 2);
         expect(groups[0].items[0].href).toBe('/admin');
         expect(groups[1].items.map(i => i.href)).toEqual(['/admin/pending', '/admin/members', '/admin/leaves', '/admin/balances', '/admin/org']);
         expect(groups[3].items.map(i => [i.href, i.label])).toEqual([
@@ -14,7 +14,7 @@ describe('adminNavFor', () => {
             ['/admin/work/docs', '양식'],
             ['/admin/work/accounts', '계정과목'],
         ]);
-        expect(groups[4].items[0].href).toBe('/admin/security');
+        expect(groups[4].items.map(i => i.href)).toEqual(['/admin/security', '/admin/blocked-ips']);
     });
     it('홈페이지 권한자: 홈페이지 묶음만', () => {
         const groups = adminNavFor(false);

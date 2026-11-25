@@ -43,6 +43,12 @@ export function adminErrorMessage(error: unknown) {
         if (error.reason === 'Invalid reason') return '사유를 1~200자로 입력해 주세요.';
         if (error.reason === 'Invalid balance' || error.reason === 'Invalid changes') return '입력값을 확인해 주세요.';
         if (error.reason === 'No changes') return '바뀐 값이 없어요.';
+        if (error.reason === 'Not applicant') return '승인 대기·거절된 가입 신청만 삭제할 수 있어요.';
+        if (error.reason === 'Invalid ip') return 'IP 주소 형식을 확인해 주세요.';
+        if (error.reason === 'Protected ip') return '회사 사무실 IP와 지금 접속한 내 IP는 차단할 수 없어요.';
+        if (error.reason === 'Already blocked') return '이미 차단된 IP예요.';
+        if (error.reason === 'Ip changed') return '그 사이 직원의 접속 IP가 바뀌었어요. 새로고침 후 다시 시도해 주세요.';
+        if (error.reason === 'Blocked ip') return '차단된 IP에서는 사용할 수 없어요.';
         if (error.status === 403) return '관리자만 할 수 있어요.';
         if (error.status === 404) return '대상 직원을 찾을 수 없어요. 새로고침 후 다시 시도해 주세요.';
     }

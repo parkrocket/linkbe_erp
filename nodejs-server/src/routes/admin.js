@@ -1,6 +1,7 @@
 const express = require('express');
 const admin = require('../controllers/adminController');
 const secretKey = require('../controllers/adminSecretKeyController');
+const blockedIp = require('../controllers/adminBlockedIpController');
 const router = express.Router();
 
 // /api/admin/* — index.js에서 requireAuth(/api 전체) 뒤에 requireAdmin과 함께 연결
@@ -12,6 +13,10 @@ router.post('/users/:mbNo/profile', admin.updateProfile);
 router.post('/users/:mbNo/status', admin.changeStatus);
 router.post('/users/:mbNo/role', admin.changeRole);
 router.post('/users/:mbNo/permission', admin.changePermission);
+router.delete('/users/:mbNo', admin.deleteApplicant);
+router.get('/blocked-ips', blockedIp.list);
+router.post('/blocked-ips', blockedIp.add);
+router.delete('/blocked-ips/:id', blockedIp.remove);
 router.get('/balances', admin.listBalances);
 router.post('/balances', admin.adjustBalances);
 router.get('/balances/:mbNo/logs', admin.balanceLogs);

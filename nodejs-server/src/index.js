@@ -48,6 +48,12 @@ if (process.env.NODE_ENV === 'production') {
 // limit: 관리자 글 본문(최대 500KB HTML)이 들어가도록 1MB (기본 100KB)
 app.use(express.json({ limit: '1mb', verify: keepRawBody }));
 
+// 차단 IP(관리 '차단 IP')는 로그인·직원 API 403 — 공개 API(linkbe.kr)·Slack은 제외 (utils/ipBlock.js)
+const ipBlock = require('./utils/ipBlock');
+app.use('/api', ipBlock.blockMiddleware);
+// 화면 서버(proxy.ts)가 페이지 진입 차단에 쓰는 목록 — 서버 안에서 직접 부른 요청만
+app.get('/api/internal/blocked-ips', ipBlock.internalList);
+
 // /api 전체에 로그인(JWT 쿠키) 검사 — 예외 경로는 requireAuth.js 참고
 app.use('/api', requireAuth);
 
