@@ -138,7 +138,7 @@ function MemberRow({ user: u, isMe, run, onOpen }: { user: AdminUser; isMe: bool
                     {u.user_role === 'admin' && <Badge tone="info">관리자</Badge>}
                 </span>
                 <span className="block truncate text-xs text-muted">
-                    {u.user_id} · {joinedAt(u.user_datetime)} 가입{u.last_login_ip ? ` · 접속 IP ${u.last_login_ip}` : ''}
+                    {u.user_id} · {joinedAt(u.user_datetime)} 가입 · {u.last_login_ip ? `접속 IP ${u.last_login_ip}` : 'IP 기록 없음(11-25 이전 가입·로그인)'}
                 </span>
             </button>
             {actions ?? <span className="text-xs text-muted">자기 자신은 변경할 수 없어요</span>}

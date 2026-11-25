@@ -54,7 +54,7 @@ export function AdminShell({ groups, badges, children }: Props) {
                     {groups.map((g, gi) => (
                         <div key={g.title ?? gi}>
                             {/* 묶음 제목(누르는 메뉴 아님) — 배경으로 메뉴와 구분 */}
-                            {g.title && <p className="mb-1 rounded-md bg-neutral-bg px-3 py-1.5 text-xs font-bold text-muted">{g.title}</p>}
+                            {g.title && <p className="mb-1 rounded-md bg-[#e4e0ee] px-3 py-1.5 text-xs font-bold text-ink">{g.title}</p>}
                             <ul className="flex flex-col gap-0.5">
                                 {g.items.map(i => {
                                     const active = isActive(pathname, i.href);
